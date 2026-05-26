@@ -1270,7 +1270,7 @@ if (window.location.protocol === 'file:') {
   <div style="display:flex;align-items:center;gap:10px;">
     <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.72rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:3px 10px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap;">🔒 Privacy protected</div>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;">⚙ District &amp; Site Settings</button>
-    <div class="version-badge">v1</div>
+    <div class="version-badge">v2</div>
   </div>
 </header>
 
@@ -4046,7 +4046,7 @@ async function saveDistrictProfile() {
     return true;
   } catch (err) {
     hideStatus();
-    alert('Error saving profile. Please try again.');
+    alert('Error saving profile: ' + (err.message || String(err)));
     return false;
   }
 }
@@ -4949,6 +4949,20 @@ document.getElementById('memoDate').value = _today;
 document.getElementById('incidentDates').value = _today;
 
 // Load district profile, schools, and CBA library on startup
+// Show setup immediately if no district profile in localStorage
+// This prevents the writeup tab from flashing before setup appears
+(function() {
+  try {
+    const hasProfile = localStorage.getItem('wt__district:profile');
+    if (!hasProfile) {
+      // Show setup overlay immediately -- don't wait for async storage reads
+      document.addEventListener('DOMContentLoaded', () => {
+        openSetup();
+      });
+    }
+  } catch(e) {}
+})();
+
 // Migrate window.storage → localStorage first, then load everything
 // Clean version -- no migration needed
 Promise.resolve().then(() => {
