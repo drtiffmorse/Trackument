@@ -3977,7 +3977,6 @@ function applyDistrictProfile(profile) {
   const dnEl = document.getElementById('setupDistrictName');
   const bpEl = document.getElementById('setupBPURL');
   if (dnEl) dnEl.value = profile.name || '';
-  if (urlEl) urlEl.value = profile.url || '';
   if (bpEl) bpEl.value = profile.bpURL || '';
 
   // Populate docType select from saved types
