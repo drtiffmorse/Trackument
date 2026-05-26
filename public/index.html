@@ -1270,7 +1270,7 @@ if (window.location.protocol === 'file:') {
   <div style="display:flex;align-items:center;gap:10px;">
     <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.72rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:3px 10px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap;">🔒 Privacy protected</div>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;">⚙ District &amp; Site Settings</button>
-    <div class="version-badge">v2</div>
+    <div class="version-badge">v4</div>
   </div>
 </header>
 
@@ -1889,6 +1889,7 @@ if (window.location.protocol === 'file:') {
       <div class="output-actions" style="margin-top:20px;">
         <button class="btn btn-primary" onclick="window.print()">Print Document</button>
         <button class="btn btn-secondary" onclick="copyMemo()">Copy to Clipboard</button>
+        <button class="btn btn-secondary" onclick="downloadMemo()">Download as Word Doc</button>
         <button class="btn btn-secondary" onclick="startOver()">Start New Document</button>
       </div>
     </div>
@@ -2531,26 +2532,19 @@ function buildPrompt(d) {
   // Define CBA variables FIRST before anything uses them
   const cbaName = window._activeCBAEntry?.name || '';
   const cbaExtractedRefs = d.cbaRef || '';
-  const cbaDisciplineArticle = cbaExtractedRefs.match(/Article\s+[\d.]+/i)?.[0] || null;
   const hasCBAContent = cbaExtractedRefs.trim().length > 0;
-  const cbaOpeningRef = hasCBAContent && cbaDisciplineArticle
-    ? 'Pursuant to ' + cbaDisciplineArticle + ' of ' + cbaName + ', this document will serve as'
-    : hasCBAContent && cbaName
-      ? 'Pursuant to ' + cbaName + ', this document will serve as'
-      : 'This document will serve as';
-  const includeGoalsSection = isConference && hasCBAContent;
-  const cbaGoalsOpen = cbaDisciplineArticle
-    ? 'In accordance with ' + cbaDisciplineArticle + ' of ' + cbaName + ', this Conference Summary is intended to'
-    : 'In accordance with ' + cbaName + ', this Conference Summary is intended to';
-  const cbaGoalsStipulates = cbaDisciplineArticle
-    ? cbaDisciplineArticle + ' also stipulates'
-    : 'The agreement also stipulates';
 
-  // Now safe to use hasCBAContent and cbaName
+  // NEVER reference a CBA article number in the opening paragraph or goals section.
+  // Article numbers belong ONLY in the citations section where the user explicitly selected them.
+  const cbaOpeningRef = 'This document will serve as';
+  const includeGoalsSection = isConference && hasCBAContent;
+  // Goals section language -- NO article numbers, NO CBA name
+  const cbaGoalsOpen = 'This Conference Summary is intended to';
+  const cbaGoalsStipulates = 'It is also intended';
+
+  // File notice: never reference CBA name or article numbers
   const fileNoticeText = isConference
-    ? (hasCBAContent && cbaName
-        ? 'Pursuant to ' + cbaName + ', a copy of this conference summary memo will not be placed in your official personnel file. It will be retained in the administrator\'s working file only. Should the concerns described herein recur or continue, this memo may be referenced in any subsequent formal disciplinary action.'
-        : 'A copy of this conference summary memo will not be placed in your official personnel file. It will be retained in the administrator\'s working file only. Should the concerns described herein recur or continue, this memo may be referenced in any subsequent formal disciplinary action.')
+    ? 'A copy of this conference summary memo will not be placed in your official personnel file. It will be retained in the administrator\'s working file only. Should the concerns described herein recur or continue, this memo may be referenced in any subsequent formal disciplinary action.'
     : d.fileNotice;
 
   const impactNote = d.impactStudents
@@ -2559,7 +2553,9 @@ function buildPrompt(d) {
 
   return `You are writing a ${d.docType} for a California school district. Write exactly like the sample templates below — professional, human, and direct. The document is addressed TO the employee using "you" and "your" throughout the body.
 
-CRITICAL RULE ON CBA REFERENCES: Only cite CBA article numbers that appear verbatim in the CBA citations list in CONTENT below. Never invent article numbers. Never use article numbers from examples or templates. The sample "Article 20.4.1" in this prompt is an EXAMPLE ONLY — never use it unless it appears in the actual CBA citations list. If no CBA citations are provided, do not reference any article numbers.
+CRITICAL RULE ON CBA REFERENCES: The opening paragraph and goals section must NEVER contain any CBA article numbers. Never write "Pursuant to Article X" or "In accordance with Article X" anywhere in this document. CBA article numbers appear ONLY as bullet points in the citations section, and only if they are explicitly listed in the CBA citations field below. If that field is empty, write zero CBA citations. Do not invent, infer, or reuse any article numbers from examples.
+
+CRITICAL RULE ON QUOTED POLICY LANGUAGE: When quoting Ed Code, Board Policies, or CBA provisions, the quotes must be the actual verbatim statutory or policy text. Never insert the employee's name, job title, or any personal identifier inside a quoted passage. Policy language uses generic terms like "employees," "unit members," or "classified employees" -- not individual names. A quote that reads "Mr. Smith employees are expected to..." is wrong. The correct quote reads "Employees are expected to..."
 
 STUDY THESE TEMPLATE PATTERNS CAREFULLY:
 
@@ -2610,11 +2606,14 @@ WRITING RULES — follow every one:
 
 5. IMPACT: Reference the employee's specific job title throughout (e.g. "bus driver," "instructional aide," "teacher") — never use generic language like "classified employee" or "permanent position." Use: "During our meeting on [date], I informed you that your conduct negatively impacted the working operations of our school inasmuch as..." then be specific to this situation and their role.
 
-6. DIRECTIVES: One introductory sentence, then bullet points (•) for each directive. Each must be specific and actionable.
+6. DIRECTIVES: Always introduce directives with exactly this sentence: "Effective immediately, I am directing you to comply with the following:" Then bullet points (•) for each directive. Each must be specific and actionable.
 
 7. GOALS (conference summaries only): ${includeGoalsSection ? 'Include the goals section using the pattern shown above, using only the CBA references from the citations list.' : 'DO NOT include any goals section. No CBA discipline content was provided.'}
 
-8. CLOSING: One positive paragraph ("I believe you are capable..."). Blank line. Then consequences and file notice paragraph.
+8. CLOSING: Write in this exact order:
+   First: One positive paragraph starting with "I believe you are capable of meeting these expectations..." 
+   Then: The right to respond sentence.
+   Then: A blank line, then the consequences of future violations and file notice as a final paragraph.
 
 9. SIGNATURE BLOCK:
 ___________________________________
@@ -2703,6 +2702,50 @@ function copyMeetingEmail() {
   const el = document.getElementById('draftMeetingEmail');
   const text = el?.innerText || '';
   navigator.clipboard.writeText(text).then(() => showToast('Email copied to clipboard'));
+}
+
+function downloadMemo() {
+  const output = document.getElementById('memoOutput');
+  if (!output) return;
+
+  // Build plain text version for download
+  const text = output.innerText || output.textContent || '';
+  const data = collectData();
+  const empName = (data.employeeName || 'document').replace(/[^a-z0-9]/gi, '_');
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const filename = `${empName}_${data.docType || 'memo'}_${dateStr}.txt`.replace(/\s+/g, '_');
+
+  // Create downloadable HTML file that looks like the document
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>${data.docType || 'Memo'}</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 750px; margin: 60px auto; font-size: 12pt; line-height: 1.8; color: #000; }
+    .letterhead { border-bottom: 2px solid #1a2642; padding-bottom: 16px; margin-bottom: 28px; }
+    .district { font-size: 16pt; font-weight: bold; color: #1a2642; }
+    .school { font-size: 12pt; color: #444; }
+    pre { white-space: pre-wrap; font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.8; }
+  </style>
+</head>
+<body>
+  <div class="letterhead">
+    <div class="district">${data.districtName || ''}</div>
+    <div class="school">${data.schoolName || ''}</div>
+    ${data.schoolURL ? '<div class="school">' + data.schoolURL + '</div>' : ''}
+  </div>
+  <pre>${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename.replace('.txt', '.html');
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function copyMemo() {
@@ -3714,16 +3757,18 @@ function buildPseudoMap(d) {
 function applyPseudo(text, map) {
   let result = text;
   for (const { real, pseudo } of map) {
-    // Case-insensitive replacement
-    result = result.replace(new RegExp(real.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), pseudo);
+    // Use word boundaries to avoid matching partial words
+    // e.g. "Employee" should not match inside "Employees" or "Employment"
+    const escaped = real.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    result = result.replace(new RegExp('\\b' + escaped + '\\b', 'gi'), pseudo);
   }
   return result;
 }
 
 function removePseudo(text, map) {
   let result = text;
-  // Restore in reverse order (shortest pseudo tokens first doesn't matter; they're unique)
   for (const { real, pseudo } of map) {
+    // Restore all occurrences of the pseudo token
     result = result.split(pseudo).join(real);
   }
   return result;
