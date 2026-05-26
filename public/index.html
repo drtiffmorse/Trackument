@@ -1274,7 +1274,7 @@ if (window.location.protocol === 'file:') {
   <div style="display:flex;align-items:center;gap:10px;">
     <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.72rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:3px 10px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap;">🔒 Privacy protected</div>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;">⚙ District &amp; Site Settings</button>
-    <div class="version-badge">v5</div>
+    <div class="version-badge">v6</div>
   </div>
 </header>
 
@@ -1670,7 +1670,7 @@ if (window.location.protocol === 'file:') {
         <!-- Impact loading -->
         <div id="impactLoading" style="display:none; text-align:center; padding:28px 0;">
           <div class="loading-spinner" style="margin:0 auto 10px;"></div>
-          <p style="color:var(--gray); font-size:0.85rem;">Drafting impact language — 30 seconds to 1 minute...</p>
+          <p style="color:var(--gray); font-size:0.85rem;">Drafting impact language — 1–3 minutes...</p>
         </div>
 
         <!-- Draft result with per-area checkboxes -->
@@ -1868,7 +1868,7 @@ if (window.location.protocol === 'file:') {
 
       <div style="text-align:center; padding:12px 0 8px;">
         <button class="btn btn-action btn-generate" onclick="generateMemo()" style="padding:18px 60px; font-size:1rem; letter-spacing:0.03em;">&#10003; Generate Document</button>
-        <div style="font-size:0.8rem; color:var(--gray); margin-top:10px;">This usually takes 30 seconds to 1 minute.</div>
+        <div style="font-size:0.8rem; color:var(--gray); margin-top:10px;">This usually takes 1–3 minutes.</div>
       </div>
 
       <div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--light-gray);">
@@ -1934,7 +1934,7 @@ if (window.location.protocol === 'file:') {
         <div style="font-size:0.78rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:#92400e; margin-bottom:10px;">Verify Before Issuing</div>
         <div style="font-size:0.85rem; line-height:1.8; color:#78350f;">
           <strong>Ed Code citations:</strong> Verify current language and confirm the sections cited are applicable to this employee's classification and the specific conduct at issue.<br><br>
-          <strong>Board Policies and ARs:</strong> Policy numbers are based on the standard California (CSBA) model. These match most districts' adopted numbers. A quick check at your district's policy site before issuing takes 30 seconds to 1 minute.<br><br>
+          <strong>Board Policies and ARs:</strong> Policy numbers are based on the standard California (CSBA) model. These match most districts' adopted numbers. A quick check at your district's policy site before issuing takes 1–3 minutes.<br><br>
           <strong>CBA language:</strong> Confirm article numbers and language are current for your active contract year.<br><br>
           <strong>Personnel file procedures:</strong> Confirm the file placement language matches your district's practice and any applicable CBA requirements.
         </div>
@@ -2359,7 +2359,7 @@ async function generateMemo() {
   maxReachedStep = 9;
   updateSideNav();
   document.getElementById('loading').style.display = 'block';
-  showStatus('Generating document...', 'Drafting your writeup — 30 seconds to 1 minute');
+  showStatus('Generating document...', 'Drafting your writeup — 1–3 minutes');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
   // Build message content — include CBA document, prior docs, and witness statements
@@ -2553,7 +2553,9 @@ CRITICAL RULE ON QUOTED POLICY LANGUAGE: When quoting Ed Code, Board Policies, o
 
 STUDY THESE TEMPLATE PATTERNS CAREFULLY:
 
-Opening: "This is to summarize our meeting on [date]. Present at this meeting were [administrator name, employee name, and any others from the othersPresent list below]. ${cbaOpeningRef} a Conference Summary regarding your conduct."
+Opening for CONFERENCE SUMMARIES: "This is to summarize our meeting on [date]. Present at this meeting were [administrator name, employee name, and any others from the othersPresent list below]. This document will serve as a Conference Summary regarding your conduct."
+
+Opening for ALL OTHER DOCUMENT TYPES (Written Warning, Letter of Reprimand, Notice of Unsatisfactory Performance, etc.): Do NOT reference a meeting in the opening. Use: "This [document type] is to address concerns regarding your conduct and performance." Then go directly into the facts paragraph. There was no "meeting" -- this is a formal disciplinary letter.
 
 ${includeGoalsSection ? `Goals section (CONFERENCE SUMMARIES ONLY): Write this paragraph verbatim: "This conference summary is meant to support improvement in performance and conduct. It outlines clear expectations and goals to help you be successful moving forward. The goals of this letter are to improve the quality of your work, increase awareness of the changes needed, and clarify the consequences if sufficient improvement does not occur."` : 'Goals section: DO NOT include any goals section — no CBA discipline content was provided for this writeup.'}
 
@@ -2575,7 +2577,8 @@ Ed Code (USE ONLY THESE — never add your own): ${d.edCodeCitations || 'None �
 ${d.cvcCitations ? 'California Vehicle Code: ' + d.cvcCitations : ''}
 ${d.otherCitations ? 'Other applicable citations: ' + d.otherCitations : ''}
 Board Policy/AR (USE ONLY THESE — never add your own): ${d.bpCitations || 'None — omit board policy citations entirely'}
-${window._activeCBAEntry ? 'CBA: ' + window._activeCBAEntry.name + ' (document attached — extract only the single most relevant sentence per article)' : d.cbaRef ? 'CBA: ' + d.cbaRef : ''}
+${d.cbaRef ? 'CBA citations selected by administrator (USE THESE VERBATIM in the citations section):\n' + d.cbaRef : 'No CBA citations selected — do not include any CBA citations.'}
+${window._activeCBAEntry ? '(CBA document: ' + window._activeCBAEntry.name + ')' : ''}
 ${d.ruleNotes ? 'Additional context: ' + d.ruleNotes : ''}
 Impact: ${impactNote}
 Directives: ${d.directives || 'Draft specific, actionable directives based on the facts.'}
@@ -2589,7 +2592,7 @@ WRITING RULES — follow every one:
 
 1. NO SECTION HEADERS. Never write "Facts:", "Rule:", "Impact:", "Directives:" as labels. The document flows as connected paragraphs with no visible section headings.
 
-2. OPENING PARAGRAPH: Use "This is to summarize our meeting on [date]." Do NOT describe the conduct in the opening paragraph. List everyone present. For conference summaries, simply say "This document will serve as a Conference Summary regarding your conduct." — never add "of a Written Warning" or any sub-classification.
+2. OPENING PARAGRAPH: For conference summaries only: "This is to summarize our meeting on [date]. Present at this meeting were [list people]. This document will serve as a Conference Summary regarding your conduct." For all other document types (Written Warning, Letter of Reprimand, Notice of Unsatisfactory Performance): do NOT reference a meeting. Open with "This [document type] is to address concerns regarding your conduct and performance." Never add "of a Written Warning" or sub-classifications to a conference summary title.
 
 3. FACTS: Narrate in chronological paragraphs from ${authorName}'s perspective using "I" and addressing the employee as "you." Mention the date once. Reference prior documentation naturally if it exists.
 
@@ -2598,7 +2601,7 @@ WRITING RULES — follow every one:
    
    Do NOT add an explanatory sentence after each citation. The quote speaks for itself. Never paraphrase. Never quote more than 1-2 sentences from any single source.
 
-5. IMPACT: Reference the employee's specific job title throughout (e.g. "bus driver," "instructional aide," "teacher") — never use generic language like "classified employee" or "permanent position." Use: "During our meeting on [date], I informed you that your conduct negatively impacted the working operations of our school inasmuch as..." then be specific to this situation and their role.
+5. IMPACT: The employee's job title is "${d.employeeTitle || 'not specified'}". Every sentence in the impact section must reflect the specific duties and responsibilities of a ${d.employeeTitle || 'employee in this role'}. If the employee is a custodian, describe how the absence/conduct affects building cleanliness, safety, and the custodial team. If a bus driver, describe student safety and transportation. If a teacher, describe classroom impact. Never use generic language like "classified employee" or language from a different job title. The impact must make sense for the actual role.
 
 6. DIRECTIVES: Always introduce directives with exactly this sentence: "Effective immediately, I am directing you to comply with the following:" Then bullet points (•) for each directive. Each must be specific and actionable.
 
@@ -2663,20 +2666,27 @@ function renderMemo(text, data) {
 
   // Convert clean text to HTML with proper formatting
   const lines = cleanText.split('\n');
+  let inList = false;
   const htmlLines = lines.map(line => {
-    // Strip markdown headers entirely (# ## ### etc)
+    // Strip markdown headers entirely
     if (/^#{1,3}\s+/.test(line)) return '';
-    // Convert bullet points to hanging indent paragraphs
+    // Convert bullet points to list items
     if (/^[•\-\*]\s+/.test(line)) {
-      const content = line.replace(/^[•\-\*]\s+/, '');
-      return `<div style="padding-left:2em; text-indent:-1.5em; margin:4px 0;">• ${content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+      const content = line.replace(/^[•\-\*]\s+/, '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const item = `<li style="margin-bottom:4px;">${content}</li>`;
+      if (!inList) { inList = true; return '<ul style="margin:8px 0 8px 0; padding-left:2.2em; list-style-type:disc;">' + item; }
+      return item;
     }
-    // Bold text **word**
+    // Close list if we were in one
+    let prefix = '';
+    if (inList) { inList = false; prefix = '</ul>'; }
     let escaped = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    if (escaped.trim() === '') return '<br>';
-    return `<span>${escaped}</span><br>`;
+    if (escaped.trim() === '') return prefix + '<br>';
+    return prefix + `<span>${escaped}</span><br>`;
   });
+  if (inList) htmlLines.push('</ul>');
   const htmlBody = htmlLines.join('\n');
 
   output.innerHTML = `
@@ -2813,7 +2823,7 @@ async function generateImpactDraft() {
   if (generateBtn) generateBtn.disabled = true;
   if (loadingEl) loadingEl.style.display = 'block';
   if (resultEl) resultEl.style.display = 'none';
-  showStatus('Generating impact draft...', 'Drafting impact language — 30 seconds to 1 minute');
+  showStatus('Generating impact draft...', 'Drafting impact language — 1–3 minutes');
 
   const classification = document.getElementById('employeeClass').value;
   const situations = Array.from(selectedSituations).join(', ');
@@ -2835,6 +2845,7 @@ async function generateImpactDraft() {
 
 CONTEXT:
 Employee: ${pseudoEmployee}
+Job Title: ${impactPseudo.employeeTitle || 'Not specified'}
 Classification: ${classLabels[classification] || classification || 'Not specified'}
 Situation Type(s): ${situations || 'Not specified'}
 Incident Date(s): ${pseudoDates}
@@ -3165,7 +3176,7 @@ async function analyzeAndSuggestCitations() {
   const loadingEl = document.getElementById('analyzeLoading');
   if (analyzeBtn) analyzeBtn.disabled = true;
   if (loadingEl) loadingEl.style.display = 'block';
-  showStatus('Analyzing facts...', 'Reading your CBA and identifying applicable citations — 30 seconds to 1 minute');
+  showStatus('Analyzing facts...', 'Reading your CBA and identifying applicable citations — 1–3 minutes');
 
   const classLabels = {
     'cert-prob': 'Certificated Probationary', 'cert-perm': 'Certificated Permanent',
@@ -3289,7 +3300,7 @@ Citation rules:
     if (bpFlagEl) {
       bpFlagEl.style.display = 'block';
       bpFlagEl.innerHTML = bpURL
-        ? `<strong>Important:</strong> These are standard CSBA model policy numbers. Your district's board policy site is saved, but we encountered a security restriction from Simbli/eBoard that prevented automated retrieval. <a href="${bpURL}" target="_blank" style="color:var(--navy); font-weight:700;">Open your policy site →</a> to verify adopted numbers (takes 30 seconds to 1 minute).`
+        ? `<strong>Important:</strong> These are standard CSBA model policy numbers. Your district's board policy site is saved, but we encountered a security restriction from Simbli/eBoard that prevented automated retrieval. <a href="${bpURL}" target="_blank" style="color:var(--navy); font-weight:700;">Open your policy site →</a> to verify adopted numbers (takes 1–3 minutes).`
         : `<strong>Note:</strong> These are standard CSBA model policy numbers. Add your district's board policy URL in District Settings to get a direct verification link.`;
     }
 
@@ -4571,7 +4582,7 @@ async function saveSetupCBA() {
   const entry = { key, name, unit, sourceType, sourceData, sourceLabel, savedAt: new Date().toLocaleDateString() };
 
   try {
-    showStatus('Saving bargaining agreement...', 'This may take 30 seconds to 1 minute for large files');
+    showStatus('Saving bargaining agreement...', 'This may take 1–3 minutes for large files');
     await store.set(key, JSON.stringify(entry));
     hideStatus();
     // Reset form
