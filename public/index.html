@@ -1274,7 +1274,7 @@ if (window.location.protocol === 'file:') {
   <div style="display:flex;align-items:center;gap:10px;">
     <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.72rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:3px 10px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap;">🔒 Privacy protected</div>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;">⚙ District &amp; Site Settings</button>
-    <div class="version-badge">v6</div>
+    <div class="version-badge">v7</div>
   </div>
 </header>
 
@@ -1809,7 +1809,7 @@ if (window.location.protocol === 'file:') {
         <select id="fileNotice" style="display:none;" onchange="document.getElementById('fileNoticeDisplay').innerText = this.options[this.selectedIndex].text;">
           <option value="conference-summary">A copy of this conference summary memo will not be placed in your official personnel file. It will be retained in the administrator's working file only. Should the concerns described herein recur or continue, this memo may be referenced in any subsequent formal disciplinary action.</option>
           <option value="supervisor-file">This document will be maintained in the administrator's working file and may be placed in your official personnel file if the conduct described herein recurs or escalates.</option>
-          <option value="personnel-file">This document will be placed in your official personnel file maintained by the District in ten (10) calendar days. You have the right to respond in writing within that period, and your response will be included with this document in your file.</option>
+          <option value="personnel-file">This document will be placed in your official personnel file maintained by the District in ten (10) calendar days.</option>
           <option value="cba">Placement per CBA provisions — see applicable contract language.</option>
         </select>
       </div>
@@ -1891,9 +1891,8 @@ if (window.location.protocol === 'file:') {
       <div id="memoOutput" contenteditable="true" spellcheck="true" style="outline:none; cursor:text; min-height:400px; background:var(--white); border:1px solid var(--light-gray); border-radius:3px; padding:32px;"></div>
 
       <div class="output-actions" style="margin-top:20px;">
-        <button class="btn btn-primary" onclick="window.print()">Print Document</button>
         <button class="btn btn-secondary" onclick="copyMemo()">Copy to Clipboard</button>
-        <button class="btn btn-secondary" onclick="downloadMemo()">Download as Word Doc</button>
+        <button class="btn btn-secondary" onclick="downloadMemo()">Download Document</button>
         <button class="btn btn-secondary" onclick="startOver()">Start New Document</button>
       </div>
     </div>
@@ -2051,30 +2050,71 @@ const CITATIONS = {
   },
 
   boardpolicy: {
-    'attendance': [
-      { code: 'BP 4161.1 / 4261.1 / 4361.1', desc: 'Personal Illness/Injury Leave — governs leave reporting requirements and expectations for timely notification.' },
-      { code: 'AR 4161.1 / 4261.1 / 4361.1', desc: 'Leave procedures — documentation and notification requirements for absence.' },
+    // Certificated staff (4100 series)
+    'cert-attendance': [
+      { code: 'BP 4161.1', desc: 'Personal Illness/Injury Leave — certificated leave reporting requirements and expectations for timely notification of absence.' },
     ],
-    'performance': [
-      { code: 'BP 4115 / 4215', desc: 'Evaluation — sets standards for satisfactory performance for certificated and classified employees.' },
-      { code: 'AR 4115 / 4215', desc: 'Evaluation procedures — timelines and criteria applicable to this employee\'s classification.' },
+    'cert-performance': [
+      { code: 'BP 4115', desc: 'Certificated Personnel Evaluation — sets standards for satisfactory performance for certificated employees.' },
     ],
-    'conduct': [
-      { code: 'BP 4119.21 / 4219.21 / 4319.21', desc: 'Professional Standards — establishes the district\'s expectations for employee conduct and professional behavior.' },
-      { code: 'AR 4119.21 / 4219.21', desc: 'Professional Standards — procedures implementing conduct expectations.' },
+    'cert-conduct': [
+      { code: 'BP 4119.21', desc: 'Professional Standards — establishes the district\'s expectations for certificated employee conduct and professional behavior.' },
     ],
-    'safety': [
-      { code: 'BP 4157 / 4257 / 4357', desc: 'Employee Safety — establishes employee responsibilities for maintaining a safe environment.' },
-      { code: 'AR 4157 / 4257 / 4357', desc: 'Employee Safety — procedures for reporting safety violations and workplace incidents.' },
-      { code: 'BP 3514', desc: 'Environmental Safety — district obligations and employee responsibilities for a safe workplace.' },
+    'cert-professional': [
+      { code: 'BP 4119.21', desc: 'Professional Standards — establishes the district\'s expectations for certificated employee conduct and professional behavior.' },
     ],
-    'alcohol': [
-      { code: 'BP 4020', desc: 'Drug and Alcohol-Free Workplace — prohibitions and district expectations.' },
-      { code: 'AR 4020', desc: 'Drug and Alcohol-Free Workplace — procedures for reporting, testing, and response.' },
+    'cert-safety': [
+      { code: 'BP 4157', desc: 'Employee Safety — establishes certificated employee responsibilities for maintaining a safe work environment.' },
     ],
-    'dishonesty': [
-      { code: 'BP 4119.1 / 4219.1', desc: 'Duty to Report — obligation to report suspected fraud or dishonest conduct.' },
-      { code: 'BP 3314.2', desc: 'Falsification of Records — if conduct involves falsified documents, time records, or official reports.' },
+    'cert-alcohol': [
+      { code: 'BP 4020', desc: 'Drug and Alcohol-Free Workplace — prohibitions and district expectations for certificated employees.' },
+    ],
+    'cert-dishonesty': [
+      { code: 'BP 4119.1', desc: 'Duty to Report — certificated employee obligation to report suspected fraud or dishonest conduct.' },
+    ],
+    // Classified staff (4200 series)
+    'class-attendance': [
+      { code: 'BP 4261.1', desc: 'Personal Illness/Injury Leave — classified employee leave reporting requirements and expectations for timely notification of absence.' },
+    ],
+    'class-performance': [
+      { code: 'BP 4215', desc: 'Classified Personnel Evaluation — sets standards for satisfactory performance for classified employees.' },
+    ],
+    'class-conduct': [
+      { code: 'BP 4219.21', desc: 'Professional Standards — establishes the district\'s expectations for classified employee conduct and professional behavior.' },
+    ],
+    'class-professional': [
+      { code: 'BP 4219.21', desc: 'Professional Standards — establishes the district\'s expectations for classified employee conduct and professional behavior.' },
+    ],
+    'class-safety': [
+      { code: 'BP 4257', desc: 'Employee Safety — establishes classified employee responsibilities for maintaining a safe work environment.' },
+    ],
+    'class-alcohol': [
+      { code: 'BP 4020', desc: 'Drug and Alcohol-Free Workplace — prohibitions and district expectations for classified employees.' },
+    ],
+    'class-dishonesty': [
+      { code: 'BP 4219.1', desc: 'Duty to Report — classified employee obligation to report suspected fraud or dishonest conduct.' },
+    ],
+    // Management/Confidential (4300 series)
+    'mgmt-attendance': [
+      { code: 'BP 4361.1', desc: 'Personal Illness/Injury Leave — management/confidential employee leave reporting requirements.' },
+    ],
+    'mgmt-performance': [
+      { code: 'BP 4315', desc: 'Management/Confidential Evaluation — performance standards for management employees.' },
+    ],
+    'mgmt-conduct': [
+      { code: 'BP 4319.21', desc: 'Professional Standards — establishes the district\'s expectations for management employee conduct.' },
+    ],
+    'mgmt-professional': [
+      { code: 'BP 4319.21', desc: 'Professional Standards — establishes the district\'s expectations for management employee conduct.' },
+    ],
+    'mgmt-safety': [
+      { code: 'BP 4357', desc: 'Employee Safety — management employee responsibilities for maintaining a safe work environment.' },
+    ],
+    'mgmt-alcohol': [
+      { code: 'BP 4020', desc: 'Drug and Alcohol-Free Workplace — prohibitions and expectations for management employees.' },
+    ],
+    'mgmt-dishonesty': [
+      { code: 'BP 4319.1', desc: 'Duty to Report — management employee obligation to report suspected fraud or dishonest conduct.' },
     ],
   },
 
@@ -2139,10 +2179,11 @@ function updateCitations() {
     (CITATIONS.edcode[key] || []).forEach(c => { if (!edcodeSet.has(c.code)) edcodeSet.set(c.code, c); });
   });
 
-  // Board Policy + Administrative Regulations (merged into bpList)
+  // Board Policy -- use classification prefix to get correct series
   const bpSet = new Map();
   selectedSituations.forEach(sit => {
-    (CITATIONS.boardpolicy[sit] || []).forEach(c => { if (!bpSet.has(c.code)) bpSet.set(c.code, c); });
+    const bpKey = `${prefix}-${sit}`;
+    (CITATIONS.boardpolicy[bpKey] || []).forEach(c => { if (!bpSet.has(c.code)) bpSet.set(c.code, c); });
     (CITATIONS.adminreg[sit] || []).forEach(c => { if (!bpSet.has(c.code)) bpSet.set(c.code, c); });
   });
 
@@ -2583,6 +2624,8 @@ ${d.ruleNotes ? 'Additional context: ' + d.ruleNotes : ''}
 Impact: ${impactNote}
 Directives: ${d.directives || 'Draft specific, actionable directives based on the facts.'}
 Support offered: ${d.supportOffered || 'None noted'}
+
+CRITICAL RULE ON SUPPORT RESOURCES: Never insert the employee's name or any personal identifier into the support resource text. "Employee Assistance Program" is a fixed proper name — do not prefix it with a person's name. Write exactly: "Employee Assistance Program (EAP) information was provided." Never write "[Name] Employee Assistance Program."
 Right to respond: ${d.respondRight}
 Consequences: ${d.consequences}
 File notice: ${fileNoticeText}
@@ -3225,7 +3268,7 @@ Citation rules:
 - Ed Code: Classified = 45xxx, Certificated = 44xxx. No dismissal statutes for pre-discipline. Max 4.
 - CVC: Only include if the employee operates a district vehicle (bus driver, van driver, etc.). Use the actual CVC section. Return empty array [] if not applicable.
 - Other: Include Health & Safety Code, DMV regulations, or other non-Ed Code citations ONLY if directly relevant to the specific conduct (e.g., nutrition services/food safety = Health & Safety Code; driving record = DMV). Return empty array [] if not applicable. Never include Cal-OSHA.
-- Board Policy: CSBA model numbers, max 3. Quote verbatim.
+- Board Policy: Use the correct CSBA series for this classification ONLY. Never combine series with "/". Certificated = 4100 series (BP 4119.21, BP 4161.1, etc). Classified = 4200 series (BP 4219.21, BP 4261.1, etc). Management = 4300 series (BP 4319.21, etc). Max 3. Quote verbatim.
 - CBA: Single most relevant sentence per article. Max 3.`;
 
 
@@ -3367,7 +3410,7 @@ const SUGGESTED_DIRECTIVES = {
     'You are directed to conduct yourself in a professional manner at all times when interacting with students, staff, parents, and members of the public.',
     'You are directed to follow the lawful directives of your supervisor and other district administrators.',
     'You are directed to refrain from [specific conduct] on district property and during district activities.',
-    'You are directed to review and acknowledge receipt of BP/AR [4119.21 / 4219.21] — Professional Standards — by [date].',
+    'You are directed to review and acknowledge receipt of the district\'s Professional Standards policy and the Employee Standards of Conduct by [date].',
   ],
   safety: [
     'You are directed to follow all district safety policies and site safety procedures at all times.',
