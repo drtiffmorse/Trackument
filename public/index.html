@@ -463,7 +463,11 @@
     font-size: 0.93rem;
     line-height: 1.85;
     color: var(--text);
-    white-space: pre-wrap;
+  }
+  .memo-body div[style*="padding-left"] {
+    padding-left: 2em;
+    text-indent: -1.5em;
+    margin: 4px 0;
   }
 
   .output-actions {
@@ -1270,7 +1274,7 @@ if (window.location.protocol === 'file:') {
   <div style="display:flex;align-items:center;gap:10px;">
     <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.72rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:3px 10px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap;">🔒 Privacy protected</div>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;">⚙ District &amp; Site Settings</button>
-    <div class="version-badge">v4</div>
+    <div class="version-badge">v5</div>
   </div>
 </header>
 
@@ -2302,19 +2306,9 @@ function nextStep(from) {
     if (classVal) updateDueProcess(classVal);
   }
 
-  // When entering Generate step, populate the summary
+  // When entering Generate step, update the summary
   if (currentStep === 6) {
-    const _classLabels = {'cert-prob':'Certificated Probationary','cert-perm':'Certificated Permanent','class-prob':'Classified Probationary','class-perm':'Classified Permanent','mgmt':'Management/Confidential'};
-    const sal = document.getElementById('employeeSalutation')?.value || '';
-    const name = document.getElementById('employeeName')?.value || '';
-    const classVal = document.getElementById('employeeClass')?.value || '';
-    const docType = document.getElementById('docType')?.value || '';
-    const dates = document.getElementById('incidentDates')?.value || '';
-    const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v || '—'; };
-    setEl('genSummaryEmployee', [sal, name].filter(Boolean).join(' '));
-    setEl('genSummaryDocType', docType);
-    setEl('genSummaryDate', dates);
-    setEl('genSummaryClass', _classLabels[classVal] || classVal);
+    updateGenSummary();
   }
 
   updateSideNav();
@@ -2559,9 +2553,9 @@ CRITICAL RULE ON QUOTED POLICY LANGUAGE: When quoting Ed Code, Board Policies, o
 
 STUDY THESE TEMPLATE PATTERNS CAREFULLY:
 
-Opening: "This is to summarize our meeting on [date]. Present at this meeting were [administrator name, employee name, and any others from the othersPresent list below]. ${cbaOpeningRef} a Conference Summary of a [Written Reprimand/Warning] regarding your conduct."
+Opening: "This is to summarize our meeting on [date]. Present at this meeting were [administrator name, employee name, and any others from the othersPresent list below]. ${cbaOpeningRef} a Conference Summary regarding your conduct."
 
-${includeGoalsSection ? `Goals section (CONFERENCE SUMMARIES ONLY — include this because CBA content was provided): "${cbaGoalsOpen} 'motivate an employee to change performance or conduct.' ${cbaGoalsStipulates} that goals be established to effectuate such improvement. This letter herein establishes the express goals of: improving the quality of your work; increasing your awareness of the changes that must occur for you to be successful; and alerting you to the consequences of failure to make such improvements."` : 'Goals section: DO NOT include any goals section or CBA discipline language — no CBA discipline content was provided for this writeup.'}
+${includeGoalsSection ? `Goals section (CONFERENCE SUMMARIES ONLY): Write this paragraph verbatim: "This conference summary is meant to support improvement in performance and conduct. It outlines clear expectations and goals to help you be successful moving forward. The goals of this letter are to improve the quality of your work, increase awareness of the changes needed, and clarify the consequences if sufficient improvement does not occur."` : 'Goals section: DO NOT include any goals section — no CBA discipline content was provided for this writeup.'}
 
 ---
 
@@ -2595,7 +2589,7 @@ WRITING RULES — follow every one:
 
 1. NO SECTION HEADERS. Never write "Facts:", "Rule:", "Impact:", "Directives:" as labels. The document flows as connected paragraphs with no visible section headings.
 
-2. OPENING PARAGRAPH: Use "This is to summarize our meeting on [date]." Do NOT describe the conduct in the opening paragraph — that belongs in the Facts section. List everyone present. State the document type and CBA reference if applicable.
+2. OPENING PARAGRAPH: Use "This is to summarize our meeting on [date]." Do NOT describe the conduct in the opening paragraph. List everyone present. For conference summaries, simply say "This document will serve as a Conference Summary regarding your conduct." — never add "of a Written Warning" or any sub-classification.
 
 3. FACTS: Narrate in chronological paragraphs from ${authorName}'s perspective using "I" and addressing the employee as "you." Mention the date once. Reference prior documentation naturally if it exists.
 
@@ -2608,7 +2602,7 @@ WRITING RULES — follow every one:
 
 6. DIRECTIVES: Always introduce directives with exactly this sentence: "Effective immediately, I am directing you to comply with the following:" Then bullet points (•) for each directive. Each must be specific and actionable.
 
-7. GOALS (conference summaries only): ${includeGoalsSection ? 'Include the goals section using the pattern shown above, using only the CBA references from the citations list.' : 'DO NOT include any goals section. No CBA discipline content was provided.'}
+7. GOALS (conference summaries only): ${includeGoalsSection ? 'Include the goals paragraph shown above, word for word.' : 'DO NOT include any goals section.'}
 
 8. CLOSING: Write in this exact order:
    First: One positive paragraph starting with "I believe you are capable of meeting these expectations..." 
@@ -2667,9 +2661,23 @@ function renderMemo(text, data) {
     return p1 + '______________________';
   });
 
-  const htmlBody = cleanText
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/\n/g,'<br>');
+  // Convert clean text to HTML with proper formatting
+  const lines = cleanText.split('\n');
+  const htmlLines = lines.map(line => {
+    // Strip markdown headers entirely (# ## ### etc)
+    if (/^#{1,3}\s+/.test(line)) return '';
+    // Convert bullet points to hanging indent paragraphs
+    if (/^[•\-\*]\s+/.test(line)) {
+      const content = line.replace(/^[•\-\*]\s+/, '');
+      return `<div style="padding-left:2em; text-indent:-1.5em; margin:4px 0;">• ${content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+    }
+    // Bold text **word**
+    let escaped = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    if (escaped.trim() === '') return '<br>';
+    return `<span>${escaped}</span><br>`;
+  });
+  const htmlBody = htmlLines.join('\n');
 
   output.innerHTML = `
     <div class="memo-letterhead" style="border-bottom:2px solid var(--navy); padding-bottom:16px; margin-bottom:24px;">
@@ -3903,12 +3911,26 @@ async function restoreFormState() {
   if (docTypeVal) toggleOtherDocType(docTypeVal);
 }
 
+function updateGenSummary() {
+  const _classLabels = {'cert-prob':'Certificated Probationary','cert-perm':'Certificated Permanent','class-prob':'Classified Probationary','class-perm':'Classified Permanent','mgmt':'Management/Confidential'};
+  const sal = document.getElementById('employeeSalutation')?.value || '';
+  const name = document.getElementById('employeeName')?.value || '';
+  const classVal = document.getElementById('employeeClass')?.value || '';
+  const docType = document.getElementById('docType')?.value || '';
+  const dates = document.getElementById('incidentDates')?.value || '';
+  const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v || '—'; };
+  setEl('genSummaryEmployee', [sal, name].filter(Boolean).join(' '));
+  setEl('genSummaryDocType', docType);
+  setEl('genSummaryDate', dates);
+  setEl('genSummaryClass', _classLabels[classVal] || classVal);
+}
+
 function attachFormStateSavers() {
   FORM_FIELDS.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     const evt = (el.tagName === 'SELECT') ? 'change' : 'input';
-    el.addEventListener(evt, () => saveFormState());
+    el.addEventListener(evt, () => { saveFormState(); updateGenSummary(); });
   });
 }
 
