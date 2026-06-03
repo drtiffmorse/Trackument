@@ -108,7 +108,7 @@ app.post('/api/login', express.json(), (req, res) => {
   const { password } = req.body;
   if (password === BETA_PASSWORD) {
     res.setHeader('Set-Cookie',
-      `${COOKIE_NAME}=${BETA_PASSWORD}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`
+      `${COOKIE_NAME}=${BETA_PASSWORD}; Path=/; HttpOnly; Max-Age=2592000`
     );
     res.json({ ok: true });
   } else {
