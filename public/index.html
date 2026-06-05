@@ -1351,7 +1351,7 @@ if (window.location.protocol === 'file:') {
     <a href="/privacy" target="_blank" style="font-size:0.7rem; color:rgba(255,255,255,0.5); text-decoration:none; white-space:nowrap;">Privacy Policy</a>
     <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.06em; text-transform:uppercase;">+ New Writeup</button>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;">⚙ District &amp; Site Settings</button>
-    <div class="version-badge">v22</div>
+    <div class="version-badge">v28</div>
   </div>
 </header>
 
@@ -1929,7 +1929,7 @@ if (window.location.protocol === 'file:') {
         <select id="fileNotice" style="display:none;" onchange="document.getElementById('fileNoticeDisplay').innerText = this.options[this.selectedIndex].text;">
           <option value="conference-summary">A copy of this conference summary memo will not be placed in your official personnel file. It will be retained in the administrator's working file only. Should the concerns described herein recur or continue, this memo may be referenced in any subsequent formal disciplinary action.</option>
           <option value="supervisor-file">This document will be maintained in the administrator's working file and may be placed in your official personnel file if the conduct described herein recurs or escalates.</option>
-          <option value="personnel-file">This document will be placed in your official personnel file maintained by the District in ten (10) calendar days.</option>
+          <option value="personnel-file">This document will be placed in your official personnel file maintained by the District.</option>
           <option value="cba">Placement per CBA provisions — see applicable contract language.</option>
         </select>
       </div>
@@ -2721,7 +2721,10 @@ DATE: ${d.memoDate}
 RE: ${d.docType}
 
 CONTENT:
-Meeting/Incident Date(s): ${d.incidentDates}${d.incidentTimes ? ', ' + d.incidentTimes : ''}
+Meeting/Incident Date(s): ${d.incidentDates}
+Meeting/Incident Time(s): ${d.incidentTimes ? d.incidentTimes : 'Not specified'}
+
+IMPORTANT: If a time is specified above, include it in the facts narrative using the phrase "at approximately [time]" — for example "On February 14, 2026, at approximately 8:15 AM, you..." Never omit the time if it was provided.
 Others present at meeting: ${d.othersPresent || 'None listed'}
 Facts: ${d.factDescription}
 Prior documentation: ${d.priorDoc || 'None on file'}
@@ -2932,17 +2935,62 @@ function startOver() {
     if (el.tagName === 'SELECT') el.selectedIndex = 0;
     else el.value = '';
   });
-  // Reset date pickers
+  // Reset date pickers fully
   const today = new Date().toISOString().split('T')[0];
+  const dateMode = document.getElementById('dateEntryMode');
+  if (dateMode) { dateMode.value = 'single'; updateDateEntryMode(); }
   const singlePicker = document.getElementById('incidentDateSingle');
-  if (singlePicker) { singlePicker.value = today; syncIncidentDates(); }
+  if (singlePicker) { singlePicker.value = today; }
+  const multiDateList = document.getElementById('multiDateList');
+  if (multiDateList) multiDateList.innerHTML = '';
+  const dateRangeFrom = document.getElementById('dateRangeFrom');
+  const dateRangeTo = document.getElementById('dateRangeTo');
+  if (dateRangeFrom) dateRangeFrom.value = '';
+  if (dateRangeTo) dateRangeTo.value = '';
+  syncIncidentDates();
+
+  // Reset time pickers fully
+  const timeMode = document.getElementById('timeEntryMode');
+  if (timeMode) { timeMode.value = 'none'; updateTimeEntryMode(); }
+  const timeSingle = document.getElementById('incidentTimeSingle');
+  if (timeSingle) timeSingle.value = '';
+  const multiTimeList = document.getElementById('multiTimeList');
+  if (multiTimeList) multiTimeList.innerHTML = '';
+  const timeApprox = document.getElementById('incidentTimeApprox');
+  if (timeApprox) timeApprox.value = '';
+  syncIncidentTimes();
+
   const memoDate = document.getElementById('memoDate');
   if (memoDate) memoDate.value = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  // Clear citation lists
+  // Clear citation lists and analysis state
   ['edcodeList', 'bpList', 'cbaRefList', 'cvcList', 'otherCiteList'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = '';
   });
+  // Reset situation chips
+  document.querySelectorAll('.sit-checkbox.selected').forEach(el => el.classList.remove('selected'));
+  selectedSituations.clear();
+  // Reset analyze button
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  if (analyzeBtn) { analyzeBtn.disabled = false; analyzeBtn.textContent = 'Analyze Facts & Suggest Citations'; }
+  // Clear BP flag
+  const bpFlag = document.getElementById('bpModelFlag');
+  if (bpFlag) { bpFlag.style.display = 'none'; bpFlag.innerHTML = ''; }
+  // Clear citation notes
+  const ruleNotes = document.getElementById('ruleNotes');
+  if (ruleNotes) ruleNotes.value = '';
+  // Hide CVC and other citation groups
+  const cvcGroup = document.getElementById('cvcGroup');
+  const otherGroup = document.getElementById('otherCiteGroup');
+  if (cvcGroup) cvcGroup.style.display = 'none';
+  if (otherGroup) otherGroup.style.display = 'none';
+  // Clear suggested directives and support
+  const sugDirWrap = document.getElementById('suggestedDirectivesWrap');
+  if (sugDirWrap) sugDirWrap.style.display = 'none';
+  const sugDirList = document.getElementById('suggestedDirectivesList');
+  if (sugDirList) sugDirList.innerHTML = '';
+  const sugSupList = document.getElementById('suggestedSupportList');
+  if (sugSupList) sugSupList.innerHTML = '';
   // Clear impact, directives, support
   const impactResult = document.getElementById('impactDraftResult');
   if (impactResult) impactResult.style.display = 'none';
@@ -3141,25 +3189,25 @@ const DUE_PROCESS = {
   'cert-prob': {
     dueProcess: 'Before beginning, inform the employee: "You have the right to have a representative present at this meeting. Would you like to contact your association representative before we proceed?"',
     consequences: 'Further violations of this nature may result in escalating progressive discipline and may result in non-reelection or termination of employment.',
-    representation: 'Before the meeting, inform the employee verbally: "You have the right to have a certificated association representative present at this meeting. Would you like to exercise that right before we proceed?" Probationary certificated employees have Weingarten rights. If they request a rep, pause the meeting until one is available.',
+    representation: 'Please be advised that you have the right to have a certificated association representative present at this meeting. If you wish to exercise this right, please make arrangements prior to the scheduled meeting time and notify me as soon as possible so that we may accommodate your representative.',
     adminNote: 'Probationary certificated employees may be non-reelected for the following school year without a hearing, on or before March 15 of the second probationary year (EC § 44929.21). Document this incident carefully.',
   },
   'cert-perm': {
     dueProcess: 'Before beginning, inform the employee: "You have the right to have a representative present at this meeting. Would you like to contact your association representative before we proceed?"',
     consequences: 'Further violations may result in escalating progressive discipline up to and including a formal Notice of Unprofessional Conduct or Notice of Unsatisfactory Performance pursuant to EC § 44938, suspension without pay, or a recommendation for dismissal.',
-    representation: 'Before the meeting, inform the employee verbally: "You have the right to have a certificated association representative present at this meeting. Would you like to exercise that right before we proceed?" Permanent certificated employees have both Weingarten rights and additional due process protections. Document that you offered representation.',
+    representation: 'Please be advised that you have the right to have a certificated association representative present at this meeting. If you wish to exercise this right, please make arrangements prior to the scheduled meeting time and notify me as soon as possible so that we may accommodate your representative.',
     adminNote: 'Permanent certificated employees may not be dismissed except for cause (EC § 44932). If a pattern of conduct develops, a formal 45-day or 90-day notice under EC § 44938 may be required before formal discipline. Consult with HR before escalating.',
   },
   'class-prob': {
     dueProcess: 'Before beginning, inform the employee: "You have the right to have a union representative present at this meeting. Would you like to contact your representative before we proceed?"',
     consequences: 'Further violations of this nature may result in escalating progressive discipline and may result in non-reelection or termination of employment.',
-    representation: 'Before the meeting, inform the employee verbally: "You have the right to have a union representative present at this meeting. Would you like to exercise that right before we proceed?" Probationary classified employees have Weingarten rights. Document that you offered representation.',
+    representation: 'Please be advised that you have the right to have a union representative present at this meeting. If you wish to exercise this right, please make arrangements prior to the scheduled meeting time and notify me as soon as possible so that we may accommodate your representative.',
     adminNote: 'Probationary classified employees may be released from probation at any time during the probationary period (not to exceed six months or 130 days of paid service) without the procedures required for permanent employees (EC § 45113). Document performance and conduct concerns carefully.',
   },
   'class-perm': {
     dueProcess: 'Before beginning, inform the employee: "You have the right to have a union representative present at this meeting. Would you like to contact your representative before we proceed?"',
     consequences: 'Further violations may result in escalating progressive discipline up to and including a formal Notice of Proposed Discipline, suspension without pay, demotion, or dismissal pursuant to EC § 45113.',
-    representation: 'Before the meeting, inform the employee verbally: "You have the right to have a union representative present at this meeting. Would you like to exercise that right before we proceed?" Permanent classified employees have Weingarten rights and additional due process protections under EC § 45113. Document that you offered representation.',
+    representation: 'Please be advised that you have the right to have a union representative present at this meeting. If you wish to exercise this right, please make arrangements prior to the scheduled meeting time and notify me as soon as possible so that we may accommodate your representative.',
     adminNote: 'Permanent classified employees are subject to formal disciplinary procedures under EC § 45113. A Skelly hearing is required before any suspension without pay, demotion, or dismissal takes effect. Contact HR before initiating formal discipline.',
   },
   'mgmt': {
@@ -3192,21 +3240,23 @@ function updateDueProcess(classification) {
   const guidEl = document.getElementById('adminGuidanceNotes');
   if (guidEl) guidEl.innerHTML = dp.adminNote;
 
-  // Populate draft meeting email
+  // Populate draft meeting email -- always refresh so employee name is current
   const empName = [document.getElementById('employeeSalutation')?.value, document.getElementById('employeeName')?.value].filter(Boolean).join(' ') || '[Employee Name]';
   const authorName = getSelectedAuthor()?.name || '[Administrator Name]';
+  const authorTitle = getSelectedAuthor()?.title || '';
   const emailEl = document.getElementById('draftMeetingEmail');
-  if (emailEl && !emailEl.innerText?.trim()) {
+  if (emailEl) {
     emailEl.innerText = `Dear ${empName},
 
 I am writing to inform you that a meeting has been scheduled to discuss a matter related to your employment. The meeting will be held on [date] at [time] in [location].
 
-Please be aware that you have the right to have a representative present at this meeting. ${dp.representation}
+${dp.representation}
 
-If you have questions or need to reschedule, please contact me as soon as possible.
+Please contact me as soon as possible if you have any questions or need to reschedule.
 
 Sincerely,
-${authorName}`;
+
+${authorName}${authorTitle ? '\n' + authorTitle : ''}`;
   }
 
   updateSuggestedDirectives();
@@ -3410,12 +3460,36 @@ Return ONLY a JSON object — no preamble, no markdown backticks, no explanation
   "notes": "One sentence summarizing the primary rules violated"
 }
 
-Citation rules:
-- Ed Code: Classified = 45xxx (e.g. 45260, 45302), Certificated = 44xxx (e.g. 44660, 44830). NEVER cite dismissal statutes (44932, 44938, 44939, 45113, 45304) in pre-discipline documents — these are for Skelly/CPC proceedings only. Max 4.
-- CVC: Only include if the employee operates a district vehicle (bus driver, van driver, etc.). Use the actual CVC section. Return empty array [] if not applicable.
-- Other: Include Health & Safety Code, DMV regulations, or other non-Ed Code citations ONLY if directly relevant to the specific conduct (e.g., nutrition services/food safety = Health & Safety Code; driving record = DMV). Return empty array [] if not applicable. Never include Cal-OSHA.
-- Board Policy: Use the correct CSBA series for this classification ONLY. Never combine series with "/". Certificated = 4100 series (BP 4119.21, BP 4161.1, etc). Classified = 4200 series (BP 4219.21, BP 4261.1, etc). Management = 4300 series (BP 4319.21, etc). Never cite evaluation policies (4115, 4215, 4261, 4315) or district administration policies (3542, 3514, 3516) — these are directed at the district/superintendent, not individual employees. Max 3. Quote verbatim.
-- CBA: Only cite articles that impose a DIRECT OBLIGATION ON THE EMPLOYEE or establish a STANDARD OF CONDUCT the employee violated. Valid examples: attendance requirements, professional conduct standards, safety obligations, leave notification procedures. NEVER cite: District Rights (Article 3 or equivalent), Management Rights, Zipper clauses, Recognition clauses, Grievance procedures, Duration/Reopener articles. Ask yourself: "Does this article tell the employee what they must do or how they must behave?" If no, exclude it. Max 3 articles.`;
+Citation rules — READ CAREFULLY:
+
+This tool generates PRE-DISCIPLINE documentation only (conference summaries, written warnings, letters of reprimand). It does NOT generate Skelly hearing packets or dismissal notices.
+
+RELEVANCE TEST — apply to every single citation before including it:
+1. Does this provision state something the employee was required to do (or prohibited from doing)?
+2. Is this provision DIRECTLY connected to the specific conduct described in the facts above?
+Both must be YES. A citation that imposes an employee obligation but is unrelated to the actual conduct does not belong. For example: if the conduct is running a stop sign, an article about reporting workplace assaults fails test 2 and must be excluded. If the conduct is an attendance issue, a CVC section fails test 2. Match the citation to the actual conduct, not just the employee's job classification.
+
+FORBIDDEN citations — never include these regardless of relevance:
+- Ed Code 44932, 44938, 44939 (dismissal grounds for certificated) — Skelly only
+- Ed Code 45113, 45302, 45304 (discipline/suspension/dismissal procedures for classified) — Skelly only
+- Ed Code 45101 ("cause" definition) — Skelly only
+- Any Ed Code section that describes what the DISTRICT may do, not what the EMPLOYEE must do
+- Board Policies in the 3000 series (district administration — directed at the Superintendent)
+- Board Policies 4115, 4215, 4315 (employee evaluation)
+- CBA: District Rights, Management Rights, Zipper, Recognition, Grievance, Duration articles
+- Any CBA article about district authority or procedures — only cite articles imposing employee obligations
+
+REQUIRED citations for driving/transportation violations:
+- California Vehicle Code sections that the employee actually violated (e.g. CVC § 22450 for stop signs, CVC § 22349 for speeding)
+- Ed Code transportation safety sections if applicable (e.g. § 39800 series)
+- BP 4218 (classified) for general conduct standards
+
+For CBA: only cite if the article specifically addresses: attendance, punctuality, safe work practices, compliance with laws while on duty, professional conduct, or leave notification. A CBA article about employee safety/assault reporting does NOT apply to a traffic violation.
+
+- Ed Code: Classified = 45xxx performance/conduct sections only. Certificated = 44xxx performance/conduct sections only. Max 4.
+- CVC: Bus drivers, van drivers, any driver — cite the specific code sections violated. Return [] if not a driving situation.
+- Board Policy: Correct series by classification. Classified = 4200 series. Certificated = 4100 series. Management = 4300 series. Max 3.
+- CBA: Max 3 articles that directly state employee obligations. Strict relevance to the actual conduct.`;
 
 
   // Build message content -- include CBA file only if it's actually a PDF
