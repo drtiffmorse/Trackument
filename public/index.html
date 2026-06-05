@@ -1351,7 +1351,7 @@ if (window.location.protocol === 'file:') {
     <a href="/privacy" target="_blank" style="font-size:0.7rem; color:rgba(255,255,255,0.5); text-decoration:none; white-space:nowrap;">Privacy Policy</a>
     <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.06em; text-transform:uppercase;">+ New Writeup</button>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;">⚙ District &amp; Site Settings</button>
-    <div class="version-badge">v32</div>
+    <div class="version-badge">v33</div>
   </div>
 </header>
 
@@ -2795,10 +2795,12 @@ ABSOLUTE RULES:
 - NEVER ask questions or request more information under any circumstances
 - NEVER start with "I'll help", "I need", "To create", "Could you provide" or any conversational opener
 - Start immediately with the document header (TO: FROM: DATE: RE:)
-- Never cite CBA articles about District Rights, Management Rights, Zipper clauses, Recognition, Grievance procedures, or Duration articles -- these do not establish employee conduct obligations
-- Never cite Board Policies in the 3000 series -- these govern district operations, not employee conduct
-- Exclude any provision that creates an obligation ONLY for the district (provide, post, ensure, maintain, supply) with no corresponding employee conduct requirement. Include provisions that create obligations for the employee, even if they also reference a district obligation.
-- Only cite provisions the employee actually violated -- not general authority provisions
+- Never cite CBA Article 3 (District Rights) or any Management Rights/Zipper/Grievance/Recognition article
+- Never cite Ed Code 45020, 39800, or any provision where the governing board or district is the subject
+- Never cite Board Policies in the 3000 series or evaluation policies (4115, 4215, 4315)
+- Only cite provisions that directly state what the EMPLOYEE must do or is prohibited from doing
+- Only cite CVC sections relevant to the specific vehicle type and violation in the facts
+- Exclude any provision not directly violated by the specific conduct described
 - No preamble outside the document`;
 }
 
@@ -2944,12 +2946,11 @@ function startOver() {
     if (el.tagName === 'SELECT') el.selectedIndex = 0;
     else el.value = '';
   });
-  // Reset date pickers fully
-  const today = new Date().toISOString().split('T')[0];
+  // Reset date pickers fully -- no default date on new writeup
   const dateMode = document.getElementById('dateEntryMode');
   if (dateMode) { dateMode.value = 'single'; updateDateEntryMode(); }
   const singlePicker = document.getElementById('incidentDateSingle');
-  if (singlePicker) { singlePicker.value = today; }
+  if (singlePicker) { singlePicker.value = ''; }
   const multiDateList = document.getElementById('multiDateList');
   if (multiDateList) multiDateList.innerHTML = '';
   const dateRangeFrom = document.getElementById('dateRangeFrom');
@@ -3470,35 +3471,42 @@ Return ONLY a JSON object — no preamble, no markdown backticks, no explanation
   "notes": "One sentence summarizing the primary rules violated"
 }
 
-Citation rules — READ CAREFULLY:
+Citation rules — MANDATORY CHECKLIST:
 
-This tool generates PRE-DISCIPLINE documentation only (conference summaries, written warnings, letters of reprimand). It does NOT generate Skelly hearing packets or dismissal notices.
+This tool generates PRE-DISCIPLINE documentation only. Scope: conference summaries, written warnings, letters of reprimand, notices of unsatisfactory performance.
 
-RELEVANCE TEST — apply to every single citation before including it. Both must be YES:
-1. Does this provision impose an obligation on the EMPLOYEE (not the district, not the superintendent, not management)?
-2. Is this provision directly connected to the specific conduct in the facts — not just the general topic area?
+Before including ANY citation, apply this checklist. ALL must be YES:
+☐ 1. Does this provision directly state what the EMPLOYEE must do or is prohibited from doing?
+☐ 2. Is the EMPLOYEE (not the district, not the governing board) the subject of the obligation?
+☐ 3. Does the specific conduct in the facts directly violate this provision?
+☐ 4. Is this provision relevant to pre-discipline documentation (not dismissal/Skelly proceedings)?
 
-DISTRICT-OBLIGATION FILTER: Ask -- does this provision create a conduct obligation for the EMPLOYEE, or only for the DISTRICT?
+AUTOMATIC EXCLUSIONS — exclude immediately without further analysis:
+- Any provision where the subject is "The District", "The governing board", "The Superintendent", "Management", or "The commission" — these are institutional obligations, not employee conduct standards
+- Ed Code 44932, 44938, 44939, 45113, 45302, 45304, 45101 — dismissal/Skelly only
+- Ed Code 45020 — defines classified service structure, not an employee conduct standard
+- Ed Code 39800 — authorizes districts to provide transportation, not an employee driving standard
+- Board Policies in the 3000 series — district operations
+- Board Policies 4115, 4215, 4315 — employee evaluation
+- CBA Article 3 (District Rights) or equivalent — ALWAYS exclude regardless of how it is worded
+- CBA Management Rights, Zipper, Recognition, Grievance, Duration articles
+- CBA articles where the District is the subject ("The District will...", "The District shall...")
+- CVC sections about bicycles, pedestrians, or vehicles unrelated to the specific violation
+- Any citation not directly tied to the specific conduct in the facts
 
-EXCLUDE if the provision only tells the district what to do (provide, post, publish, ensure, maintain, supply, train) with no corresponding employee conduct requirement. Examples to exclude:
-- "The Superintendent shall ensure bus drivers receive training" — district obligation only
-- "The District shall provide safety equipment" — district obligation only
-- "The District shall post bus routes" — district obligation only
-- "Management shall notify employees of conduct standards" — district obligation only
+GOOD EXAMPLES for a bus driver running stop signs:
+- Ed Code § 39831.3: "A school bus driver shall not operate a school bus in a manner that would constitute reckless driving" ✓ (employee obligation, directly relevant)
+- CVC § 22450: "The driver of any vehicle approaching a stop sign shall stop" ✓ (employee obligation, directly violated)
+- CVC § 22349, 22351: speed limits ✓ (if speeding was involved)
+- BP 4219.21: Professional Standards — classified employees ✓ (employee conduct standard)
+- CBA article requiring employees to comply with all applicable laws while on duty ✓
 
-INCLUDE if the provision tells the employee what to do or prohibits the employee from doing something, even if it also references a district obligation. Examples to include:
-- "The District shall ensure employees comply with all traffic laws" — includes employee obligation
-- "Employees shall notify their supervisor of any absence" — employee obligation
-- "Unit members shall comply with all applicable laws and regulations while on duty" — employee obligation
-- Any CBA article where the employee obligation is explicit, even if paired with a district obligation
-
-FORBIDDEN citations — never include regardless of relevance:
-- Ed Code 44932, 44938, 44939 (dismissal grounds) — Skelly only
-- Ed Code 45113, 45302, 45304 (discipline/suspension/dismissal procedures) — Skelly only
-- Ed Code 45101 ("cause" definition) — Skelly only
-- Board Policies in the 3000 series (district administration)
-- Board Policies 4115, 4215, 4315 (evaluation)
-- CBA: District Rights, Management Rights, Zipper, Recognition, Grievance, Duration articles
+BAD EXAMPLES — exclude these:
+- Ed Code § 45020: classified service structure — NOT an employee conduct standard ✗
+- Ed Code § 39800: district may provide transportation — district obligation ✗
+- CVC § 21200: bicycle/pedicab rights — irrelevant to bus driving ✗
+- Article 3 — District Rights: district authority — NOT an employee conduct standard ✗
+- Article 11.7: "The District will comply with health and safety regulations" — district obligation ✗
 
 FORBIDDEN citations — never include these regardless of relevance:
 - Ed Code 44932, 44938, 44939 (dismissal grounds for certificated) — Skelly only
