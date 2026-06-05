@@ -1351,7 +1351,7 @@ if (window.location.protocol === 'file:') {
     <a href="/privacy" target="_blank" style="font-size:0.7rem; color:rgba(255,255,255,0.5); text-decoration:none; white-space:nowrap;">Privacy Policy</a>
     <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.06em; text-transform:uppercase;">+ New Writeup</button>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;">⚙ District &amp; Site Settings</button>
-    <div class="version-badge">v29</div>
+    <div class="version-badge">v32</div>
   </div>
 </header>
 
@@ -2797,7 +2797,7 @@ ABSOLUTE RULES:
 - Start immediately with the document header (TO: FROM: DATE: RE:)
 - Never cite CBA articles about District Rights, Management Rights, Zipper clauses, Recognition, Grievance procedures, or Duration articles -- these do not establish employee conduct obligations
 - Never cite Board Policies in the 3000 series -- these govern district operations, not employee conduct
-- A citation is only valid if it directly states what the employee is required to do or how they must behave. If the citation describes what the DISTRICT may do, it does not belong in this document.
+- Exclude any provision that creates an obligation ONLY for the district (provide, post, ensure, maintain, supply) with no corresponding employee conduct requirement. Include provisions that create obligations for the employee, even if they also reference a district obligation.
 - Only cite provisions the employee actually violated -- not general authority provisions
 - No preamble outside the document`;
 }
@@ -2830,17 +2830,21 @@ function renderMemo(text, data) {
   });
 
   // Convert clean text to HTML with proper formatting
-  const lines = cleanText.split('\n');
+  // Pre-process: collapse multiple consecutive blank lines into one
+  const collapsed = cleanText.replace(/\n{3,}/g, '\n\n');
+  const lines = collapsed.split('\n');
   let inList = false;
+  let blankCount = 0;
   const htmlLines = lines.map(line => {
     // Strip markdown headers entirely
     if (/^#{1,3}\s+/.test(line)) return '';
     // Convert bullet points to list items
     if (/^[•\-\*]\s+/.test(line)) {
+      blankCount = 0;
       const content = line.replace(/^[•\-\*]\s+/, '')
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      const item = '<li style="margin-bottom:4px;">' + content + '</li>';
-      if (!inList) { inList = true; return '<ul style="margin:8px 0 8px 0; padding-left:2.2em; list-style-type:disc;">' + item; }
+      const item = '<li style="margin-bottom:2px; margin-top:2px;">' + content + '</li>';
+      if (!inList) { inList = true; return '<ul style="margin:4px 0; padding-left:2.2em; list-style-type:disc;">' + item; }
       return item;
     }
     // Close list if we were in one
@@ -2848,7 +2852,12 @@ function renderMemo(text, data) {
     if (inList) { inList = false; prefix = '</ul>'; }
     let escaped = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    if (escaped.trim() === '') return prefix + '<br>';
+    if (escaped.trim() === '') {
+      blankCount++;
+      // Only emit one <br> per blank section regardless of consecutive blanks
+      return blankCount === 1 ? prefix + '<br>' : prefix;
+    }
+    blankCount = 0;
     return prefix + '<span>' + escaped + '</span><br>';
   });
   if (inList) htmlLines.push('</ul>');
@@ -3465,10 +3474,31 @@ Citation rules — READ CAREFULLY:
 
 This tool generates PRE-DISCIPLINE documentation only (conference summaries, written warnings, letters of reprimand). It does NOT generate Skelly hearing packets or dismissal notices.
 
-RELEVANCE TEST — apply to every single citation before including it:
-1. Does this provision state something the employee was required to do (or prohibited from doing)?
-2. Is this provision DIRECTLY connected to the specific conduct described in the facts above?
-Both must be YES. A citation that imposes an employee obligation but is unrelated to the actual conduct does not belong. For example: if the conduct is running a stop sign, an article about reporting workplace assaults fails test 2 and must be excluded. If the conduct is an attendance issue, a CVC section fails test 2. Match the citation to the actual conduct, not just the employee's job classification.
+RELEVANCE TEST — apply to every single citation before including it. Both must be YES:
+1. Does this provision impose an obligation on the EMPLOYEE (not the district, not the superintendent, not management)?
+2. Is this provision directly connected to the specific conduct in the facts — not just the general topic area?
+
+DISTRICT-OBLIGATION FILTER: Ask -- does this provision create a conduct obligation for the EMPLOYEE, or only for the DISTRICT?
+
+EXCLUDE if the provision only tells the district what to do (provide, post, publish, ensure, maintain, supply, train) with no corresponding employee conduct requirement. Examples to exclude:
+- "The Superintendent shall ensure bus drivers receive training" — district obligation only
+- "The District shall provide safety equipment" — district obligation only
+- "The District shall post bus routes" — district obligation only
+- "Management shall notify employees of conduct standards" — district obligation only
+
+INCLUDE if the provision tells the employee what to do or prohibits the employee from doing something, even if it also references a district obligation. Examples to include:
+- "The District shall ensure employees comply with all traffic laws" — includes employee obligation
+- "Employees shall notify their supervisor of any absence" — employee obligation
+- "Unit members shall comply with all applicable laws and regulations while on duty" — employee obligation
+- Any CBA article where the employee obligation is explicit, even if paired with a district obligation
+
+FORBIDDEN citations — never include regardless of relevance:
+- Ed Code 44932, 44938, 44939 (dismissal grounds) — Skelly only
+- Ed Code 45113, 45302, 45304 (discipline/suspension/dismissal procedures) — Skelly only
+- Ed Code 45101 ("cause" definition) — Skelly only
+- Board Policies in the 3000 series (district administration)
+- Board Policies 4115, 4215, 4315 (evaluation)
+- CBA: District Rights, Management Rights, Zipper, Recognition, Grievance, Duration articles
 
 FORBIDDEN citations — never include these regardless of relevance:
 - Ed Code 44932, 44938, 44939 (dismissal grounds for certificated) — Skelly only
@@ -4044,10 +4074,14 @@ function buildPseudoMap(d) {
 function applyPseudo(text, map) {
   let result = text;
   for (const { real, pseudo } of map) {
-    // Use word boundaries to avoid matching partial words
-    // e.g. "Employee" should not match inside "Employees" or "Employment"
     const escaped = real.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    result = result.replace(new RegExp('\\b' + escaped + '\\b', 'gi'), pseudo);
+    // For short tokens or tokens ending in word characters, use word boundaries
+    // For names with periods (Mr., Ms.) or that end in common words, use simpler match
+    const hasPeriod = real.includes('.');
+    const pattern = hasPeriod
+      ? new RegExp(escaped, 'gi')
+      : new RegExp('\\b' + escaped + '\\b', 'gi');
+    result = result.replace(pattern, pseudo);
   }
   return result;
 }
@@ -4055,8 +4089,10 @@ function applyPseudo(text, map) {
 function removePseudo(text, map) {
   let result = text;
   for (const { real, pseudo } of map) {
-    // Restore all occurrences of the pseudo token
+    // Primary: restore pseudo tokens
     result = result.split(pseudo).join(real);
+    // Safety net: if AI wrapped the real name in brackets e.g. [Mr. Testing Employee], unwrap it
+    result = result.split('[' + real + ']').join(real);
   }
   return result;
 }
