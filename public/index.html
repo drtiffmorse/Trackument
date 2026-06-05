@@ -1351,7 +1351,7 @@ if (window.location.protocol === 'file:') {
     <a href="/privacy" target="_blank" style="font-size:0.7rem; color:rgba(255,255,255,0.5); text-decoration:none; white-space:nowrap;">Privacy Policy</a>
     <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.06em; text-transform:uppercase;">+ New Writeup</button>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;">⚙ District &amp; Site Settings</button>
-    <div class="version-badge">v28</div>
+    <div class="version-badge">v29</div>
   </div>
 </header>
 
@@ -2484,12 +2484,12 @@ async function generateMemo() {
   // Block generation if essential fields are missing
   if (!data.factDescription || data.factDescription.trim().length < 20) {
     alert('Please complete the Facts section (Step 2) with a description of what occurred before generating the document.');
-    goToStep(2);
+    jumpToStep(2);
     return;
   }
   if (!data.employeeName || data.employeeName.trim().length < 2) {
     alert('Please complete the employee name in Step 1 before generating.');
-    goToStep(1);
+    jumpToStep(1);
     return;
   }
 
@@ -3009,9 +3009,10 @@ function startOver() {
   if (wrap) wrap.style.display = 'block';
   // Reset pseudonyms
   window._pseudoMap = null;
-  // Go back to step 1
+  // Go back to step 1 and scroll to top
   maxReachedStep = 0;
-  goToStep(0);
+  jumpToStep(0);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   showToast('✓ Ready for a new writeup');
 }
 
