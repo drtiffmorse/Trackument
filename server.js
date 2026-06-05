@@ -13,11 +13,6 @@ if (!ANTHROPIC_API_KEY) {
   process.exit(1);
 }
 
-// No password gate for now -- open access
-function checkBeta(req, res, next) { return next(); }
-app.use(checkBeta);
-
-// Anthropic API proxy
 app.post('/api/anthropic', async (req, res) => {
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -39,12 +34,10 @@ app.post('/api/anthropic', async (req, res) => {
   }
 });
 
-// Privacy policy
 app.get('/privacy', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'privacy.html'));
 });
 
-// Serve static frontend
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('*', (req, res) => {

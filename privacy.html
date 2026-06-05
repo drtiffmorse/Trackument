@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Trackument</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a2642; background: #fafaf8; line-height: 1.8; }
+    header { background: #1a2642; padding: 20px 40px; display: flex; align-items: center; gap: 16px; }
+    header a { color: #e6a800; font-size: 1.2rem; font-weight: 800; text-decoration: none; letter-spacing: 0.02em; }
+    header span { color: rgba(255,255,255,0.5); font-size: 0.85rem; }
+    .container { max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; }
+    h1 { font-size: 2rem; font-weight: 800; color: #1a2642; margin-bottom: 8px; }
+    .effective { font-size: 0.85rem; color: #64748b; margin-bottom: 40px; }
+    .summary-box { background: #f0f7ff; border: 1px solid #bfdbfe; border-left: 4px solid #3b82f6; border-radius: 6px; padding: 20px 24px; margin-bottom: 40px; }
+    .summary-box h2 { font-size: 0.95rem; font-weight: 700; color: #1e40af; margin-bottom: 12px; letter-spacing: 0.05em; text-transform: uppercase; }
+    .summary-box ul { padding-left: 20px; }
+    .summary-box li { margin-bottom: 6px; font-size: 0.92rem; color: #1e3a5f; }
+    h2 { font-size: 1.15rem; font-weight: 700; color: #1a2642; margin: 36px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; }
+    p { margin-bottom: 14px; font-size: 0.95rem; color: #334155; }
+    ul, ol { padding-left: 22px; margin-bottom: 14px; }
+    li { margin-bottom: 6px; font-size: 0.95rem; color: #334155; }
+    .highlight { background: #fefce8; border: 1px solid #fde68a; border-radius: 4px; padding: 14px 18px; margin: 16px 0; font-size: 0.92rem; color: #713f12; }
+    a { color: #1a2642; }
+    footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid #e2e8f0; font-size: 0.82rem; color: #94a3b8; }
+  </style>
+</head>
+<body>
+<header>
+  <a href="/">Trackument</a>
+  <span>Privacy Policy</span>
+</header>
+
+<div class="container">
+  <h1>Privacy Policy</h1>
+  <p class="effective">Effective date: May 31, 2026 &nbsp;·&nbsp; Last updated: May 31, 2026</p>
+
+  <div class="summary-box">
+    <h2>The short version</h2>
+    <ul>
+      <li>Employee names, administrator names, and dates are replaced with placeholders <strong>before</strong> any information leaves your browser. The AI never sees real names.</li>
+      <li>Anthropic's API does <strong>not</strong> use your data to train AI models. Your content is treated as confidential under Anthropic's Commercial Terms.</li>
+      <li>We do not sell your data. We do not share it with third parties beyond what is necessary to deliver the service.</li>
+      <li>Document content is never stored on our servers. It lives in your browser only.</li>
+      <li>You can delete all your saved data at any time from within the app.</li>
+    </ul>
+  </div>
+
+  <h2>1. Who we are</h2>
+  <p>Trackument is a California-based HR documentation tool designed for K-12 school districts. References to "we," "us," or "Trackument" in this policy refer to the operator of trackument.com. For questions about this policy, contact us at privacy@trackument.com.</p>
+
+  <h2>2. What information we collect</h2>
+  <p>Trackument is designed to minimize data collection. Here is what we collect and why:</p>
+  <ul>
+    <li><strong>District and site profile information</strong> (district name, school name, administrator names, board policy URL): Stored locally in your browser using localStorage. This information never leaves your device except as described in Section 4.</li>
+    <li><strong>Document content you enter</strong> (facts, employee information, directives, citations): Stored locally in your browser only. Never stored on our servers.</li>
+    <li><strong>Uploaded files</strong> (CBA PDFs, prior documentation): Processed in your browser and transmitted to the AI service for analysis as described in Section 4. Not stored on our servers.</li>
+    <li><strong>Authentication</strong>: We use a session cookie to verify beta access. This cookie contains only a hashed password token and no personal information.</li>
+    <li><strong>Server logs</strong>: Our hosting provider (Railway) may retain standard server access logs (IP addresses, request timestamps, response codes) for operational purposes. We do not log request body content.</li>
+  </ul>
+
+  <h2>3. Pseudonymization — how we protect employee identities</h2>
+  <p>Before any document content is transmitted to our AI service, Trackument automatically replaces identifying information with neutral placeholders:</p>
+  <ul>
+    <li>Employee names → <code>[EMPLOYEE]</code></li>
+    <li>Administrator names → <code>[ADMINISTRATOR]</code></li>
+    <li>District and school names → <code>[DISTRICT]</code>, <code>[SCHOOL]</code></li>
+    <li>Specific incident dates → <code>[DATE_1]</code>, <code>[DATE_2]</code>, etc.</li>
+  </ul>
+  <p>The AI generates the document using these placeholders. Real names and dates are restored in your browser after generation. <strong>The AI service never processes real employee or administrator names.</strong></p>
+  <div class="highlight">This pseudonymization process happens entirely within your browser using JavaScript before any network request is made. It is not a server-side process — it cannot be bypassed or disabled by server configuration.</div>
+
+  <h2>4. How we use AI services</h2>
+  <p>Trackument uses the Anthropic Claude API to generate HR documentation. When you use AI-powered features (Analyze Citations, Generate Impact Draft, Generate Document), the following information is transmitted to Anthropic:</p>
+  <ul>
+    <li>Pseudonymized document content (facts, citations, directives — with real names replaced as described above)</li>
+    <li>Employee classification and job title</li>
+    <li>Uploaded CBA PDF files (collective bargaining agreements are public documents)</li>
+    <li>Document type and situation type</li>
+  </ul>
+  <p><strong>Anthropic's data handling:</strong> Under Anthropic's Commercial Terms of Service, customer content transmitted via the API is treated as confidential information and is not used to train Anthropic's AI models. Anthropic's Data Processing Addendum (DPA) with Standard Contractual Clauses is automatically incorporated into their Commercial Terms. You can review Anthropic's privacy practices at <a href="https://www.anthropic.com/legal/privacy" target="_blank">anthropic.com/legal/privacy</a>.</p>
+
+  <h2>5. FERPA and student information</h2>
+  <p>Trackument is a tool for documenting employee conduct and performance. It is not designed to process student education records as defined by FERPA. Administrators should not enter student names, student ID numbers, or other personally identifiable student information into Trackument.</p>
+  <p>To the extent that conduct descriptions incidentally reference students, administrators should use general descriptors (e.g., "a student on the route" rather than a student's name). Trackument's pseudonymization system does not automatically detect or replace student names.</p>
+  <p>Trackument is used by authorized school officials acting within their legitimate educational interest in employee supervision and discipline. Use of Trackument by authorized district personnel for employee documentation purposes is consistent with FERPA's school official exception.</p>
+
+  <h2>6. Data retention and deletion</h2>
+  <ul>
+    <li><strong>Local browser data:</strong> District profiles, site profiles, and saved form data are stored in your browser's localStorage until you clear it or use the "Reset all saved data" feature within the app.</li>
+    <li><strong>Generated documents:</strong> Not stored by Trackument. They exist only in your browser session until you download, copy, or close the page.</li>
+    <li><strong>Server logs:</strong> Retained by Railway per their standard retention policies (typically 7–30 days).</li>
+    <li><strong>Anthropic API:</strong> Per Anthropic's policy, API request logs are retained for a limited period for safety and operational purposes, with shorter retention periods as of September 2025.</li>
+  </ul>
+
+  <h2>7. Data sharing and third parties</h2>
+  <p>We do not sell, rent, or share your information with third parties for marketing purposes. Information is shared only as follows:</p>
+  <ul>
+    <li><strong>Anthropic:</strong> As described in Section 4, for AI document generation.</li>
+    <li><strong>Railway (hosting):</strong> Our server infrastructure provider. Standard server logs only.</li>
+    <li><strong>Legal requirements:</strong> If required by law, court order, or valid legal process.</li>
+  </ul>
+
+  <h2>8. Security</h2>
+  <p>All data transmitted between your browser and our servers is encrypted using TLS (HTTPS). Employee names and other identifying information are pseudonymized before transmission as described in Section 3. We do not store document content on our servers.</p>
+  <p>No method of transmission or storage is 100% secure. We encourage administrators to use Trackument on secured, district-managed devices consistent with their district's acceptable use policies.</p>
+
+  <h2>9. Your rights and choices</h2>
+  <ul>
+    <li><strong>Delete your data:</strong> Open District &amp; Site Settings → scroll to the bottom of the District tab → click "Reset all saved data." This permanently deletes all locally stored profiles and form data.</li>
+    <li><strong>Access your data:</strong> All data stored by Trackument is accessible directly within the app. There is no server-side database of your content.</li>
+    <li><strong>Opt out:</strong> You may stop using Trackument at any time. Because we do not maintain server-side user accounts, there is no account to delete.</li>
+  </ul>
+
+  <h2>10. California privacy rights (CCPA/CPRA)</h2>
+  <p>California residents have rights under the California Consumer Privacy Act (CCPA) and California Privacy Rights Act (CPRA), including the right to know what personal information is collected, the right to delete personal information, and the right to opt out of the sale of personal information. Trackument does not sell personal information. For CCPA requests, contact privacy@trackument.com.</p>
+
+  <h2>11. Children's privacy</h2>
+  <p>Trackument is a professional tool intended for use by school district administrators and HR professionals. It is not directed at children under 13 and we do not knowingly collect personal information from children.</p>
+
+  <h2>12. Changes to this policy</h2>
+  <p>We may update this Privacy Policy from time to time. We will post the updated policy on this page with a revised effective date. For material changes, we will provide notice through the application or by email where possible.</p>
+
+  <h2>13. Contact</h2>
+  <p>For privacy questions, data requests, or to request a Data Processing Agreement for your district, contact us at:<br>
+  <strong>privacy@trackument.com</strong></p>
+
+  <footer>
+    <p>Trackument &nbsp;·&nbsp; trackument.com &nbsp;·&nbsp; California K-12 HR Documentation</p>
+  </footer>
+</div>
+</body>
+</html>
