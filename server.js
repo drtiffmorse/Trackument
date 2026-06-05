@@ -19,19 +19,7 @@ if (!ANTHROPIC_API_KEY) {
   process.exit(1);
 }
 
-// ─── Beta password check ──────────────────────────────────────────────────────
-// Simple token stored in a cookie. Not a full auth system -- just a beta gate.
-const COOKIE_NAME = 'trackument_beta';
-
-function checkBeta(req, res, next) {
-  // Allow API routes through if cookie is set
-  const cookies = parseCookies(req.headers.cookie || '');
-  if (cookies[COOKIE_NAME] === BETA_PASSWORD) return next();
-  // Allow the login page and login POST through
-  if (req.path === '/login' || req.path === '/login.html') return next();
-  // Block everything else
-  res.redirect('/login');
-}
+function checkBeta(req, res, next) { return next(); }
 
 function parseCookies(cookieHeader) {
   return cookieHeader.split(';').reduce((acc, c) => {
