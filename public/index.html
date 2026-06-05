@@ -1351,7 +1351,7 @@ if (window.location.protocol === 'file:') {
     <a href="/privacy" target="_blank" style="font-size:0.7rem; color:rgba(255,255,255,0.5); text-decoration:none; white-space:nowrap;">Privacy Policy</a>
     <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.06em; text-transform:uppercase;">+ New Writeup</button>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;">⚙ District &amp; Site Settings</button>
-    <div class="version-badge">v18</div>
+    <div class="version-badge">v22</div>
   </div>
 </header>
 
@@ -2085,78 +2085,49 @@ const CITATIONS = {
   edcode: {
     // CERTIFICATED
     'cert-attendance': [
-      { code: 'Ed Code § 44932(a)(8)', desc: 'Persistent violation of or refusal to obey school laws or reasonable regulations — grounds for dismissal of permanent certificated employee.' },
-      { code: 'Ed Code § 44933', desc: 'Unprofessional conduct — grounds for suspension of permanent certificated employee; includes willful refusal to perform assigned duties.' },
-      { code: 'Ed Code § 44938', desc: 'Requires written notice and 45-day improvement opportunity before dismissal for unsatisfactory performance or unprofessional conduct.' },
     ],
     'cert-performance': [
-      { code: 'Ed Code § 44932(a)(5)', desc: 'Unsatisfactory performance — grounds for dismissal of permanent certificated employee.' },
-      { code: 'Ed Code § 44932(a)(6)', desc: 'Evident unfitness for service — grounds for dismissal of permanent certificated employee.' },
-      { code: 'Ed Code § 44938', desc: 'Requires written notice and 45-day improvement opportunity prior to dismissal for unsatisfactory performance.' },
           ],
     'cert-conduct': [
-      { code: 'Ed Code § 44932(a)(2)', desc: 'Unprofessional conduct — grounds for dismissal of permanent certificated employee.' },
-      { code: 'Ed Code § 44932(a)(1)', desc: 'Immoral conduct — grounds for dismissal of permanent certificated employee.' },
+
       { code: 'Ed Code § 44933', desc: 'Authorizes suspension without pay for unprofessional conduct for permanent certificated employees.' },
     ],
     'cert-safety': [
-      { code: 'Ed Code § 44932(a)(8)', desc: 'Persistent violation of or refusal to obey reasonable regulations — grounds for dismissal.' },
       { code: 'Ed Code § 44807', desc: 'Duty of certificated employees to hold pupils to strict account for conduct on school premises and on the way to and from school.' },
       { code: 'Ed Code § 49001', desc: 'Prohibition on corporal punishment and other unsafe physical conduct toward students.' },
     ],
     'cert-alcohol': [
-      { code: 'Ed Code § 44932(a)(1)', desc: 'Immoral conduct — grounds for dismissal; may encompass reporting to duty under the influence.' },
-      { code: 'Ed Code § 44932(a)(2)', desc: 'Unprofessional conduct — grounds for dismissal of permanent certificated employee.' },
+
       { code: 'Ed Code § 44940', desc: 'Mandatory leave of absence upon criminal charges involving controlled substances or moral turpitude.' },
     ],
     'cert-dishonesty': [
-      { code: 'Ed Code § 44932(a)(4)', desc: 'Dishonesty — expressly enumerated ground for dismissal of permanent certificated employee.' },
-      { code: 'Ed Code § 44932(a)(1)', desc: 'Immoral conduct — grounds for dismissal; may encompass fraud and misrepresentation.' },
-      { code: 'Ed Code § 44939', desc: 'Allows immediate suspension without pay pending dismissal for immoral conduct.' },
     ],
 
     // CLASSIFIED
     'class-attendance': [
-      { code: 'Ed Code § 45101(h)', desc: '"Cause" for classified discipline means grounds enumerated in law or the written rules of the employer — including attendance rules.' },
-      { code: 'Ed Code § 45113', desc: 'Governs discipline of classified employees; sets procedures for notice and hearing rights. (Note: Modified by AB 2413, 2022 — permanent employees who request a hearing must be retained pending outcome.)' },
       { code: 'Ed Code § 45123', desc: 'Unauthorized absence without leave — basis for disciplinary action for classified employees.' },
     ],
     'class-performance': [
-      { code: 'Ed Code § 45101(h)', desc: '"Cause" for classified discipline means grounds enumerated in law or the written rules of the employer.' },
-      { code: 'Ed Code § 45113', desc: 'Governs discipline procedures for classified employees including performance-based discipline.' },
           ],
     'class-conduct': [
-      { code: 'Ed Code § 45101(h)', desc: '"Cause" for classified discipline includes conduct grounds enumerated in employer rules.' },
-      { code: 'Ed Code § 45113', desc: 'Discipline procedures for classified employees; notice and hearing requirements.' },
-      { code: 'Ed Code § 45304', desc: 'Merit system districts: classified employee may be suspended, demoted, or dismissed for reasonable cause; specifies 10-day notice requirement.' },
     ],
     'class-safety': [
-      { code: 'Ed Code § 45113', desc: 'Governs discipline of classified employees including safety-related violations.' },
-      { code: 'Ed Code § 45101(h)', desc: '"Cause" for discipline includes safety violations enumerated in district rules and regulations.' },
       { code: 'Ed Code § 44807', desc: 'All employees have duty to maintain safe environment for students on school grounds and in transit.' },
     ],
     'class-alcohol': [
-      { code: 'Ed Code § 45113', desc: 'Governs classified employee discipline; reporting to duty impaired constitutes reasonable cause for action.' },
-      { code: 'Ed Code § 45304', desc: 'Merit system: classified employee may be suspended or dismissed for reasonable cause including substance-related conduct.' },
       { code: 'Ed Code § 44940', desc: 'Mandatory leave of absence provisions applicable to classified employees charged with qualifying offenses.' },
     ],
     'class-dishonesty': [
-      { code: 'Ed Code § 45113', desc: 'Governs discipline procedures; dishonesty constitutes reasonable cause for discipline of classified employees.' },
-      { code: 'Ed Code § 45304', desc: 'Merit system: authorizes dismissal for reasonable cause including fraud and dishonesty.' },
-      { code: 'Ed Code § 45101(h)', desc: '"Cause" includes dishonesty as enumerated in district board policy and administrative regulations.' },
     ],
 
     // MANAGEMENT/CONFIDENTIAL
     'mgmt-attendance': [
-      { code: 'Ed Code § 44932 (by reference)', desc: 'Districts may apply certificated dismissal standards to management employees at-will or by policy.' },
       { code: 'Gov. Code § 3511.1', desc: 'Employer rights regarding management and confidential employees not covered by EERA collective bargaining.' },
     ],
     'mgmt-performance': [
-      { code: 'Ed Code § 44932 (by reference)', desc: 'Unsatisfactory performance standards applicable to management employees by policy.' },
       { code: 'Ed Code § 44951', desc: 'District may reassign or non-reelect management employees per contract and board policy.' },
     ],
     'mgmt-conduct': [
-      { code: 'Ed Code § 44932(a)(1)–(2) (by reference)', desc: 'Immoral or unprofessional conduct standards applied to management by board policy.' },
     ],
     'mgmt-safety': [
       { code: 'Ed Code § 44807', desc: 'All employees including management share duty to maintain student safety.' },
@@ -2165,7 +2136,6 @@ const CITATIONS = {
       { code: 'Ed Code § 44940 (by reference)', desc: 'Mandatory leave provisions; applicable to management employees by board policy.' },
     ],
     'mgmt-dishonesty': [
-      { code: 'Ed Code § 44932(a)(4) (by reference)', desc: 'Dishonesty as grounds for discipline of management employees, applied by board policy.' },
     ],
   },
 
@@ -2175,7 +2145,6 @@ const CITATIONS = {
       { code: 'BP 4161.1', desc: 'Personal Illness/Injury Leave — certificated leave reporting requirements and expectations for timely notification of absence.' },
     ],
     'cert-performance': [
-      { code: 'BP 4115', desc: 'Certificated Personnel Evaluation — sets standards for satisfactory performance for certificated employees.' },
     ],
     'cert-conduct': [
       { code: 'BP 4119.21', desc: 'Professional Standards — establishes the district\'s expectations for certificated employee conduct and professional behavior.' },
@@ -2197,7 +2166,6 @@ const CITATIONS = {
       { code: 'BP 4261.1', desc: 'Personal Illness/Injury Leave — classified employee leave reporting requirements and expectations for timely notification of absence.' },
     ],
     'class-performance': [
-      { code: 'BP 4215', desc: 'Classified Personnel Evaluation — sets standards for satisfactory performance for classified employees.' },
     ],
     'class-conduct': [
       { code: 'BP 4219.21', desc: 'Professional Standards — establishes the district\'s expectations for classified employee conduct and professional behavior.' },
@@ -2219,7 +2187,6 @@ const CITATIONS = {
       { code: 'BP 4361.1', desc: 'Personal Illness/Injury Leave — management/confidential employee leave reporting requirements.' },
     ],
     'mgmt-performance': [
-      { code: 'BP 4315', desc: 'Management/Confidential Evaluation — performance standards for management employees.' },
     ],
     'mgmt-conduct': [
       { code: 'BP 4319.21', desc: 'Professional Standards — establishes the district\'s expectations for management employee conduct.' },
@@ -2825,7 +2792,10 @@ ABSOLUTE RULES:
 - NEVER ask questions or request more information under any circumstances
 - NEVER start with "I'll help", "I need", "To create", "Could you provide" or any conversational opener
 - Start immediately with the document header (TO: FROM: DATE: RE:)
-- Never cite CBA articles about District Rights, Management Rights, or Zipper clauses -- these are not relevant to employee discipline
+- Never cite CBA articles about District Rights, Management Rights, Zipper clauses, Recognition, Grievance procedures, or Duration articles -- these do not establish employee conduct obligations
+- Never cite Board Policies in the 3000 series -- these govern district operations, not employee conduct
+- A citation is only valid if it directly states what the employee is required to do or how they must behave. If the citation describes what the DISTRICT may do, it does not belong in this document.
+- Only cite provisions the employee actually violated -- not general authority provisions
 - No preamble outside the document`;
 }
 
@@ -3441,11 +3411,11 @@ Return ONLY a JSON object — no preamble, no markdown backticks, no explanation
 }
 
 Citation rules:
-- Ed Code: Classified = 45xxx, Certificated = 44xxx. No dismissal statutes for pre-discipline. Max 4.
+- Ed Code: Classified = 45xxx (e.g. 45260, 45302), Certificated = 44xxx (e.g. 44660, 44830). NEVER cite dismissal statutes (44932, 44938, 44939, 45113, 45304) in pre-discipline documents — these are for Skelly/CPC proceedings only. Max 4.
 - CVC: Only include if the employee operates a district vehicle (bus driver, van driver, etc.). Use the actual CVC section. Return empty array [] if not applicable.
 - Other: Include Health & Safety Code, DMV regulations, or other non-Ed Code citations ONLY if directly relevant to the specific conduct (e.g., nutrition services/food safety = Health & Safety Code; driving record = DMV). Return empty array [] if not applicable. Never include Cal-OSHA.
-- Board Policy: Use the correct CSBA series for this classification ONLY. Never combine series with "/". Certificated = 4100 series (BP 4119.21, BP 4161.1, etc). Classified = 4200 series (BP 4219.21, BP 4261.1, etc). Management = 4300 series (BP 4319.21, etc). Max 3. Quote verbatim.
-- CBA: Single most relevant sentence per article. Max 3. Never include District Rights, Management Rights, or Zipper clause articles.`;
+- Board Policy: Use the correct CSBA series for this classification ONLY. Never combine series with "/". Certificated = 4100 series (BP 4119.21, BP 4161.1, etc). Classified = 4200 series (BP 4219.21, BP 4261.1, etc). Management = 4300 series (BP 4319.21, etc). Never cite evaluation policies (4115, 4215, 4261, 4315) or district administration policies (3542, 3514, 3516) — these are directed at the district/superintendent, not individual employees. Max 3. Quote verbatim.
+- CBA: Only cite articles that impose a DIRECT OBLIGATION ON THE EMPLOYEE or establish a STANDARD OF CONDUCT the employee violated. Valid examples: attendance requirements, professional conduct standards, safety obligations, leave notification procedures. NEVER cite: District Rights (Article 3 or equivalent), Management Rights, Zipper clauses, Recognition clauses, Grievance procedures, Duration/Reopener articles. Ask yourself: "Does this article tell the employee what they must do or how they must behave?" If no, exclude it. Max 3 articles.`;
 
 
   // Build message content -- include CBA file only if it's actually a PDF
