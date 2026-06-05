@@ -1351,7 +1351,7 @@ if (window.location.protocol === 'file:') {
     <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.72rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:3px 10px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap;">🔒 Privacy protected</div>
     <a href="/privacy" target="_blank" style="font-size:0.7rem; color:rgba(255,255,255,0.5); text-decoration:none; white-space:nowrap;">Privacy Policy</a>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;">⚙ District &amp; Site Settings</button>
-    <div class="version-badge">v16</div>
+    <div class="version-badge">v17</div>
   </div>
 </header>
 
@@ -1927,7 +1927,7 @@ if (window.location.protocol === 'file:') {
         </label>
         <div id="fileNoticeDisplay" contenteditable="true" spellcheck="true" style="padding:14px; font-size:0.88rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:80px; white-space:pre-wrap; word-wrap:break-word;"></div>
         <select id="fileNotice" style="display:none;" onchange="document.getElementById('fileNoticeDisplay').innerText = this.options[this.selectedIndex].text;">
-          <option value="conference-summary">A copy of this conference summary memo will not be placed in your official personnel file. It will be retained in the administrator's working file only. Should the concerns described herein recur or continue, this memo may be referenced in any subsequent formal disciplinary action.</option>
+          <option value="conference-summary">A copy of this conference summary memo will not be placed in your official personnel file. It will be retained in the administrator's working file only. If these concerns continue, this memo may be used as documentation in future disciplinary proceedings.</option>
           <option value="supervisor-file">This document will be maintained in the administrator's working file and may be placed in your official personnel file if the conduct described herein recurs or escalates.</option>
           <option value="personnel-file">This document will be placed in your official personnel file maintained by the District in ten (10) calendar days.</option>
           <option value="cba">Placement per CBA provisions — see applicable contract language.</option>
@@ -2723,7 +2723,7 @@ function buildPrompt(d) {
 
   // File notice: never reference CBA name or article numbers
   const fileNoticeText = isConference
-    ? 'A copy of this conference summary memo will not be placed in your official personnel file. It will be retained in the administrator\'s working file only. Should the concerns described herein recur or continue, this memo may be referenced in any subsequent formal disciplinary action.'
+    ? 'A copy of this conference summary memo will not be placed in your official personnel file. It will be retained in the administrator\'s working file only. If these concerns continue, this memo may be used as documentation in future disciplinary proceedings.'
     : d.fileNotice;
 
   const impactNote = d.impactStudents
