@@ -1351,7 +1351,7 @@ if (window.location.protocol === 'file:') {
     <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.72rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:3px 10px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap;">🔒 Privacy protected</div>
     <a href="/privacy" target="_blank" style="font-size:0.7rem; color:rgba(255,255,255,0.5); text-decoration:none; white-space:nowrap;">Privacy Policy</a>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;">⚙ District &amp; Site Settings</button>
-    <div class="version-badge">v15</div>
+    <div class="version-badge">v16</div>
   </div>
 </header>
 
@@ -2742,7 +2742,7 @@ Opening for CONFERENCE SUMMARIES: "This is to summarize our meeting on [date]. P
 
 Opening for ALL OTHER DOCUMENT TYPES (Written Warning, Letter of Reprimand, Notice of Unsatisfactory Performance, etc.): Do NOT reference a meeting in the opening. Use: "This [document type] is to address concerns regarding your conduct and performance." Then go directly into the facts paragraph. There was no "meeting" -- this is a formal disciplinary letter.
 
-${includeGoalsSection ? `Goals section (CONFERENCE SUMMARIES ONLY): Write this paragraph verbatim: "This conference summary is meant to support improvement in performance and conduct. It outlines clear expectations and goals to help you be successful moving forward. The goals of this letter are to improve the quality of your work, increase awareness of the changes needed, and clarify the consequences if sufficient improvement does not occur."` : 'Goals section: DO NOT include any goals section — no CBA discipline content was provided for this writeup.'}
+${includeGoalsSection ? 'Goals section (CONFERENCE SUMMARIES ONLY): Write this paragraph verbatim: "This conference summary is meant to support improvement in performance and conduct. It outlines clear expectations and goals to help you be successful moving forward. The goals of this letter are to improve the quality of your work, increase awareness of the changes needed, and clarify the consequences if sufficient improvement does not occur."' : 'Goals section: DO NOT include any goals section — no CBA discipline content was provided for this writeup.'}
 
 ---
 
@@ -2826,7 +2826,7 @@ ABSOLUTE RULES:
 - NEVER start with "I'll help", "I need", "To create", "Could you provide" or any conversational opener
 - Start immediately with the document header (TO: FROM: DATE: RE:)
 - Never cite CBA articles about District Rights, Management Rights, or Zipper clauses -- these are not relevant to employee discipline
-- No preamble outside the document
+- No preamble outside the document`;
 }
 
 function renderMemo(text, data) {
@@ -4717,9 +4717,9 @@ async function loadSchoolProfileList() {
           <div class="cba-card-name">${s.name}</div>
         </div>
         ${s.authors && s.authors.length > 0
-          ? `<div class="cba-card-preview" style="margin-top:4px;">${s.authors.map(a => [a.salutation, a.name, a.title ? '— ' + a.title : ''].filter(Boolean).join(' ')).join(' · ')}</div>`
+          ? '<div class="cba-card-preview" style="margin-top:4px;">' + s.authors.map(a => [a.salutation, a.name, a.title ? '— ' + a.title : ''].filter(Boolean).join(' ')).join(' · ') + '</div>'
           : ''}
-        ${s.url ? `<div class="cba-card-preview">${s.url}</div>` : ''}
+        ${s.url ? '<div class="cba-card-preview">' + s.url + '</div>' : ''}
       </div>
       <div class="cba-card-actions">
         <button class="btn-cba-edit" data-key="${s.key}" data-type="school-edit" style="font-size:0.72rem; background:var(--navy); color:var(--white); border:none; border-radius:2px; padding:4px 10px; cursor:pointer; margin-right:6px;">Edit</button>
