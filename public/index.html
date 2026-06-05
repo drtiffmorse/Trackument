@@ -1349,8 +1349,9 @@ if (window.location.protocol === 'file:') {
   <div style="display:flex;align-items:center;gap:10px;">
     <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.72rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:3px 10px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap;">🔒 Privacy protected</div>
     <a href="/privacy" target="_blank" style="font-size:0.7rem; color:rgba(255,255,255,0.5); text-decoration:none; white-space:nowrap;">Privacy Policy</a>
+    <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.06em; text-transform:uppercase;">+ New Writeup</button>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;">⚙ District &amp; Site Settings</button>
-    <div class="version-badge">v17</div>
+    <div class="version-badge">v18</div>
   </div>
 </header>
 
@@ -2952,8 +2953,48 @@ function copyMemo() {
 }
 
 function startOver() {
+  if (!confirm('Start a new writeup? All current information will be cleared.')) return;
   try { store.delete('form:draft'); } catch(e) {}
-  location.reload();
+  // Clear all form fields without reloading the page
+  FORM_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.tagName === 'SELECT') el.selectedIndex = 0;
+    else el.value = '';
+  });
+  // Reset date pickers
+  const today = new Date().toISOString().split('T')[0];
+  const singlePicker = document.getElementById('incidentDateSingle');
+  if (singlePicker) { singlePicker.value = today; syncIncidentDates(); }
+  const memoDate = document.getElementById('memoDate');
+  if (memoDate) memoDate.value = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  // Clear citation lists
+  ['edcodeList', 'bpList', 'cbaRefList', 'cvcList', 'otherCiteList'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  });
+  // Clear impact, directives, support
+  const impactResult = document.getElementById('impactDraftResult');
+  if (impactResult) impactResult.style.display = 'none';
+  const customDir = document.getElementById('customDirectivesList');
+  if (customDir) customDir.innerHTML = '';
+  const customSup = document.getElementById('customSupportList');
+  if (customSup) customSup.innerHTML = '';
+  // Clear output
+  const output = document.getElementById('memoOutput');
+  if (output) output.innerHTML = '';
+  // Reset school selection
+  window._selectedSchool = null;
+  const strip = document.getElementById('schoolSelectedStrip');
+  const wrap = document.getElementById('schoolSelectorWrap');
+  if (strip) strip.style.display = 'none';
+  if (wrap) wrap.style.display = 'block';
+  // Reset pseudonyms
+  window._pseudoMap = null;
+  // Go back to step 1
+  maxReachedStep = 0;
+  goToStep(0);
+  showToast('✓ Ready for a new writeup');
 }
 
 // ─── Impact Draft Generator ───────────────────────────────────────────────────
@@ -4740,25 +4781,47 @@ async function editSchoolProfile(key) {
     const r = await store.get(key);
     if (!r?.value) return;
     const s = JSON.parse(r.value);
-    // Pre-fill the form
-    document.getElementById('newSchoolName').value = s.name || '';
-    document.getElementById('newSchoolURL').value = s.url || '';
-    // Pre-fill logo URL if present
-    const logoInput = document.getElementById('newSchoolLogoURL');
-    if (logoInput) logoInput.value = s.logoURL || '';
-    // Pre-fill administrators
-    const adminList = document.getElementById('authorList');
-    if (adminList && s.authors?.length) {
-      adminList.innerHTML = '';
-      s.authors.forEach(a => addAuthorRow(a));
+
+    // Show the form first if it's hidden
+    const form = document.getElementById('schoolAddForm');
+    const btn = document.getElementById('schoolFormToggleBtn');
+    if (form && form.style.display === 'none') {
+      form.style.display = 'block';
+      if (btn) btn.textContent = 'Cancel';
     }
-    // Store key for update (so save replaces instead of creating new)
-    document.getElementById('newSchoolName').dataset.editKey = key;
-    // Scroll to the form
-    document.getElementById('newSchoolName').scrollIntoView({ behavior: 'smooth' });
-    document.getElementById('newSchoolName').focus();
-    showToast('Edit the form above and click Save Site Profile to update');
-  } catch(e) { showToast('Error loading site profile'); }
+
+    // Pre-fill the form fields
+    const nameEl = document.getElementById('newSchoolName');
+    const urlEl = document.getElementById('newSchoolURL');
+    if (nameEl) nameEl.value = s.name || '';
+    if (urlEl) urlEl.value = s.url || '';
+
+    // Pre-fill administrators
+    const adminContainer = document.getElementById('adminInputs');
+    if (adminContainer) {
+      adminContainer.innerHTML = '';
+      if (s.authors && s.authors.length > 0) {
+        s.authors.forEach(a => addAdminRow(a));
+      } else {
+        addAdminRow();
+      }
+    }
+
+    // Pre-fill logo if present
+    if (s.logoURL && s.logoURL.startsWith('data:')) {
+      window._newSchoolLogoBase64 = s.logoURL;
+      const preview = document.getElementById('newSchoolLogoPreview');
+      if (preview) { preview.src = s.logoURL; preview.style.display = 'block'; }
+    }
+
+    // Store key for update so save replaces instead of creating new
+    if (nameEl) nameEl.dataset.editKey = key;
+
+    // Scroll to form and focus
+    form?.scrollIntoView({ behavior: 'smooth' });
+    if (nameEl) nameEl.focus();
+    showToast('Edit the form below and click Save Site Profile to update');
+  } catch(e) { showToast('Error loading site profile: ' + e.message); }
 }
 
 async function deleteSchoolProfile(key) {
