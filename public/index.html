@@ -535,13 +535,13 @@
 
   .memo-body {
     font-size: 0.93rem;
-    line-height: 1.85;
+    line-height: 1.5;
     color: var(--text);
   }
   .memo-body div[style*="padding-left"] {
     padding-left: 2em;
     text-indent: -1.5em;
-    margin: 4px 0;
+    margin: 2px 0;
   }
 
   .output-actions {
@@ -1097,63 +1097,6 @@
 </head>
 <body>
 
-<!-- Beta Password Gate -->
-<div id="betaGate" style="position:fixed; inset:0; background:#1B2A4A; z-index:99999; display:flex; align-items:center; justify-content:center; flex-direction:column;">
-  <div style="background:#fff; border-radius:6px; padding:40px 48px; max-width:420px; width:90%; text-align:center; box-shadow:0 8px 40px rgba(0,0,0,0.4);">
-    <div style="margin-bottom:20px;">
-      <div style="width:52px; height:52px; background:#1B2A4A; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px;">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="5" y="3" width="16" height="21" rx="2" fill="#FAF6EE" stroke="#C9A84C" stroke-width="1.5"/>
-          <path d="M18 3l4 4h-4V3z" fill="#C9A84C"/>
-          <circle cx="19.5" cy="19.5" r="5.5" fill="#1B2A4A" stroke="#C9A84C" stroke-width="1.5"/>
-          <path d="M17.5 19.5l1.5 1.5 3-3" stroke="#C9A84C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <div style="font-family:Arial,sans-serif; font-size:1.3rem; font-weight:700; color:#1B2A4A; margin-bottom:4px;">Trackument</div>
-      <div style="font-family:Arial,sans-serif; font-size:0.82rem; color:#888; letter-spacing:0.05em; text-transform:uppercase;">Beta Access</div>
-    </div>
-    <p style="font-family:Arial,sans-serif; font-size:0.92rem; color:#444; margin:0 0 20px;">Enter your access password to continue.</p>
-    <input id="betaPasswordInput" type="password" placeholder="Password"
-      style="width:100%; box-sizing:border-box; padding:10px 14px; font-size:1rem; font-family:Arial,sans-serif; border:1.5px solid #ddd; border-radius:4px; margin-bottom:10px; outline:none; color:#1B2A4A;"
-      onkeydown="if(event.key==='Enter') checkBetaPassword()"
-    />
-    <div id="betaPasswordError" style="display:none; font-family:Arial,sans-serif; font-size:0.83rem; color:#c0392b; margin-bottom:10px;">Incorrect password. Please try again.</div>
-    <button onclick="checkBetaPassword()"
-      style="width:100%; padding:11px; background:#1B2A4A; color:#fff; border:none; border-radius:4px; font-size:0.95rem; font-family:Arial,sans-serif; font-weight:600; cursor:pointer; letter-spacing:0.02em;">
-      Enter
-    </button>
-  </div>
-  <div style="margin-top:20px; font-family:Arial,sans-serif; font-size:0.78rem; color:rgba(255,255,255,0.4);">Writeups Right Now</div>
-</div>
-
-<script>
-  (function() {
-    var BETA_PASSWORD = 'FriendofTiff';
-    var gate = document.getElementById('betaGate');
-    if (sessionStorage.getItem('trackument_unlocked') === '1') {
-      gate.style.display = 'none';
-    } else {
-      gate.style.display = 'flex';
-      setTimeout(function() {
-        var inp = document.getElementById('betaPasswordInput');
-        if (inp) inp.focus();
-      }, 100);
-    }
-    window.checkBetaPassword = function() {
-      var val = document.getElementById('betaPasswordInput').value;
-      var err = document.getElementById('betaPasswordError');
-      if (val === BETA_PASSWORD) {
-        sessionStorage.setItem('trackument_unlocked', '1');
-        gate.style.display = 'none';
-      } else {
-        err.style.display = 'block';
-        document.getElementById('betaPasswordInput').value = '';
-        document.getElementById('betaPasswordInput').focus();
-      }
-    };
-  })();
-</script>
-
 <!-- Working status banner -->
 <div class="status-banner" id="statusBanner">
   <div class="status-banner-spinner"></div>
@@ -1408,7 +1351,7 @@ if (window.location.protocol === 'file:') {
     <a href="/privacy" target="_blank" style="font-size:0.7rem; color:rgba(255,255,255,0.5); text-decoration:none; white-space:nowrap;">Privacy Policy</a>
     <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.06em; text-transform:uppercase;">+ New Writeup</button>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;">⚙ District &amp; Site Settings</button>
-    <div class="version-badge">v34</div>
+    <div class="version-badge">v35</div>
   </div>
 </header>
 
@@ -2864,7 +2807,7 @@ ABSOLUTE RULES:
 function renderMemo(text, data) {
   const output = document.getElementById('memoOutput');
   const logoHTML = data.logoURL
-    ? '<img src="' + data.logoURL + '" alt="' + (data.schoolName || '') + ' logo" style="max-height:70px; max-width:220px; object-fit:contain;" onerror="this.style.display=\'none\'">'
+    ? '<img src="' + data.logoURL + '" alt="' + (data.schoolName || '') + ' logo" style="max-height:44px; max-width:160px; object-fit:contain;" onerror="this.style.display=\'none\'">'
     : '';
   const siteLine = data.schoolName || data.districtName;
   const siteAddress = data.schoolURL ? '<div class="memo-letterhead-address">' + data.schoolURL + '</div>' : '';
@@ -2902,8 +2845,8 @@ function renderMemo(text, data) {
       blankCount = 0;
       const content = line.replace(/^[•\-\*]\s+/, '')
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      const item = '<li style="margin-bottom:2px; margin-top:2px;">' + content + '</li>';
-      if (!inList) { inList = true; return '<ul style="margin:4px 0; padding-left:2.2em; list-style-type:disc;">' + item; }
+      const item = '<li style="margin-bottom:2px; margin-top:0;">' + content + '</li>';
+      if (!inList) { inList = true; return '<ul style="margin:4px 0 4px 0; padding-left:2.2em; list-style-type:disc;">' + item; }
       return item;
     }
     // Close list if we were in one
@@ -2913,8 +2856,8 @@ function renderMemo(text, data) {
     escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     if (escaped.trim() === '') {
       blankCount++;
-      // Only emit one <br> per blank section regardless of consecutive blanks
-      return blankCount === 1 ? prefix + '<br>' : prefix;
+      // One paragraph break per blank section -- matches letter format
+      return blankCount === 1 ? prefix + '<div style="height:0.6em;"></div>' : prefix;
     }
     blankCount = 0;
     return prefix + '<span>' + escaped + '</span><br>';
@@ -2922,7 +2865,7 @@ function renderMemo(text, data) {
   if (inList) htmlLines.push('</ul>');
   const htmlBody = htmlLines.join('\n');
 
-  output.innerHTML = '<div class="memo-letterhead" style="border-bottom:2px solid var(--navy); padding-bottom:16px; margin-bottom:24px;">'
+  output.innerHTML = '<div class="memo-letterhead" style="border-bottom:1px solid var(--navy); padding-bottom:10px; margin-bottom:14px;">'
     + logoHTML
     + '<div class="memo-letterhead-text">'
     + '<div class="memo-letterhead-district">' + (data.districtName || '') + '</div>'
