@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Get Trackument — Writeups Right Now</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #1a2744;
+      --gold: #c9a84c;
+      --cream: #f8f5ef;
+      --white: #ffffff;
+      --gray: #6b7280;
+      --light-gray: #e8e4dc;
+      --text: #1a2744;
+    }
+    body { font-family: 'Source Sans 3', sans-serif; background: var(--cream); color: var(--text); }
+
+    header {
+      background: var(--navy);
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: 14px; text-decoration: none; }
+    .logo-mark { width: 36px; height: 44px; }
+    .logo-text { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: white; letter-spacing: 0.06em; }
+    .logo-tag { font-size: 0.72rem; color: var(--gold); letter-spacing: 0.18em; text-transform: uppercase; }
+    header a.login { color: rgba(255,255,255,0.6); font-size: 0.85rem; text-decoration: none; }
+    header a.login:hover { color: white; }
+
+    .hero {
+      background: var(--navy);
+      padding: 60px 40px 80px;
+      text-align: center;
+    }
+    .hero h1 { font-family: 'Playfair Display', serif; font-size: 2.6rem; color: white; margin-bottom: 16px; }
+    .hero p { font-size: 1.1rem; color: rgba(255,255,255,0.75); max-width: 600px; margin: 0 auto; }
+
+    .pricing-section {
+      max-width: 760px;
+      margin: -40px auto 60px;
+      padding: 0 20px;
+    }
+
+    .pricing-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 8px 40px rgba(26,39,68,0.14);
+      overflow: hidden;
+    }
+
+    .pricing-header {
+      background: var(--navy);
+      padding: 28px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .pricing-header h2 { font-family: 'Playfair Display', serif; color: white; font-size: 1.4rem; }
+    .pricing-badge { background: var(--gold); color: var(--navy); font-size: 0.75rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+    .pricing-body { padding: 36px; }
+
+    .price-display { margin-bottom: 28px; padding-bottom: 24px; border-bottom: 1px solid var(--light-gray); }
+    .price-base { font-size: 2.2rem; font-weight: 700; color: var(--navy); }
+    .price-base span { font-size: 1rem; font-weight: 400; color: var(--gray); }
+    .price-note { font-size: 0.85rem; color: var(--gray); margin-top: 4px; }
+
+    .includes { margin-bottom: 28px; }
+    .includes h3 { font-size: 0.8rem; font-weight: 600; color: var(--gray); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 14px; }
+    .include-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; font-size: 0.93rem; color: var(--text); }
+    .include-item::before { content: '✓'; color: var(--gold); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+    .calculator { background: var(--cream); border-radius: 8px; padding: 24px; margin-bottom: 28px; }
+    .calculator h3 { font-size: 0.85rem; font-weight: 600; color: var(--navy); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 16px; }
+
+    .calc-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-size: 0.92rem; }
+    .calc-row label { color: var(--gray); }
+    .calc-row .calc-amount { font-weight: 600; color: var(--navy); }
+
+    .site-input-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .site-input-row label { font-size: 0.9rem; color: var(--text); flex: 1; }
+    .site-input-row input {
+      width: 80px;
+      padding: 8px 12px;
+      border: 1px solid var(--light-gray);
+      border-radius: 4px;
+      font-size: 0.9rem;
+      text-align: center;
+      font-family: inherit;
+    }
+
+    .calc-divider { border: none; border-top: 1px solid var(--light-gray); margin: 12px 0; }
+    .calc-total { display: flex; align-items: center; justify-content: space-between; font-size: 1.05rem; }
+    .calc-total .label { font-weight: 600; color: var(--navy); }
+    .calc-total .amount { font-size: 1.3rem; font-weight: 700; color: var(--navy); }
+
+    .checkout-form h3 { font-size: 0.85rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--navy); margin-bottom: 16px; }
+    .form-row { margin-bottom: 14px; }
+    .form-row label { display: block; font-size: 0.82rem; color: var(--gray); margin-bottom: 5px; font-weight: 500; }
+    .form-row input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--light-gray);
+      border-radius: 4px;
+      font-size: 0.92rem;
+      font-family: inherit;
+      color: var(--navy);
+      background: white;
+    }
+    .form-row input:focus { outline: none; border-color: var(--navy); }
+
+    .payment-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .payment-option {
+      border: 2px solid var(--light-gray);
+      border-radius: 6px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .payment-option:hover { border-color: var(--navy); }
+    .payment-option.selected { border-color: var(--gold); background: #fffbf0; }
+    .payment-option input { display: none; }
+    .payment-option .po-icon { font-size: 1.4rem; margin-bottom: 4px; }
+    .payment-option .po-label { font-size: 0.85rem; font-weight: 600; color: var(--navy); }
+    .payment-option .po-sub { font-size: 0.75rem; color: var(--gray); margin-top: 2px; }
+
+    .btn-checkout {
+      width: 100%;
+      background: var(--gold);
+      color: var(--navy);
+      border: none;
+      border-radius: 4px;
+      padding: 16px;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: background 0.15s;
+    }
+    .btn-checkout:hover { background: #b8973d; }
+    .btn-checkout:disabled { background: var(--light-gray); color: var(--gray); cursor: not-allowed; }
+
+    .secure-note { text-align: center; font-size: 0.78rem; color: var(--gray); margin-top: 12px; }
+
+    .faq { max-width: 760px; margin: 0 auto 80px; padding: 0 20px; }
+    .faq h2 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--navy); margin-bottom: 24px; }
+    .faq-item { border-bottom: 1px solid var(--light-gray); padding: 18px 0; }
+    .faq-item h3 { font-size: 0.95rem; font-weight: 600; color: var(--navy); margin-bottom: 8px; }
+    .faq-item p { font-size: 0.9rem; color: var(--gray); line-height: 1.6; }
+
+    .error-msg { background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; padding: 12px 14px; font-size: 0.87rem; color: #dc2626; margin-bottom: 14px; display: none; }
+    .success-msg { background: #f0fdf4; border: 1px solid #86efac; border-radius: 4px; padding: 16px; font-size: 0.9rem; color: #15803d; margin-bottom: 14px; display: none; line-height: 1.6; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="logo">
+    <svg class="logo-mark" viewBox="0 0 46 58" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="46" height="58" rx="5" fill="rgba(255,255,255,0.10)"/>
+      <rect width="46" height="58" rx="5" fill="none" stroke="#c9a84c" stroke-width="1.5"/>
+      <polygon points="33,0 46,13 33,13" fill="#c9a84c"/>
+      <rect x="7" y="21" width="18" height="3" rx="1.5" fill="white" opacity="0.45"/>
+      <rect x="7" y="29" width="26" height="3" rx="1.5" fill="white" opacity="0.45"/>
+      <rect x="7" y="37" width="14" height="3" rx="1.5" fill="white" opacity="0.45"/>
+      <circle cx="38" cy="51" r="10.5" fill="#c9a84c"/>
+      <polyline points="33,51 36.5,54.5 44,46" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div>
+      <div class="logo-text">TRACKUMENT</div>
+      <div class="logo-tag">Writeups Right Now</div>
+    </div>
+  </a>
+  <a href="/login" class="login">Sign in →</a>
+</header>
+
+<div class="hero">
+  <h1>Simple, transparent pricing</h1>
+  <p>Trackument guides California TK-12 administrators through generating legally grounded employee discipline documentation in minutes.</p>
+</div>
+
+<div class="pricing-section">
+  <div class="pricing-card">
+    <div class="pricing-header">
+      <h2>District Annual License</h2>
+      <div class="pricing-badge">Annual</div>
+    </div>
+    <div class="pricing-body">
+
+      <div class="price-display">
+        <div class="price-base">$1,000 <span>base / year</span></div>
+        <div class="price-note">+ $500 per school site · Unlimited administrators · All document types</div>
+      </div>
+
+      <div class="includes">
+        <h3>What's included</h3>
+        <div class="include-item">All document types: conference summaries, written warnings, letters of reprimand, notices of unsatisfactory performance</div>
+        <div class="include-item">California Ed Code, Board Policy, and CBA citation analysis</div>
+        <div class="include-item">Unlimited administrators at all included sites</div>
+        <div class="include-item">Privacy-protected — employee names pseudonymized before reaching the AI</div>
+        <div class="include-item">Mobile-friendly for use from any device</div>
+      </div>
+
+      <div class="calculator">
+        <h3>Calculate your price</h3>
+        <div class="calc-row">
+          <label>District base fee</label>
+          <span class="calc-amount">$1,000</span>
+        </div>
+        <div class="site-input-row">
+          <label>Number of school sites</label>
+          <input type="number" id="siteCount" min="1" max="200" value="1" oninput="updateCalc()">
+        </div>
+        <div class="calc-row">
+          <label>Site fee (<span id="siteCountLabel">1</span> sites × $500)</label>
+          <span class="calc-amount" id="siteFeeDisplay">$500</span>
+        </div>
+        <hr class="calc-divider">
+        <div class="calc-total">
+          <span class="label">Annual total</span>
+          <span class="amount" id="totalDisplay">$1,500</span>
+        </div>
+      </div>
+
+      <div class="checkout-form">
+        <h3>Get started</h3>
+
+        <div class="error-msg" id="errorMsg"></div>
+        <div class="success-msg" id="successMsg"></div>
+
+        <div class="form-row">
+          <label>District name</label>
+          <input type="text" id="districtName" placeholder="e.g. Burbank Unified School District">
+        </div>
+        <div class="form-row">
+          <label>Contact name</label>
+          <input type="text" id="contactName" placeholder="Your full name">
+        </div>
+        <div class="form-row">
+          <label>District email address</label>
+          <input type="email" id="contactEmail" placeholder="you@district.k12.ca.us">
+        </div>
+        <div class="form-row">
+          <label>District email domain (for staff login)</label>
+          <input type="text" id="districtDomain" placeholder="e.g. burbank.k12.ca.us">
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label style="display:block; font-size:0.82rem; color:var(--gray); margin-bottom:10px; font-weight:500;">Payment method</label>
+          <div class="payment-options">
+            <label class="payment-option selected" id="opt-card">
+              <input type="radio" name="paymentMethod" value="card" checked onchange="selectPayment('card')">
+              <div class="po-icon">💳</div>
+              <div class="po-label">Credit Card</div>
+              <div class="po-sub">Pay now, instant access</div>
+            </label>
+            <label class="payment-option" id="opt-invoice">
+              <input type="radio" name="paymentMethod" value="invoice" onchange="selectPayment('invoice')">
+              <div class="po-icon">📋</div>
+              <div class="po-label">Purchase Order / Check</div>
+              <div class="po-sub">Invoice emailed within 24 hrs</div>
+            </label>
+          </div>
+        </div>
+
+        <button class="btn-checkout" id="checkoutBtn" onclick="handleCheckout()">
+          Continue to Payment →
+        </button>
+        <div class="secure-note">🔒 Secured by Stripe · 30-day money back guarantee</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="faq">
+  <h2>Common questions</h2>
+  <div class="faq-item">
+    <h3>Who counts as a "school site"?</h3>
+    <p>Each school, continuation school, alternative education site, or district office location with administrators who will use Trackument counts as one site. If you're unsure, contact us and we'll help you figure it out.</p>
+  </div>
+  <div class="faq-item">
+    <h3>How many administrators can use it?</h3>
+    <p>Unlimited. Every principal, assistant principal, and district administrator at your included sites can use Trackument at no additional cost.</p>
+  </div>
+  <div class="faq-item">
+    <h3>Can we pay by purchase order?</h3>
+    <p>Yes. Select "Purchase Order / Check" above and we'll send a formal invoice within 24 hours. Access is activated once payment is received.</p>
+  </div>
+  <div class="faq-item">
+    <h3>Is our data private?</h3>
+    <p>Employee names, administrator names, and dates are replaced with placeholders before any information reaches the AI. Real employee names never leave your browser. See our <a href="/privacy" style="color:var(--navy);">Privacy Policy</a> for details.</p>
+  </div>
+  <div class="faq-item">
+    <h3>What if we need to add sites mid-year?</h3>
+    <p>Contact us and we'll send a prorated invoice for the additional sites. Your access updates immediately.</p>
+  </div>
+</div>
+
+<script>
+  function updateCalc() {
+    const sites = Math.max(1, parseInt(document.getElementById('siteCount').value) || 1);
+    const siteFee = sites * 500;
+    const total = 1000 + siteFee;
+    document.getElementById('siteCountLabel').textContent = sites;
+    document.getElementById('siteFeeDisplay').textContent = '$' + siteFee.toLocaleString();
+    document.getElementById('totalDisplay').textContent = '$' + total.toLocaleString();
+  }
+
+  function selectPayment(method) {
+    document.getElementById('opt-card').classList.toggle('selected', method === 'card');
+    document.getElementById('opt-invoice').classList.toggle('selected', method === 'invoice');
+    const btn = document.getElementById('checkoutBtn');
+    btn.textContent = method === 'card' ? 'Continue to Payment →' : 'Request Invoice →';
+  }
+
+  async function handleCheckout() {
+    const districtName = document.getElementById('districtName').value.trim();
+    const contactName = document.getElementById('contactName').value.trim();
+    const contactEmail = document.getElementById('contactEmail').value.trim();
+    const districtDomain = document.getElementById('districtDomain').value.trim().toLowerCase().replace(/^@/, '');
+    const sites = Math.max(1, parseInt(document.getElementById('siteCount').value) || 1);
+    const method = document.querySelector('input[name="paymentMethod"]:checked').value;
+
+    const errEl = document.getElementById('errorMsg');
+    const sucEl = document.getElementById('successMsg');
+    errEl.style.display = 'none';
+    sucEl.style.display = 'none';
+
+    if (!districtName || !contactName || !contactEmail || !districtDomain) {
+      errEl.textContent = 'Please fill in all fields before continuing.';
+      errEl.style.display = 'block';
+      return;
+    }
+    if (!contactEmail.includes('@')) {
+      errEl.textContent = 'Please enter a valid email address.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const btn = document.getElementById('checkoutBtn');
+    btn.disabled = true;
+    btn.textContent = 'Processing...';
+
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ districtName, contactName, contactEmail, districtDomain, sites, method })
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+
+      if (method === 'card' && data.url) {
+        window.location.href = data.url;
+      } else if (method === 'invoice') {
+        sucEl.innerHTML = '<strong>Invoice request received!</strong><br>We\'ll send a formal invoice to ' + contactEmail + ' within 24 hours. Your access will be activated as soon as payment is received.';
+        sucEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Request Sent ✓';
+      }
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = method === 'card' ? 'Continue to Payment →' : 'Request Invoice →';
+    }
+  }
+</script>
+</body>
+</html>

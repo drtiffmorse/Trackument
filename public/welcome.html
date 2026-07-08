@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to Trackument</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Source Sans 3', sans-serif; background: #f8f5ef; color: #1a2744; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; }
+    .card { background: white; border-radius: 10px; box-shadow: 0 8px 40px rgba(26,39,68,0.12); max-width: 520px; width: 100%; padding: 48px; text-align: center; }
+    .check { font-size: 3rem; margin-bottom: 16px; }
+    h1 { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: #1a2744; margin-bottom: 12px; }
+    p { color: #6b7280; line-height: 1.7; margin-bottom: 20px; }
+    .next-steps { background: #f8f5ef; border-radius: 8px; padding: 20px; text-align: left; margin-bottom: 28px; }
+    .next-steps h3 { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #1a2744; margin-bottom: 14px; }
+    .step { display: flex; gap: 12px; margin-bottom: 10px; font-size: 0.9rem; color: #374151; }
+    .step-num { width: 22px; height: 22px; border-radius: 50%; background: #c9a84c; color: #1a2744; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .btn { display: inline-block; background: #c9a84c; color: #1a2744; font-weight: 700; font-size: 0.95rem; padding: 14px 32px; border-radius: 4px; text-decoration: none; letter-spacing: 0.04em; }
+    .btn:hover { background: #b8973d; }
+    .support { margin-top: 20px; font-size: 0.82rem; color: #9ca3af; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="check">✅</div>
+    <h1>You're all set!</h1>
+    <p>Your district's Trackument license is active. Your administrators can start generating legally grounded discipline documentation right now.</p>
+
+    <div class="next-steps">
+      <h3>Next steps</h3>
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>Check your email — a receipt and account confirmation is on its way.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>Share the Trackument link with your site administrators. Anyone logging in with a district email address will have access.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>Have them set up their site profile in the District & Site Settings — takes about 2 minutes.</div>
+      </div>
+    </div>
+
+    <a href="/" class="btn">Open Trackument →</a>
+    <div class="support">Questions? Email <a href="mailto:tiffany@trackument.com" style="color:#1a2744;">tiffany@trackument.com</a></div>
+  </div>
+</body>
+</html>
