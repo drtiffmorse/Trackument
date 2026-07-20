@@ -1140,7 +1140,7 @@
         <button type="button" class="btn btn-secondary" onclick="checkDistrictDomain()" id="checkDomainBtn" style="font-size:0.78rem; white-space:nowrap; flex-shrink:0; padding:10px 14px;">Find My District</button>
       </div>
       <div id="checkDomainResult" style="font-size:0.82rem; margin-top:6px; display:none; padding:8px 12px; border-radius:2px;"></div>
-      <div class="setup-section-sub" style="margin-top:6px;">If someone at your district has already set this up, entering your domain and clicking "Find My District" will pull in the board policy link, document types, and bargaining agreements automatically — no re-entering. Otherwise, fill in the fields below and every other site in your district will be able to pull from what you save here.</div>
+      <div class="setup-section-sub" style="margin-top:6px;">If someone at your district has already set this up, entering your domain and clicking "Find My District" will pull in the board policy link, county, document types, and bargaining agreements automatically — no re-entering. Otherwise, fill in the fields below and every other site in your district will be able to pull from what you save here.</div>
 
 
       <label>Board Policy Website URL</label>
@@ -1149,6 +1149,10 @@
         <button class="btn btn-secondary" onclick="testBPConnection()" id="bpTestBtn" style="font-size:0.78rem; white-space:nowrap; flex-shrink:0; padding:10px 14px;">Test Connection</button>
       </div>
       <div id="bpTestResult" style="font-size:0.82rem; margin-top:6px; display:none; padding:8px 12px; border-radius:2px;"></div>
+
+      <label>County</label>
+      <input type="text" id="setupCounty" name="county" autocomplete="off" placeholder="e.g. Ventura">
+      <div class="setup-section-sub" style="margin-top:-6px;">Used for food-service/nutrition write-ups only — helps the tool point administrators to the right county environmental health department for local permit and certification requirements.</div>
 
       <!-- Configurable document types -->
       <div style="margin-top:20px; padding-top:18px; border-top:1px solid var(--light-gray);">
@@ -1360,7 +1364,7 @@ if (window.location.protocol === 'file:') {
     <a href="/privacy" target="_blank" style="font-size:0.7rem; color:rgba(255,255,255,0.5); text-decoration:none; white-space:nowrap;">Privacy Policy</a>
     <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.06em; text-transform:uppercase;">+ New Writeup</button>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;">⚙ District &amp; Site Settings</button>
-    <div class="version-badge">v38</div>
+    <div class="version-badge">v40</div>
   </div>
 </header>
 
@@ -3445,10 +3449,12 @@ async function analyzeAndSuggestCitations() {
   };
 
   const bpURL = window._districtProfile?.bpURL || null;
+  const county = window._districtProfile?.county || null;
   // Pseudonymize facts before sending -- district name replaced too
   const citeData = collectData();
   const { pseudoData: citePseudo } = pseudonymizeData(citeData);
   const pseudoFacts = citePseudo.factDescription;
+  const employeeTitle = citeData.employeeTitle || '';
 
   // Ensure the correct CBA is loaded for this classification
   if (!window._activeCBAEntry && classification) {
@@ -3465,6 +3471,8 @@ Suggest the standard California (CSBA) board policy numbers most applicable to t
 
   const prompt = `You are a California school district HR attorney. Analyze the following facts and return citations for a ${docType || 'disciplinary document'} for a ${classLabels[classification] || 'California school district employee'} at a California K-12 school district.
 
+EMPLOYEE JOB TITLE: ${employeeTitle || 'not specified'}
+
 FACTS:
 ${pseudoFacts}
 
@@ -3476,7 +3484,7 @@ Return ONLY a JSON object — no preamble, no markdown backticks, no explanation
 {
   "edcode": [{"code": "Ed Code § XXXXX", "desc": "Direct verbatim quote of the most relevant 1-sentence clause"}],
   "cvc": [{"code": "CVC § XXXXX", "desc": "Direct verbatim quote — only populate if employee drives a district vehicle"}],
-  "other": [{"code": "Citation name § number", "desc": "Direct verbatim quote — only for health code, DMV, or non-Ed Code regulatory citations when directly relevant"}],
+  "other": [{"code": "Citation name § number", "desc": "Direct verbatim quote — only for health code, DMV, or non-Ed Code regulatory citations when directly relevant. County health department entries are the one exception: use a plain-language verification note instead of a quote, as instructed above."}],
   "boardpolicy": [{"code": "BP XXXX", "desc": "Direct verbatim quote of the most relevant 1-sentence clause"}],
   "cba": [{"code": "Article X.X — Title", "desc": "Direct verbatim quote of the single most relevant sentence only"}],
   "notes": "One sentence summarizing the primary rules violated"
@@ -3558,10 +3566,16 @@ REQUIRED citations for driving/transportation violations:
 - Ed Code transportation safety sections if applicable (e.g. § 39800 series)
 - BP 4218 (classified) for general conduct standards
 
+REQUIRED citations for food service/nutrition/cafeteria violations (food handling, sanitation, temperature control, allergen handling, expired product, certification lapses):
+- California Retail Food Code sections the employee actually violated (California Health & Safety Code, Division 104, Part 7 — e.g. § 113996 for food handler card requirements, § 113953 for time/temperature control, § 113947 for handwashing). Only cite sections you can quote verbatim and accurately; if uncertain of the exact text, omit the citation rather than guess.
+- Do NOT invent or quote a specific county health ordinance number or text — county-level amendments are not reliably known. Instead, if a county was provided (${county ? `"${county}"` : 'none provided'}), add a citation in the "other" array with "code": "${county ? county + ' County Environmental Health' : 'County Environmental Health'}" and "desc" set to a plain-language note (not a quote) such as "Administrator should confirm current local permit and food handler certification requirements with the ${county || 'county'} Department of Environmental Health" — mark this citation clearly as a verification note, not a verbatim quote.
+- Ed Code performance/conduct sections and BP citations as usual, if the facts support them.
+
 For CBA: only cite if the article specifically addresses: attendance, punctuality, safe work practices, compliance with laws while on duty, professional conduct, or leave notification. A CBA article about employee safety/assault reporting does NOT apply to a traffic violation.
 
 - Ed Code: Classified = 45xxx performance/conduct sections only. Certificated = 44xxx performance/conduct sections only. Max 4.
 - CVC: Bus drivers, van drivers, any driver — cite the specific code sections violated. Return [] if not a driving situation.
+- Food Code / County Environmental Health: Nutrition services, cafeteria, food service staff — cite California Retail Food Code sections violated, plus a county verification note if a county was provided. Return [] if not a food-service situation.
 - Board Policy: Correct series by classification. Classified = 4200 series. Certificated = 4100 series. Management = 4300 series. Max 3.
 - CBA: Max 3 articles that directly state employee obligations. Strict relevance to the actual conduct.`;
 
@@ -4496,6 +4510,7 @@ function applyDistrictProfile(profile) {
     ['setupDistrictName', profile.name],
     ['setupDistrictDomain', profile.domain],
     ['setupBPURL', profile.bpURL],
+    ['setupCounty', profile.county],
   ];
   fields.forEach(([id, val]) => {
     const el = document.getElementById(id);
@@ -4510,9 +4525,11 @@ function applyDistrictProfile(profile) {
   const dnEl = document.getElementById('setupDistrictName');
   const ddEl = document.getElementById('setupDistrictDomain');
   const bpEl = document.getElementById('setupBPURL');
+  const countyEl = document.getElementById('setupCounty');
   if (dnEl) dnEl.value = profile.name || '';
   if (ddEl) ddEl.value = profile.domain || '';
   if (bpEl) bpEl.value = profile.bpURL || '';
+  if (countyEl) countyEl.value = profile.county || '';
 
   // Populate docType select from saved types
   if (profile.docTypes && profile.docTypes.length) {
@@ -4540,6 +4557,7 @@ async function saveDistrictProfile() {
     url: '',
     domain,
     bpURL: document.getElementById('setupBPURL').value.trim(),
+    county: document.getElementById('setupCounty').value.trim(),
     docTypes: getCheckedDocTypes()
   };
   try {
@@ -4550,7 +4568,8 @@ async function saveDistrictProfile() {
     await store.set('district:fields', JSON.stringify({
       setupDistrictName: profile.name || '',
       setupDistrictDomain: profile.domain || '',
-      setupBPURL: profile.bpURL || ''
+      setupBPURL: profile.bpURL || '',
+      setupCounty: profile.county || ''
     }));
     // Also force direct localStorage write
     try {
@@ -4558,7 +4577,8 @@ async function saveDistrictProfile() {
       localStorage.setItem('wt__district:fields', JSON.stringify({
         setupDistrictName: profile.name || '',
         setupDistrictDomain: profile.domain || '',
-          setupBPURL: profile.bpURL || ''
+          setupBPURL: profile.bpURL || '',
+          setupCounty: profile.county || ''
       }));
     } catch(e) {}
     hideStatus();
@@ -4615,6 +4635,7 @@ async function pushDistrictSettings() {
         domain,
         districtName: document.getElementById('setupDistrictName')?.value.trim() || window._districtProfile?.name || '',
         bpURL: document.getElementById('setupBPURL')?.value.trim() || '',
+        county: document.getElementById('setupCounty')?.value.trim() || '',
         docTypes: getCheckedDocTypes(),
         cbaLibrary
       })
@@ -4641,6 +4662,7 @@ async function pullDistrictSettings(domain) {
       url: '',
       domain,
       bpURL: data.bpURL || '',
+      county: data.county || '',
       docTypes: data.docTypes || []
     };
     await store.set('district:profile', JSON.stringify(profile));
