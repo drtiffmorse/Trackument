@@ -41,9 +41,15 @@ function parseCookies(cookieHeader) {
 }
 
 function checkBeta(req, res, next) {
-  // Always allow: login, api routes, public pages, static assets
-  const open = ['/login', '/privacy', '/checkout', '/welcome', '/api/checkout', '/api/webhook', '/api/check-access'];
-  if (open.includes(req.path) || req.path.startsWith('/api/')) return next();
+  // Always allow: the public marketing site, login, and its supporting api routes/assets.
+  // Everything else, including the real app, stays behind the gate.
+  const openExact = [
+    '/', '/login', '/privacy', '/checkout', '/welcome',
+    '/how-it-works.html', '/security.html', '/pricing.html',
+    '/api/checkout', '/api/webhook', '/api/check-access'
+  ];
+  const openPrefixes = ['/api/', '/assets/'];
+  if (openExact.includes(req.path) || openPrefixes.some(p => req.path.startsWith(p))) return next();
   const cookies = parseCookies(req.headers.cookie);
   if (cookies[COOKIE_NAME] === BETA_PASSWORD) return next();
   res.redirect('/login');
@@ -88,7 +94,7 @@ app.get('/login', (req, res) => {
       err.style.display = 'none';
       const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) });
       const data = await res.json();
-      if (data.ok) { window.location.href = '/'; }
+      if (data.ok) { window.location.href = '/app'; }
       else { err.style.display = 'block'; document.getElementById('pw').value = ''; }
     }
   </script>
@@ -354,6 +360,10 @@ app.get('/api/admin/districts', async (req, res) => {
 app.get('/privacy',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'privacy.html')));
 app.get('/checkout', (req, res) => res.sendFile(path.join(__dirname, 'public', 'checkout.html')));
 app.get('/welcome',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'welcome.html')));
+
+// The real application. Not in checkBeta's open list, so this stays gated
+// behind the beta password like everything else that isn't the marketing site.
+app.get('/app', (req, res) => res.sendFile(path.join(__dirname, 'public', 'app.html')));
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
