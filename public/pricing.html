@@ -13,7 +13,7 @@
 
 <header class="site-header">
   <div class="header-inner">
-    <a href="index.html" class="brand">
+    <a href="/" class="brand">
       <img class="icon" src="assets/logo-icon.png" alt="Trackument logo">
       <div class="brand-text">
         <img class="wordmark" src="assets/wordmark.png" alt="Trackument">
@@ -22,7 +22,7 @@
       </div>
     </a>
     <nav class="primary-nav">
-      <a href="index.html">Home</a>
+      <a href="/">Home</a>
       <a href="how-it-works.html">How it works</a>
       <a href="security.html">Security</a>
       <a href="pricing.html" class="active">Pricing</a>
@@ -31,34 +31,50 @@
   </div>
 </header>
 
-<section class="page-hero">
+<section class="page-hero page-hero--pricing">
   <div class="page-hero-inner">
     <p class="page-eyebrow">Pricing</p>
-    <h1>Straightforward pricing for districts and sites.</h1>
+    <h1>Straightforward pricing.</h1>
+    <p class="pricing-subhead">One annual fee covers unlimited users across every school site and department in your district, no per-user licensing, no add-on charges.</p>
   </div>
 
-  <div class="pricing-row">
-    <div class="pricing-card" style="--card-color:#280b5b;">
-      <span class="pricing-badge">District</span>
-      <div class="pricing-amount">$1,000</div>
-      <div class="pricing-unit">per district, annually</div>
-      <div class="pricing-features">
-        <div class="pricing-feature"><svg viewBox="0 0 24 24" fill="none" stroke="#280b5b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>All schools in your district</div>
-        <div class="pricing-feature"><svg viewBox="0 0 24 24" fill="none" stroke="#280b5b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Unlimited documents</div>
-        <div class="pricing-feature"><svg viewBox="0 0 24 24" fill="none" stroke="#280b5b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Priority email support</div>
-      </div>
-    </div>
-    <div class="plus-sign">+</div>
-    <div class="pricing-card" style="--card-color:#2f9c90;">
-      <span class="pricing-badge">Site</span>
-      <div class="pricing-amount">$500</div>
-      <div class="pricing-unit">per school site, annually</div>
-      <div class="pricing-features">
-        <div class="pricing-feature"><svg viewBox="0 0 24 24" fill="none" stroke="#2f9c90" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Single school site</div>
-        <div class="pricing-feature"><svg viewBox="0 0 24 24" fill="none" stroke="#2f9c90" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Unlimited documents</div>
-        <div class="pricing-feature"><svg viewBox="0 0 24 24" fill="none" stroke="#2f9c90" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Email support</div>
-      </div>
-    </div>
+  <div class="pricing-table-wrap">
+    <table class="pricing-table">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>District Size</th>
+          <th>Annual Fee</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="row-district">
+          <td><span class="price-badge badge-district">District</span></td>
+          <td>Up to 5,000 ADA</td>
+          <td>$5,000</td>
+        </tr>
+        <tr class="row-district">
+          <td><span class="price-badge badge-district">District</span></td>
+          <td>Up to 10,000 ADA</td>
+          <td>$10,000</td>
+        </tr>
+        <tr class="row-district">
+          <td><span class="price-badge badge-district">District</span></td>
+          <td>Up to 20,000 ADA</td>
+          <td>$15,000</td>
+        </tr>
+        <tr class="row-district">
+          <td><span class="price-badge badge-district">District</span></td>
+          <td>Over 20,000 ADA</td>
+          <td>$20,000</td>
+        </tr>
+        <tr class="row-school">
+          <td><span class="price-badge badge-school">School</span></td>
+          <td>Individual school site</td>
+          <td>$1,000</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
   <div class="signup-row">
@@ -70,7 +86,7 @@
   <div class="cta-panel">
     <div class="cta-inner">
       <h2>Finish your next writeup in minutes, not hours.</h2>
-      <p>Log in to start a document, or reach out if your district wants to see Trackument in action first.</p>
+      <p>Log in to access your account, or reach out to sign up.</p>
       <div class="cta-actions">
         <a href="/login" class="btn-gold">Log in</a>
         <a href="mailto:help@trackument.com" class="btn-ghost-invert">Contact us</a>
