@@ -150,6 +150,9 @@ async function initDb() {
   `);
   // Safe to run repeatedly -- adds the column if this table already existed from an earlier version.
   await pool.query(`ALTER TABLE district_settings ADD COLUMN IF NOT EXISTS county TEXT;`);
+  await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS tier_label TEXT;`);
+  await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS agreed_to_contract_at TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS wants_training BOOLEAN DEFAULT false;`);
   console.log('Database ready: districts and district_settings tables present.');
 }
 
@@ -180,8 +183,8 @@ async function activateDistrict(info) {
 
 async function recordInvoiceRequest(info) {
   await pool.query(`
-    INSERT INTO districts (domain, district_name, contact_name, contact_email, sites, status, total_due, requested_at)
-    VALUES ($1, $2, $3, $4, $5, 'pending_invoice', $6, now())
+    INSERT INTO districts (domain, district_name, contact_name, contact_email, sites, status, total_due, requested_at, tier_label, agreed_to_contract_at, wants_training)
+    VALUES ($1, $2, $3, $4, $5, 'pending_invoice', $6, now(), $7, $8, $9)
     ON CONFLICT (domain) DO UPDATE SET
       district_name = EXCLUDED.district_name,
       contact_name = EXCLUDED.contact_name,
@@ -189,8 +192,47 @@ async function recordInvoiceRequest(info) {
       sites = EXCLUDED.sites,
       status = 'pending_invoice',
       total_due = EXCLUDED.total_due,
-      requested_at = now()
-  `, [info.districtDomain, info.districtName, info.contactName || null, info.contactEmail || null, info.sitesNum, info.totalDue]);
+      requested_at = now(),
+      tier_label = EXCLUDED.tier_label,
+      agreed_to_contract_at = EXCLUDED.agreed_to_contract_at,
+      wants_training = EXCLUDED.wants_training
+  `, [info.districtDomain, info.districtName, info.contactName || null, info.contactEmail || null, info.sitesNum, info.totalDue, info.tierLabel, info.agreedAt, info.wantsTraining || false]);
+}
+
+// ─── Training request notification ───────────────────────────────────────────
+// Sends an email to Tiffany whenever someone checks "add custom training" at
+// signup. Uses Resend (resend.com) since it's the simplest transactional email
+// API to wire up with no existing email infra in this codebase -- swap this
+// out freely if a different provider is preferred.
+//
+// REQUIRES: a RESEND_API_KEY environment variable in Railway. Until that's
+// set, this silently no-ops (logs a warning) rather than breaking checkout --
+// a missing training-request email should never block someone from paying.
+const TRAINING_NOTIFY_EMAIL = process.env.TRAINING_NOTIFY_EMAIL || 'tiffany@trackument.com';
+
+async function notifyTrainingRequest({ districtName, contactName, contactEmail, tierLabel }) {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn('Training request received but RESEND_API_KEY is not set -- no email sent. District:', districtName, contactEmail);
+    return;
+  }
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + process.env.RESEND_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'Trackument <notifications@trackument.com>',
+        to: TRAINING_NOTIFY_EMAIL,
+        subject: 'Custom training requested — ' + districtName,
+        text: `${contactName} from ${districtName} requested custom training during signup.\n\nContact: ${contactName} <${contactEmail}>\nPlan selected: ${tierLabel}\n\nFollow up to schedule and quote pricing.`,
+      }),
+    });
+  } catch (err) {
+    // Never let an email failure break the checkout flow.
+    console.error('Failed to send training request notification:', err.message);
+  }
 }
 
 // ─── Stripe webhook (raw body) ────────────────────────────────────────────────
@@ -248,16 +290,33 @@ app.post('/api/anthropic', async (req, res) => {
 });
 
 // ─── Stripe checkout session ──────────────────────────────────────────────────
-app.post('/api/checkout', async (req, res) => {
-  const { districtName, contactName, contactEmail, districtDomain, sites, method } = req.body;
-  if (!districtName || !contactEmail || !districtDomain) return res.status(400).json({ error: 'Missing required fields.' });
+// Pricing tiers -- must stay in sync with the TIERS array in public/checkout.html
+const PRICING_TIERS = [
+  { label: 'District — up to 5,000 ADA', price: 5000 },
+  { label: 'District — up to 10,000 ADA', price: 10000 },
+  { label: 'District — up to 20,000 ADA', price: 15000 },
+  { label: 'District — over 20,000 ADA', price: 20000 },
+  { label: 'Individual school site', price: 1000 },
+];
 
-  const sitesNum = Math.max(1, parseInt(sites) || 1);
-  const totalCents = (1000 + sitesNum * 500) * 100;
+app.post('/api/checkout', async (req, res) => {
+  const { districtName, contactName, contactEmail, districtDomain, tier, agreedToContract, wantsTraining, method } = req.body;
+  if (!districtName || !contactEmail || !districtDomain) return res.status(400).json({ error: 'Missing required fields.' });
+  if (!agreedToContract) return res.status(400).json({ error: 'You must agree to the Service Agreement before continuing.' });
+
+  const tierIndex = PRICING_TIERS[tier] ? Number(tier) : 0;
+  const selectedTier = PRICING_TIERS[tierIndex];
+  const totalCents = selectedTier.price * 100;
+  const sitesNum = 1; // retained for schema compatibility; tier_label is now the source of truth
+  const agreedAt = new Date().toISOString();
+
+  if (wantsTraining) {
+    notifyTrainingRequest({ districtName, contactName, contactEmail, tierLabel: selectedTier.label });
+  }
 
   if (method === 'invoice') {
-    await recordInvoiceRequest({ districtName, contactName, contactEmail, districtDomain, sitesNum, totalDue: totalCents / 100 });
-    console.log('=== INVOICE REQUEST ===\nDistrict:', districtName, '\nContact:', contactName, contactEmail, '\nDomain:', districtDomain, '\nSites:', sitesNum, '\nAmount: $' + (totalCents / 100));
+    await recordInvoiceRequest({ districtName, contactName, contactEmail, districtDomain, sitesNum, totalDue: totalCents / 100, tierLabel: selectedTier.label, agreedAt, wantsTraining });
+    console.log('=== INVOICE REQUEST ===\nDistrict:', districtName, '\nContact:', contactName, contactEmail, '\nDomain:', districtDomain, '\nTier:', selectedTier.label, '\nAmount: $' + (totalCents / 100), '\nAgreed to contract:', agreedAt, '\nWants training:', !!wantsTraining);
     return res.json({ ok: true, method: 'invoice' });
   }
 
@@ -272,14 +331,14 @@ app.post('/api/checkout', async (req, res) => {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: 'Trackument — District Annual License',
-            description: districtName + ' · ' + sitesNum + ' site' + (sitesNum !== 1 ? 's' : '') + ' · Annual',
+            name: 'Trackument — Annual License',
+            description: districtName + ' · ' + selectedTier.label + ' · Annual',
           },
           unit_amount: totalCents,
         },
         quantity: 1,
       }],
-      metadata: { districtName, contactName, contactEmail, districtDomain, sites: String(sitesNum) },
+      metadata: { districtName, contactName, contactEmail, districtDomain, tierLabel: selectedTier.label, agreedToContractAt: agreedAt, wantsTraining: String(!!wantsTraining) },
       success_url: BASE_URL + '/welcome?session_id={CHECKOUT_SESSION_ID}',
       cancel_url: BASE_URL + '/checkout',
     });
