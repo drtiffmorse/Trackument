@@ -44,7 +44,7 @@ function checkBeta(req, res, next) {
   // Always allow: the public marketing site, login, and its supporting api routes/assets.
   // Everything else, including the real app, stays behind the gate.
   const openExact = [
-    '/', '/login', '/privacy', '/checkout', '/welcome', '/contact',
+    '/', '/login', '/privacy', '/checkout', '/welcome', '/contact', '/terms',
     '/how-it-works.html', '/security.html', '/pricing.html',
     '/api/checkout', '/api/webhook', '/api/check-access'
   ];
@@ -69,7 +69,9 @@ app.get('/login', (req, res) => {
     body{font-family:'Inter',sans-serif;background:#280b5b;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
     body::after{content:'';display:block;position:fixed;bottom:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#280b5b 0 25%,#2f9c90 25% 50%,#ee8c29 50% 75%,#dc012b 75% 100%);}
     .card{background:#fff;border-radius:14px;padding:48px 40px;width:100%;max-width:380px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.25);}
-    .wordmark{font-size:1.7rem;font-weight:800;color:#280b5b;letter-spacing:0.04em;margin-bottom:4px;}
+    .login-icon{height:52px;width:auto;margin-bottom:12px;}
+    .login-wordmark{height:23px;width:auto;margin-bottom:6px;}
+    .subline{font-family:'IBM Plex Mono',monospace;font-size:0.66rem;text-transform:uppercase;color:#280b5b;font-weight:700;margin-bottom:4px;letter-spacing:0.04em;}
     .tag{font-family:'IBM Plex Mono',monospace;font-size:0.68rem;text-transform:uppercase;color:#ee8c29;font-weight:600;letter-spacing:0.1em;margin-bottom:32px;}
     .err{color:#dc2626;font-size:0.82rem;margin-bottom:10px;display:none;}
     input{width:100%;padding:12px 14px;border:1.5px solid #e6e1f2;border-radius:8px;font-size:0.95rem;font-family:'Inter',sans-serif;margin-bottom:12px;text-align:center;color:#280b5b;transition:border-color .15s;}
@@ -85,7 +87,9 @@ app.get('/login', (req, res) => {
 </head>
 <body>
   <div class="card">
-    <div class="wordmark">TRACKUMENT</div>
+    <img class="login-icon" src="/assets/logo-icon.png" alt="Trackument logo">
+    <img class="login-wordmark" src="/assets/wordmark.png" alt="Trackument">
+    <div class="subline">Employee Discipline</div>
     <div class="tag">Documented. Defensible. Done.</div>
     <div class="err" id="err">Incorrect password. Please try again.</div>
     <input type="password" id="pw" placeholder="Beta Password" onkeydown="if(event.key==='Enter')login()">
@@ -153,6 +157,10 @@ async function initDb() {
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS tier_label TEXT;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS agreed_to_contract_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS wants_training BOOLEAN DEFAULT false;`);
+  await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT;`);
+  await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;`);
+  await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS renewal_date TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS renewal_reminder_sent_for TIMESTAMPTZ;`);
   console.log('Database ready: districts and district_settings tables present.');
 }
 
@@ -166,8 +174,8 @@ async function getDistrictByDomain(domain) {
 
 async function activateDistrict(info) {
   await pool.query(`
-    INSERT INTO districts (domain, district_name, contact_name, contact_email, sites, status, stripe_session_id, amount_paid, activated_at)
-    VALUES ($1, $2, $3, $4, $5, 'active', $6, $7, now())
+    INSERT INTO districts (domain, district_name, contact_name, contact_email, sites, status, stripe_session_id, amount_paid, activated_at, stripe_customer_id, stripe_subscription_id, renewal_date)
+    VALUES ($1, $2, $3, $4, $5, 'active', $6, $7, now(), $8, $9, $10)
     ON CONFLICT (domain) DO UPDATE SET
       district_name = EXCLUDED.district_name,
       contact_name = EXCLUDED.contact_name,
@@ -176,9 +184,12 @@ async function activateDistrict(info) {
       status = 'active',
       stripe_session_id = EXCLUDED.stripe_session_id,
       amount_paid = EXCLUDED.amount_paid,
-      activated_at = now()
-  `, [info.domain, info.districtName, info.contactName || null, info.contactEmail || null, info.sites || 1, info.stripeSessionId || null, info.amountPaid || null]);
-  console.log('District activated:', info.districtName, info.domain);
+      activated_at = now(),
+      stripe_customer_id = EXCLUDED.stripe_customer_id,
+      stripe_subscription_id = EXCLUDED.stripe_subscription_id,
+      renewal_date = EXCLUDED.renewal_date
+  `, [info.domain, info.districtName, info.contactName || null, info.contactEmail || null, info.sites || 1, info.stripeSessionId || null, info.amountPaid || null, info.stripeCustomerId || null, info.stripeSubscriptionId || null, info.renewalDate || null]);
+  console.log('District activated:', info.districtName, info.domain, '| renews:', info.renewalDate);
 }
 
 async function recordInvoiceRequest(info) {
@@ -243,6 +254,47 @@ async function notifyTrainingRequest({ districtName, contactName, contactEmail, 
   });
 }
 
+// ─── Renewal reminder job ─────────────────────────────────────────────────────
+// California's Automatic Renewal Law requires advance notice before a
+// recurring charge renews (roughly 15-45 days out for annual terms). This
+// checks daily for districts renewing in ~30 days and emails them once per
+// renewal cycle. renewal_reminder_sent_for is cleared on every subscription
+// update (see the webhook above), so a district gets exactly one reminder
+// per year even though this job runs every day.
+const RENEWAL_REMINDER_DAYS = 30;
+
+async function sendRenewalReminders() {
+  if (!pool) return;
+  try {
+    const { rows } = await pool.query(`
+      SELECT domain, district_name, contact_name, contact_email, tier_label, renewal_date, stripe_customer_id
+      FROM districts
+      WHERE status = 'active'
+        AND renewal_date IS NOT NULL
+        AND renewal_date::date = (CURRENT_DATE + $1::int)
+        AND (renewal_reminder_sent_for IS NULL OR renewal_reminder_sent_for::date != renewal_date::date)
+    `, [RENEWAL_REMINDER_DAYS]);
+
+    for (const d of rows) {
+      if (!d.contact_email) continue;
+      const renewDateStr = new Date(d.renewal_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      const portalUrl = await createPortalLinkForCustomer(d.stripe_customer_id);
+      const manageLine = portalUrl
+        ? `\n\nManage your subscription or cancel here: ${portalUrl}\n(This link is single-use and expires after a short time -- if it's stopped working, just reply to this email and we'll send a fresh one.)`
+        : `\n\nTo cancel or make changes, contact us at help@trackument.com.`;
+      await sendNotificationEmail({
+        to: d.contact_email,
+        subject: `Your Trackument license renews on ${renewDateStr}`,
+        text: `Hi ${d.contact_name || 'there'},\n\nThis is a reminder that ${d.district_name}'s Trackument license (${d.tier_label || 'your current plan'}) is scheduled to renew on ${renewDateStr}. Your card on file will be charged automatically on that date unless you cancel first.${manageLine}\n\nQuestions? Just reply to this email.\n\n— Trackument`,
+      });
+      await pool.query(`UPDATE districts SET renewal_reminder_sent_for = renewal_date WHERE domain = $1`, [d.domain]);
+      console.log('Sent renewal reminder to', d.district_name, d.contact_email);
+    }
+  } catch (err) {
+    console.error('Renewal reminder job failed:', err.message);
+  }
+}
+
 // ─── Stripe webhook (raw body) ────────────────────────────────────────────────
 app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   if (!stripe) return res.status(400).json({ error: 'Stripe not configured' });
@@ -257,6 +309,15 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
     const session = event.data.object;
     const meta = session.metadata || {};
     if (meta.districtDomain) {
+      let renewalDate = null;
+      if (session.subscription) {
+        try {
+          const sub = await stripe.subscriptions.retrieve(session.subscription);
+          renewalDate = new Date(sub.current_period_end * 1000).toISOString();
+        } catch (err) {
+          console.error('Could not retrieve subscription for renewal date:', err.message);
+        }
+      }
       await activateDistrict({
         districtName: meta.districtName,
         domain: meta.districtDomain,
@@ -265,8 +326,32 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
         sites: parseInt(meta.sites) || 1,
         stripeSessionId: session.id,
         amountPaid: session.amount_total,
+        stripeCustomerId: session.customer,
+        stripeSubscriptionId: session.subscription,
+        renewalDate,
       });
     }
+  }
+
+  // Fires each time a subscription renews (or otherwise updates) -- keeps our
+  // stored renewal_date accurate so the reminder job always checks the real date.
+  if (event.type === 'customer.subscription.updated') {
+    const sub = event.data.object;
+    const renewalDate = new Date(sub.current_period_end * 1000).toISOString();
+    await pool.query(
+      `UPDATE districts SET renewal_date = $1, renewal_reminder_sent_for = NULL WHERE stripe_subscription_id = $2`,
+      [renewalDate, sub.id]
+    );
+  }
+
+  // District canceled (or payment ultimately failed and Stripe gave up) --
+  // mark them inactive so it's visible in your records.
+  if (event.type === 'customer.subscription.deleted') {
+    const sub = event.data.object;
+    await pool.query(
+      `UPDATE districts SET status = 'canceled' WHERE stripe_subscription_id = $1`,
+      [sub.id]
+    );
   }
   res.json({ received: true });
 });
@@ -308,17 +393,20 @@ const PRICING_TIERS = [
 ];
 
 app.post('/api/contact', express.json(), async (req, res) => {
-  const { name, email, message } = req.body;
+  const { name, role, email, phone, message } = req.body;
   if (!name || !email || !message) return res.status(400).json({ error: 'Please fill in all fields.' });
   if (!email.includes('@')) return res.status(400).json({ error: 'Please enter a valid email address.' });
+
+  const roleLine = role ? `\nDistrict role: ${role}` : '';
+  const phoneLine = phone ? `\nPhone: ${phone}` : '';
 
   await sendNotificationEmail({
     to: SALES_NOTIFY_EMAIL,
     subject: 'New contact form message — ' + name,
-    text: `${name} <${email}> sent a message via the Trackument contact form:\n\n${message}`,
+    text: `${name} <${email}> sent a message via the Trackument contact form:${roleLine}${phoneLine}\n\n${message}`,
   });
 
-  console.log('=== CONTACT FORM ===\nFrom:', name, email, '\nMessage:', message);
+  console.log('=== CONTACT FORM ===\nFrom:', name, email, '\nRole:', role || '(not provided)', '\nPhone:', phone || '(not provided)', '\nMessage:', message);
   res.json({ ok: true });
 });
 
@@ -348,19 +436,23 @@ app.post('/api/checkout', async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      mode: 'payment',
+      mode: 'subscription',
       customer_email: contactEmail,
       line_items: [{
         price_data: {
           currency: 'usd',
           product_data: {
             name: 'Trackument — Annual License',
-            description: districtName + ' · ' + selectedTier.label + ' · Annual',
+            description: districtName + ' · ' + selectedTier.label,
           },
           unit_amount: totalCents,
+          recurring: { interval: 'year' },
         },
         quantity: 1,
       }],
+      subscription_data: {
+        metadata: { districtName, contactName, contactEmail, districtDomain, tierLabel: selectedTier.label },
+      },
       metadata: { districtName, contactName, contactEmail, districtDomain, tierLabel: selectedTier.label, agreedToContractAt: agreedAt, wantsTraining: String(!!wantsTraining) },
       success_url: BASE_URL + '/welcome?session_id={CHECKOUT_SESSION_ID}',
       cancel_url: BASE_URL + '/checkout',
@@ -446,9 +538,49 @@ app.get('/api/admin/districts', async (req, res) => {
 
 // ─── Static routes ────────────────────────────────────────────────────────────
 app.get('/privacy',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'privacy.html')));
+app.get('/terms',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'terms.html')));
 app.get('/checkout', (req, res) => res.sendFile(path.join(__dirname, 'public', 'checkout.html')));
 app.get('/contact', (req, res) => res.sendFile(path.join(__dirname, 'public', 'contact.html')));
 app.get('/welcome',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'welcome.html')));
+
+// Generates a real, one-time Stripe billing portal link for whoever just
+// completed the checkout session in the URL, and sends them straight there.
+// We look the customer up FROM the checkout session rather than trusting any
+// customer/email value passed in the URL, so this can't be used to view
+// someone else's billing by guessing an ID.
+app.get('/api/billing-portal', async (req, res) => {
+  const sessionId = req.query.session_id;
+  if (!sessionId) return res.status(400).send('Missing session_id.');
+  if (!stripe) return res.status(500).send('Payment system not configured.');
+  try {
+    const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId);
+    if (!checkoutSession.customer) return res.status(400).send('No billing account found for this session.');
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: checkoutSession.customer,
+      return_url: BASE_URL + '/welcome?session_id=' + sessionId,
+    });
+    res.redirect(303, portalSession.url);
+  } catch (err) {
+    res.status(500).send('Could not open billing portal: ' + err.message);
+  }
+});
+
+// Same idea, but keyed off a district's stored Stripe customer ID directly --
+// used by the renewal reminder emails, where we already know who they are
+// from our own database rather than a checkout session.
+async function createPortalLinkForCustomer(stripeCustomerId) {
+  if (!stripe || !stripeCustomerId) return null;
+  try {
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: stripeCustomerId,
+      return_url: BASE_URL,
+    });
+    return portalSession.url;
+  } catch (err) {
+    console.error('Could not create portal link for renewal email:', err.message);
+    return null;
+  }
+}
 
 // The real application. Not in checkBeta's open list, so this stays gated
 // behind the beta password like everything else that isn't the marketing site.
@@ -460,6 +592,10 @@ app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.ht
 initDb()
   .then(() => {
     app.listen(PORT, () => console.log('Trackument on port ' + PORT + ' | Stripe: ' + (stripe ? 'enabled' : 'disabled')));
+
+    // Check for upcoming renewals once at startup, then once every 24 hours.
+    sendRenewalReminders();
+    setInterval(sendRenewalReminders, 24 * 60 * 60 * 1000);
   })
   .catch(err => {
     console.error('FATAL: could not initialize database:', err.message);
