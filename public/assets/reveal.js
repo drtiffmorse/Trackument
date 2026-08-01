@@ -13,7 +13,11 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   justifyBrandLines();
-  window.addEventListener('resize', justifyBrandLines);
+  var resizeTimer;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(justifyBrandLines, 120);
+  });
 });
 
 // Stretches .subline and .tag to align with the visual stem-to-stem width of
@@ -35,7 +39,24 @@ function measureTextWidth(text, font) {
 function justifyBrandLines() {
   var wordmark = document.querySelector('.brand-text .wordmark');
   if (!wordmark) return;
+
+  // If the image hasn't actually decoded yet, its measured width can be 0 or
+  // wildly wrong on some browsers, which would make everything below compute
+  // garbage (extreme negative letter-spacing that squashes the text into an
+  // unreadable overlapping mess). Wait for it to load and try again rather
+  // than trusting a bad snapshot.
+  if (!wordmark.complete || wordmark.naturalWidth === 0) {
+    wordmark.addEventListener('load', justifyBrandLines, { once: true });
+    return;
+  }
+
   var boxWidth = wordmark.getBoundingClientRect().width;
+  // A real rendered wordmark is always comfortably over 100px. Anything
+  // smaller means the measurement itself is unreliable (mid-layout, a
+  // rendering timing quirk, etc.) -- bail out and leave the text at normal
+  // spacing rather than risk squashing it.
+  if (boxWidth < 100) return;
+
   var targetWidth = boxWidth - STEM_INSET_LEFT - STEM_INSET_RIGHT;
 
   document.querySelectorAll('.brand-text .subline, .brand-text .tag').forEach(function (el) {
@@ -69,6 +90,12 @@ function justifyBrandLines() {
     var naturalWidth = measureTextWidth(fitText, font) + (spaceCount * wordSpacingAdjust);
     var extra = targetWidth - naturalWidth;
     var spacing = extra / (fitText.length - 1);
+
+    // A sane letter-spacing value for this design is at most a few pixels
+    // per character. Anything more extreme means naturalWidth or targetWidth
+    // was bad -- skip rather than visibly break the text.
+    if (Math.abs(spacing) > 15) { el.style.wordSpacing = ''; return; }
+
     el.style.letterSpacing = spacing + 'px';
   });
 }
