@@ -73,8 +73,16 @@
         <input type="text" id="contactName" placeholder="Full name">
       </div>
       <div class="contact-field">
+        <label for="contactRole">District role</label>
+        <input type="text" id="contactRole" placeholder="e.g. Principal, HR Director">
+      </div>
+      <div class="contact-field">
         <label for="contactEmail">Email address</label>
         <input type="email" id="contactEmail" placeholder="you@district.k12.ca.us">
+      </div>
+      <div class="contact-field">
+        <label for="contactPhone">Phone number</label>
+        <input type="tel" id="contactPhone" placeholder="(555) 555-5555">
       </div>
       <div class="contact-field">
         <label for="contactMessage">Message</label>
@@ -83,7 +91,7 @@
       <button type="submit" class="contact-submit" id="contactSubmitBtn">Send message</button>
     </form>
     <div class="contact-success" id="contactSuccess">
-      <h3>Message sent.</h3>
+      <h3>Message sent</h3>
       <p>Thanks for reaching out, we'll get back to you soon.</p>
     </div>
   </div>
@@ -97,7 +105,7 @@
           <img class="icon" src="assets/logo-icon-white.png" alt="Trackument">
           <img class="wordmark" src="assets/wordmark-white.png" alt="Trackument">
         </div>
-        <p>Legally grounded discipline documentation for California TK-12 administrators.</p>
+        <p>Legally grounded discipline documentation tool for California TK-12 administrators.</p>
       </div>
       <div class="footer-col">
         <h4>Product</h4>
@@ -123,7 +131,9 @@
   document.getElementById('contactForm').addEventListener('submit', async function (e) {
     e.preventDefault();
     var name = document.getElementById('contactName').value.trim();
+    var role = document.getElementById('contactRole').value.trim();
     var email = document.getElementById('contactEmail').value.trim();
+    var phone = document.getElementById('contactPhone').value.trim();
     var message = document.getElementById('contactMessage').value.trim();
     var errEl = document.getElementById('contactError');
     var btn = document.getElementById('contactSubmitBtn');
@@ -147,7 +157,7 @@
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, message })
+        body: JSON.stringify({ name, role, email, phone, message })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Something went wrong.');

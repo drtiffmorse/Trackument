@@ -333,6 +333,7 @@ img{ max-width:100%; display:block; }
 }
 .scope-inner h2{ font-size:2.3rem; font-weight:800; letter-spacing:-0.02em; color:#fff; margin:0 0 20px; }
 .scope-inner p{ color:#d7dbe6; font-size:1.2rem; margin:0 0 18px; }
+.scope-text{ display:flex; flex-direction:column; justify-content:center; }
 .scope-inner p:last-child{ margin-bottom:0; }
 .scope-panel{
   background:rgba(255,255,255,0.06);
@@ -403,8 +404,8 @@ img{ max-width:100%; display:block; }
 .pricing-table tbody tr.row-addon td{ background:rgba(238,140,41,0.05); }
 .price-badge{
   display:inline-block;
-  font-family:'IBM Plex Mono',monospace; font-size:0.72rem;
-  text-transform:uppercase; letter-spacing:0.05em; font-weight:700;
+  font-family:'Inter',sans-serif; font-size:0.75rem;
+  text-transform:uppercase; letter-spacing:0.04em; font-weight:700;
   padding:5px 12px; border-radius:999px; color:#fff;
 }
 .badge-district{ background:var(--navy); }
