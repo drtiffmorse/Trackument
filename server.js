@@ -44,7 +44,7 @@ function checkBeta(req, res, next) {
   // Always allow: the public marketing site, login, and its supporting api routes/assets.
   // Everything else, including the real app, stays behind the gate.
   const openExact = [
-    '/', '/login', '/privacy', '/checkout', '/welcome',
+    '/', '/login', '/privacy', '/checkout', '/welcome', '/contact',
     '/how-it-works.html', '/security.html', '/pricing.html',
     '/api/checkout', '/api/webhook', '/api/check-access'
   ];
@@ -199,20 +199,22 @@ async function recordInvoiceRequest(info) {
   `, [info.districtDomain, info.districtName, info.contactName || null, info.contactEmail || null, info.sitesNum, info.totalDue, info.tierLabel, info.agreedAt, info.wantsTraining || false]);
 }
 
-// ─── Training request notification ───────────────────────────────────────────
-// Sends an email to Tiffany whenever someone checks "add custom training" at
-// signup. Uses Resend (resend.com) since it's the simplest transactional email
-// API to wire up with no existing email infra in this codebase -- swap this
-// out freely if a different provider is preferred.
+// ─── Email notifications ──────────────────────────────────────────────────────
+// Sends transactional emails via Resend (resend.com), used for both the
+// custom-training checkbox at signup and the /contact form. No other email
+// infra existed in this codebase, so this is the one place it's wired up --
+// swap providers here if a different one is preferred.
 //
 // REQUIRES: a RESEND_API_KEY environment variable in Railway. Until that's
-// set, this silently no-ops (logs a warning) rather than breaking checkout --
-// a missing training-request email should never block someone from paying.
+// set, this silently no-ops (logs a warning) rather than breaking whatever
+// flow triggered it -- a missing notification email should never block
+// someone from paying or block a contact form from confirming success.
+const SALES_NOTIFY_EMAIL = process.env.SALES_NOTIFY_EMAIL || 'sales@trackument.com';
 const TRAINING_NOTIFY_EMAIL = process.env.TRAINING_NOTIFY_EMAIL || 'tiffany@trackument.com';
 
-async function notifyTrainingRequest({ districtName, contactName, contactEmail, tierLabel }) {
+async function sendNotificationEmail({ to, subject, text }) {
   if (!process.env.RESEND_API_KEY) {
-    console.warn('Training request received but RESEND_API_KEY is not set -- no email sent. District:', districtName, contactEmail);
+    console.warn('RESEND_API_KEY not set -- no email sent. Subject:', subject);
     return;
   }
   try {
@@ -224,15 +226,21 @@ async function notifyTrainingRequest({ districtName, contactName, contactEmail, 
       },
       body: JSON.stringify({
         from: 'Trackument <notifications@trackument.com>',
-        to: TRAINING_NOTIFY_EMAIL,
-        subject: 'Custom training requested — ' + districtName,
-        text: `${contactName} from ${districtName} requested custom training during signup.\n\nContact: ${contactName} <${contactEmail}>\nPlan selected: ${tierLabel}\n\nFollow up to schedule and quote pricing.`,
+        to, subject, text,
       }),
     });
   } catch (err) {
-    // Never let an email failure break the checkout flow.
-    console.error('Failed to send training request notification:', err.message);
+    // Never let an email failure break whatever flow triggered it.
+    console.error('Failed to send notification email:', err.message);
   }
+}
+
+async function notifyTrainingRequest({ districtName, contactName, contactEmail, tierLabel }) {
+  await sendNotificationEmail({
+    to: TRAINING_NOTIFY_EMAIL,
+    subject: 'Custom training requested — ' + districtName,
+    text: `${contactName} from ${districtName} requested custom training during signup.\n\nContact: ${contactName} <${contactEmail}>\nPlan selected: ${tierLabel}\n\nFollow up to schedule and quote pricing.`,
+  });
 }
 
 // ─── Stripe webhook (raw body) ────────────────────────────────────────────────
@@ -298,6 +306,21 @@ const PRICING_TIERS = [
   { label: 'District — over 20,000 ADA', price: 20000 },
   { label: 'Individual school site', price: 1000 },
 ];
+
+app.post('/api/contact', express.json(), async (req, res) => {
+  const { name, email, message } = req.body;
+  if (!name || !email || !message) return res.status(400).json({ error: 'Please fill in all fields.' });
+  if (!email.includes('@')) return res.status(400).json({ error: 'Please enter a valid email address.' });
+
+  await sendNotificationEmail({
+    to: SALES_NOTIFY_EMAIL,
+    subject: 'New contact form message — ' + name,
+    text: `${name} <${email}> sent a message via the Trackument contact form:\n\n${message}`,
+  });
+
+  console.log('=== CONTACT FORM ===\nFrom:', name, email, '\nMessage:', message);
+  res.json({ ok: true });
+});
 
 app.post('/api/checkout', async (req, res) => {
   const { districtName, contactName, contactEmail, districtDomain, tier, agreedToContract, wantsTraining, method } = req.body;
@@ -424,6 +447,7 @@ app.get('/api/admin/districts', async (req, res) => {
 // ─── Static routes ────────────────────────────────────────────────────────────
 app.get('/privacy',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'privacy.html')));
 app.get('/checkout', (req, res) => res.sendFile(path.join(__dirname, 'public', 'checkout.html')));
+app.get('/contact', (req, res) => res.sendFile(path.join(__dirname, 'public', 'contact.html')));
 app.get('/welcome',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'welcome.html')));
 
 // The real application. Not in checkBeta's open list, so this stays gated
