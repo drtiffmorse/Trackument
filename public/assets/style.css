@@ -87,6 +87,7 @@ img{ max-width:100%; display:block; }
   justify-content:flex-end;
   gap:clamp(10px,2.4vw,34px);
 }
+.home-nav{ margin-right:231.26px; }
 .primary-nav a{
   text-decoration:none;
   font-size:1.05rem;
@@ -182,7 +183,7 @@ img{ max-width:100%; display:block; }
   margin:0 0 16px;
 }
 .hero-visual{ flex:1 1 340px; min-width:0; display:flex; justify-content:flex-start; }
-.device-frame-wrap{ max-width:375px; width:100%; margin-top:-68px; margin-left:95px; transform:perspective(1400px) rotateY(-8deg) rotateX(2deg); }
+.device-frame-wrap{ max-width:375px; width:100%; margin-top:-68px; transform:perspective(1400px) rotateY(-8deg) rotateX(2deg); }
 .device-frame{
   background:linear-gradient(155deg,var(--navy),var(--navy-deep));
   border-radius:22px;

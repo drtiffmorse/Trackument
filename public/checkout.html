@@ -381,9 +381,6 @@
     <h2>Get started</h2>
     <p class="sub">Fill in your district information.</p>
 
-    <div class="error-msg" id="errorMsg"></div>
-    <div class="success-msg" id="successMsg"></div>
-
     <div class="form-grid">
       <div class="form-col">
         <label>District name</label>
@@ -467,6 +464,9 @@
         <div class="pay-sub">Invoice within 24 hours</div>
       </label>
     </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+    <div class="success-msg" id="successMsg"></div>
 
     <button class="btn-submit" id="checkoutBtn" onclick="handleCheckout()" disabled>Continue to Payment →</button>
     <div class="secure">🔒 Secured by Stripe · 30-day money-back guarantee</div>
@@ -647,8 +647,12 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Something went wrong.');
 
-      if (method === 'card' && data.url) {
-        window.location.href = data.url;
+      if (method === 'card') {
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          throw new Error('Payment could not be started. Please try again, or contact help@trackument.com.');
+        }
       } else {
         sucEl.innerHTML = '<strong>Invoice request received!</strong><br>We\'ll send a formal invoice to ' + contactEmail + ' within 24 hours. Access is activated as soon as payment is received.';
         sucEl.style.display = 'block';
