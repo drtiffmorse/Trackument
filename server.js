@@ -161,6 +161,8 @@ async function initDb() {
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS renewal_date TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS renewal_reminder_sent_for TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS contact_title TEXT;`);
+  await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS contact_phone TEXT;`);
   console.log('Database ready: districts and district_settings tables present.');
 }
 
@@ -174,8 +176,8 @@ async function getDistrictByDomain(domain) {
 
 async function activateDistrict(info) {
   await pool.query(`
-    INSERT INTO districts (domain, district_name, contact_name, contact_email, sites, status, stripe_session_id, amount_paid, activated_at, stripe_customer_id, stripe_subscription_id, renewal_date)
-    VALUES ($1, $2, $3, $4, $5, 'active', $6, $7, now(), $8, $9, $10)
+    INSERT INTO districts (domain, district_name, contact_name, contact_email, sites, status, stripe_session_id, amount_paid, activated_at, stripe_customer_id, stripe_subscription_id, renewal_date, contact_title, contact_phone)
+    VALUES ($1, $2, $3, $4, $5, 'active', $6, $7, now(), $8, $9, $10, $11, $12)
     ON CONFLICT (domain) DO UPDATE SET
       district_name = EXCLUDED.district_name,
       contact_name = EXCLUDED.contact_name,
@@ -187,15 +189,17 @@ async function activateDistrict(info) {
       activated_at = now(),
       stripe_customer_id = EXCLUDED.stripe_customer_id,
       stripe_subscription_id = EXCLUDED.stripe_subscription_id,
-      renewal_date = EXCLUDED.renewal_date
-  `, [info.domain, info.districtName, info.contactName || null, info.contactEmail || null, info.sites || 1, info.stripeSessionId || null, info.amountPaid || null, info.stripeCustomerId || null, info.stripeSubscriptionId || null, info.renewalDate || null]);
+      renewal_date = EXCLUDED.renewal_date,
+      contact_title = EXCLUDED.contact_title,
+      contact_phone = EXCLUDED.contact_phone
+  `, [info.domain, info.districtName, info.contactName || null, info.contactEmail || null, info.sites || 1, info.stripeSessionId || null, info.amountPaid || null, info.stripeCustomerId || null, info.stripeSubscriptionId || null, info.renewalDate || null, info.contactTitle || null, info.contactPhone || null]);
   console.log('District activated:', info.districtName, info.domain, '| renews:', info.renewalDate);
 }
 
 async function recordInvoiceRequest(info) {
   await pool.query(`
-    INSERT INTO districts (domain, district_name, contact_name, contact_email, sites, status, total_due, requested_at, tier_label, agreed_to_contract_at, wants_training)
-    VALUES ($1, $2, $3, $4, $5, 'pending_invoice', $6, now(), $7, $8, $9)
+    INSERT INTO districts (domain, district_name, contact_name, contact_email, sites, status, total_due, requested_at, tier_label, agreed_to_contract_at, wants_training, contact_title, contact_phone)
+    VALUES ($1, $2, $3, $4, $5, 'pending_invoice', $6, now(), $7, $8, $9, $10, $11)
     ON CONFLICT (domain) DO UPDATE SET
       district_name = EXCLUDED.district_name,
       contact_name = EXCLUDED.contact_name,
@@ -206,8 +210,10 @@ async function recordInvoiceRequest(info) {
       requested_at = now(),
       tier_label = EXCLUDED.tier_label,
       agreed_to_contract_at = EXCLUDED.agreed_to_contract_at,
-      wants_training = EXCLUDED.wants_training
-  `, [info.districtDomain, info.districtName, info.contactName || null, info.contactEmail || null, info.sitesNum, info.totalDue, info.tierLabel, info.agreedAt, info.wantsTraining || false]);
+      wants_training = EXCLUDED.wants_training,
+      contact_title = EXCLUDED.contact_title,
+      contact_phone = EXCLUDED.contact_phone
+  `, [info.districtDomain, info.districtName, info.contactName || null, info.contactEmail || null, info.sitesNum, info.totalDue, info.tierLabel, info.agreedAt, info.wantsTraining || false, info.contactTitle || null, info.contactPhone || null]);
 }
 
 // ─── Email notifications ──────────────────────────────────────────────────────
@@ -323,6 +329,8 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
         domain: meta.districtDomain,
         contactName: meta.contactName,
         contactEmail: meta.contactEmail || session.customer_email,
+        contactTitle: meta.contactTitle,
+        contactPhone: meta.contactPhone,
         sites: parseInt(meta.sites) || 1,
         stripeSessionId: session.id,
         amountPaid: session.amount_total,
@@ -411,7 +419,7 @@ app.post('/api/contact', express.json(), async (req, res) => {
 });
 
 app.post('/api/checkout', async (req, res) => {
-  const { districtName, contactName, contactEmail, districtDomain, tier, agreedToContract, wantsTraining, method } = req.body;
+  const { districtName, contactName, contactTitle, contactPhone, contactEmail, districtDomain, tier, agreedToContract, wantsTraining, method } = req.body;
   if (!districtName || !contactEmail || !districtDomain) return res.status(400).json({ error: 'Missing required fields.' });
   if (!agreedToContract) return res.status(400).json({ error: 'You must agree to the Service Agreement before continuing.' });
 
@@ -426,8 +434,13 @@ app.post('/api/checkout', async (req, res) => {
   }
 
   if (method === 'invoice') {
-    await recordInvoiceRequest({ districtName, contactName, contactEmail, districtDomain, sitesNum, totalDue: totalCents / 100, tierLabel: selectedTier.label, agreedAt, wantsTraining });
-    console.log('=== INVOICE REQUEST ===\nDistrict:', districtName, '\nContact:', contactName, contactEmail, '\nDomain:', districtDomain, '\nTier:', selectedTier.label, '\nAmount: $' + (totalCents / 100), '\nAgreed to contract:', agreedAt, '\nWants training:', !!wantsTraining);
+    await recordInvoiceRequest({ districtName, contactName, contactEmail, districtDomain, sitesNum, totalDue: totalCents / 100, tierLabel: selectedTier.label, agreedAt, wantsTraining, contactTitle, contactPhone });
+    await sendNotificationEmail({
+      to: SALES_NOTIFY_EMAIL,
+      subject: 'Invoice requested — ' + districtName,
+      text: `${contactName}${contactTitle ? ' (' + contactTitle + ')' : ''} <${contactEmail}> from ${districtName} requested an invoice at signup.\n\nPhone: ${contactPhone || 'not provided'}\nDomain: ${districtDomain}\nPlan: ${selectedTier.label}\nAmount: $${(totalCents / 100).toLocaleString()}\nWants training: ${wantsTraining ? 'Yes' : 'No'}\n\nSend a formal invoice to ${contactEmail} within 24 hours per our published terms.`,
+    });
+    console.log('=== INVOICE REQUEST ===\nDistrict:', districtName, '\nContact:', contactName, contactTitle, contactEmail, contactPhone, '\nDomain:', districtDomain, '\nTier:', selectedTier.label, '\nAmount: $' + (totalCents / 100), '\nAgreed to contract:', agreedAt, '\nWants training:', !!wantsTraining);
     return res.json({ ok: true, method: 'invoice' });
   }
 
@@ -451,9 +464,9 @@ app.post('/api/checkout', async (req, res) => {
         quantity: 1,
       }],
       subscription_data: {
-        metadata: { districtName, contactName, contactEmail, districtDomain, tierLabel: selectedTier.label },
+        metadata: { districtName, contactName, contactEmail, districtDomain, tierLabel: selectedTier.label, contactTitle: contactTitle || '', contactPhone: contactPhone || '' },
       },
-      metadata: { districtName, contactName, contactEmail, districtDomain, tierLabel: selectedTier.label, agreedToContractAt: agreedAt, wantsTraining: String(!!wantsTraining) },
+      metadata: { districtName, contactName, contactEmail, districtDomain, tierLabel: selectedTier.label, agreedToContractAt: agreedAt, wantsTraining: String(!!wantsTraining), contactTitle: contactTitle || '', contactPhone: contactPhone || '' },
       success_url: BASE_URL + '/welcome?session_id={CHECKOUT_SESSION_ID}',
       cancel_url: BASE_URL + '/checkout',
     });
