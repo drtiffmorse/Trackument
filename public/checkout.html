@@ -394,6 +394,17 @@
 
     <div class="form-grid">
       <div class="form-col">
+        <label>Title</label>
+        <input type="text" id="contactTitle" placeholder="e.g. Assistant Superintendent">
+      </div>
+      <div class="form-col">
+        <label>Phone number</label>
+        <input type="tel" id="contactPhone" placeholder="(555) 555-5555">
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-col">
         <label>District email address</label>
         <input type="email" id="contactEmail" placeholder="you@district.k12.ca.us">
       </div>
@@ -444,25 +455,25 @@
       <label for="wantsTraining">I'd also like to add custom training for my team. <span class="training-note">We'll follow up after signup with pricing and schedule information.</span></label>
     </div>
 
-    <div class="agree-row">
-      <input type="checkbox" id="agreeContract" onchange="document.getElementById('checkoutBtn').disabled = !this.checked;">
-      <label for="agreeContract">I have read and agree to the <a href="/terms" target="_blank">Trackument Service Agreement</a>, and I am authorized to approve on behalf of my district.</label>
-    </div>
-
     <div class="payment-label">Payment method</div>
     <div class="payment-options">
-      <label class="pay-opt selected" id="opt-card">
+      <label class="pay-opt selected" id="opt-card" onclick="document.querySelector('input[value=card]').checked = true; selectPayment('card');">
         <input type="radio" name="paymentMethod" value="card" checked onchange="selectPayment('card')">
         <div class="pay-icon">💳</div>
         <div class="pay-name">Credit Card</div>
         <div class="pay-sub">Pay now — instant access</div>
       </label>
-      <label class="pay-opt" id="opt-invoice">
+      <label class="pay-opt" id="opt-invoice" onclick="document.querySelector('input[value=invoice]').checked = true; selectPayment('invoice');">
         <input type="radio" name="paymentMethod" value="invoice" onchange="selectPayment('invoice')">
         <div class="pay-icon">📋</div>
         <div class="pay-name">Purchase Order / Check</div>
         <div class="pay-sub">Invoice within 24 hours</div>
       </label>
+    </div>
+
+    <div class="agree-row" id="agreeRow" style="display:none;">
+      <input type="checkbox" id="agreeContract" onchange="document.getElementById('checkoutBtn').disabled = !this.checked;">
+      <label for="agreeContract">I have read and agree to the <a href="/terms" target="_blank">Trackument Service Agreement</a>, and I am authorized to approve on behalf of my district.</label>
     </div>
 
     <div class="error-msg" id="errorMsg"></div>
@@ -485,7 +496,7 @@
     <p>Each school, continuation school, alternative education site, or district office location where administrators will use Trackument counts as one site.</p>
   </div>
   <div class="faq-item">
-    <h3>How many administrators can use it?</h3>
+    <h3>How many administrators can use Trackument?</h3>
     <p>Every principal, assistant principal, and district administrator at your included sites can use Trackument at no additional cost.</p>
   </div>
   <div class="faq-item">
@@ -502,7 +513,7 @@
   </div>
   <div class="faq-item">
     <h3>What if we need to add sites mid-year?</h3>
-    <p>Contact us at <a href="mailto:help@trackument.com" style="color:var(--indigo);">help@trackument.com</a> and we'll send a prorated invoice for the additional sites.</p>
+    <p>Contact us at <a href="mailto:sales@trackument.com" style="color:var(--indigo);">sales@trackument.com</a> and we'll send a prorated invoice for the additional sites.</p>
   </div>
 </div>
 
@@ -524,7 +535,7 @@
     </div>
     <div class="footer-col">
       <h4>Contact</h4>
-      <a href="mailto:help@trackument.com">help@trackument.com</a>
+      <a href="mailto:sales@trackument.com">sales@trackument.com</a>
       <a href="/login">Log in</a>
       <a href="/privacy">Privacy Policy</a>
     </div>
@@ -602,11 +613,21 @@
     document.getElementById('opt-invoice').classList.toggle('selected', method === 'invoice');
     const btn = document.getElementById('checkoutBtn');
     btn.textContent = method === 'card' ? 'Continue to Payment →' : 'Request Invoice →';
+    document.getElementById('agreeRow').style.display = 'flex';
   }
+
+  // Credit Card is pre-selected by default, so reveal the agreement checkbox
+  // on load too -- otherwise someone who never clicks a payment option (just
+  // accepts the default) would never see it and could get stuck.
+  document.addEventListener('DOMContentLoaded', function () {
+    selectPayment('card');
+  });
 
   async function handleCheckout() {
     const districtName = document.getElementById('districtName').value.trim();
     const contactName  = document.getElementById('contactName').value.trim();
+    const contactTitle = document.getElementById('contactTitle').value.trim();
+    const contactPhone = document.getElementById('contactPhone').value.trim();
     const contactEmail = document.getElementById('contactEmail').value.trim();
     const districtDomain = document.getElementById('districtDomain').value.trim().toLowerCase().replace(/^@/, '');
     const method = document.querySelector('input[name="paymentMethod"]:checked').value;
@@ -642,7 +663,7 @@
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ districtName, contactName, contactEmail, districtDomain, tier: selectedTier, agreedToContract: agreed, wantsTraining, method })
+        body: JSON.stringify({ districtName, contactName, contactTitle, contactPhone, contactEmail, districtDomain, tier: selectedTier, agreedToContract: agreed, wantsTraining, method })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Something went wrong.');
@@ -651,7 +672,7 @@
         if (data.url) {
           window.location.href = data.url;
         } else {
-          throw new Error('Payment could not be started. Please try again, or contact help@trackument.com.');
+          throw new Error('Payment could not be started. Please try again, or contact sales@trackument.com.');
         }
       } else {
         sucEl.innerHTML = '<strong>Invoice request received!</strong><br>We\'ll send a formal invoice to ' + contactEmail + ' within 24 hours. Access is activated as soon as payment is received.';

@@ -87,7 +87,7 @@ img{ max-width:100%; display:block; }
   justify-content:flex-end;
   gap:clamp(10px,2.4vw,34px);
 }
-.home-nav{ margin-right:231.26px; }
+.home-nav{ }
 .primary-nav a{
   text-decoration:none;
   font-size:1.05rem;
@@ -130,9 +130,8 @@ img{ max-width:100%; display:block; }
   display:flex;
   gap:48px;
   align-items:center;
-  flex-wrap:wrap;
 }
-.hero-text{ flex:1 1 420px; min-width:0; }
+.hero-text{ flex:1 1 886px; min-width:0; }
 .hero-badge{
   display:inline-flex;
   align-items:center;
@@ -182,7 +181,7 @@ img{ max-width:100%; display:block; }
   max-width:560px;
   margin:0 0 16px;
 }
-.hero-visual{ flex:1 1 340px; min-width:0; display:flex; justify-content:flex-start; }
+.hero-visual{ flex:1 1 340px; min-width:0; display:flex; justify-content:flex-end; }
 .device-frame-wrap{ max-width:375px; width:100%; margin-top:-68px; transform:perspective(1400px) rotateY(-8deg) rotateX(2deg); }
 .device-frame{
   background:linear-gradient(155deg,var(--navy),var(--navy-deep));
@@ -222,7 +221,7 @@ img{ max-width:100%; display:block; }
   background:linear-gradient(120deg,var(--cream) 0%,var(--cream) 45%,rgba(40,11,91,0.4) 75%,rgba(26,7,64,0.65) 100%);
 }
 .page-hero-inner{ max-width:1400px; margin:0 auto 56px; }
-.page-hero--fade .page-eyebrow{ margin-bottom:35px; margin-left:78px; }
+.page-hero--fade .page-eyebrow{ margin-bottom:35px; }
 .page-hero--fade .page-hero-inner{ margin-bottom:35px; }
 .page-eyebrow{
   font-family:'IBM Plex Mono',monospace;
@@ -240,7 +239,7 @@ img{ max-width:100%; display:block; }
   color:var(--navy);
   margin:0;
 }
-.page-hero p.sub{ font-size:1.2rem; color:var(--text); margin:16px 0 0; max-width:760px; }
+.page-hero p.sub{ font-size:1.2rem; color:var(--text); margin:16px 0 0; }
 
 /* ---------- How it works: setup note + steps ---------- */
 .section-body{ max-width:1400px; margin:0 auto; padding:0 0 48px; }
@@ -375,7 +374,7 @@ img{ max-width:100%; display:block; }
 .security-card p{ font-size:1.08rem; color:var(--text); line-height:1.6; margin:0; }
 
 /* ---------- Pricing ---------- */
-.pricing-subhead{ font-size:1.2rem; color:var(--text); margin:0; }
+.pricing-subhead{ font-size:1.2rem; color:var(--text); margin:16px 0 0; }
 
 .pricing-table-wrap{
   max-width:1400px; margin:44px auto 0;
