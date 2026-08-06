@@ -323,6 +323,9 @@ app.get('/api/auth/google/callback', async (req, res) => {
   const code = req.query.code;
   if (!code || !GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) return res.redirect('/login?error=google_failed');
 
+  const redirectUri = BASE_URL + '/api/auth/google/callback';
+  console.log('Google token exchange using redirect_uri:', redirectUri, '| client_id ends in:', GOOGLE_CLIENT_ID.slice(-20));
+
   try {
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -331,12 +334,18 @@ app.get('/api/auth/google/callback', async (req, res) => {
         code,
         client_id: GOOGLE_CLIENT_ID,
         client_secret: GOOGLE_CLIENT_SECRET,
-        redirect_uri: BASE_URL + '/api/auth/google/callback',
+        redirect_uri: redirectUri,
         grant_type: 'authorization_code',
       }),
     });
     const tokenData = await tokenRes.json();
-    if (!tokenData.access_token) throw new Error('No access token from Google');
+    if (!tokenData.access_token) {
+      // Google's response includes a specific reason (e.g. redirect_uri_mismatch,
+      // invalid_client) -- log the whole thing rather than a generic message,
+      // since that's the actual diagnostic information.
+      console.error('Google token exchange rejected:', JSON.stringify(tokenData));
+      throw new Error('No access token from Google: ' + (tokenData.error || 'unknown') + ' - ' + (tokenData.error_description || ''));
+    }
 
     const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: { Authorization: 'Bearer ' + tokenData.access_token },
