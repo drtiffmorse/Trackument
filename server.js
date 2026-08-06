@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const fetch = require('node-fetch');
 const path = require('path');
 const fs = require('fs');
@@ -13,7 +14,10 @@ const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const BASE_URL = process.env.BASE_URL || 'https://www.trackument.com';
 const BETA_PASSWORD = process.env.BETA_PASSWORD || 'FriendofTiff';
 const COOKIE_NAME = 'trackument_beta';
+const SESSION_COOKIE_NAME = 'trackument_session';
 const DATABASE_URL = process.env.DATABASE_URL;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
 if (!ANTHROPIC_API_KEY) { console.error('ERROR: ANTHROPIC_API_KEY not set'); process.exit(1); }
 if (!DATABASE_URL) { console.error('ERROR: DATABASE_URL not set. Add the Postgres plugin in Railway before deploying this version.'); process.exit(1); }
@@ -40,19 +44,80 @@ function parseCookies(cookieHeader) {
   }, {});
 }
 
-function checkBeta(req, res, next) {
+async function checkBeta(req, res, next) {
   // Always allow: the public marketing site, login, and its supporting api routes/assets.
   // Everything else, including the real app, stays behind the gate.
   const openExact = [
     '/', '/login', '/privacy', '/checkout', '/welcome', '/contact', '/terms',
     '/how-it-works.html', '/security.html', '/pricing.html',
-    '/api/checkout', '/api/webhook', '/api/check-access'
+    '/api/checkout', '/api/webhook', '/api/check-access',
+    '/api/auth/request-link', '/api/auth/verify', '/api/auth/google', '/api/auth/google/callback',
   ];
   const openPrefixes = ['/api/', '/assets/'];
   if (openExact.includes(req.path) || openPrefixes.some(p => req.path.startsWith(p))) return next();
   const cookies = parseCookies(req.headers.cookie);
+
+  // Personal/admin access: the shared password, unchanged from before.
   if (cookies[COOKIE_NAME] === BETA_PASSWORD) return next();
+
+  // District access: a real session created by Google sign-in or a magic link.
+  if (cookies[SESSION_COOKIE_NAME]) {
+    try {
+      const session = await getValidSession(cookies[SESSION_COOKIE_NAME]);
+      if (session) { req.districtSession = session; return next(); }
+    } catch (err) {
+      console.error('Session check failed:', err.message);
+    }
+  }
+
   res.redirect('/login');
+}
+
+// ─── District sign-in: shared helpers ─────────────────────────────────────────
+// Both Google sign-in and the magic-link flow funnel through these two checks:
+// does this email's domain belong to a district that's actually paid, and if
+// so, issue them a real session, not the shared admin password.
+
+function emailDomain(email) {
+  return (email || '').toLowerCase().trim().split('@')[1] || '';
+}
+
+async function findActiveDistrictByDomain(domain) {
+  if (!domain) return null;
+  const { rows } = await pool.query(
+    `SELECT domain, district_name, status FROM districts WHERE domain = $1 AND status = 'active' LIMIT 1`,
+    [domain]
+  );
+  return rows[0] || null;
+}
+
+async function createSession(email, domain, method) {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days, matching the old cookie's lifetime
+  await pool.query(
+    `INSERT INTO sessions (token, email, district_domain, login_method, expires_at) VALUES ($1, $2, $3, $4, $5)`,
+    [token, email, domain, method, expiresAt]
+  );
+  return token;
+}
+
+async function getValidSession(token) {
+  const { rows } = await pool.query(
+    `SELECT s.*, d.status AS district_status FROM sessions s
+     JOIN districts d ON d.domain = s.district_domain
+     WHERE s.token = $1 AND s.expires_at > now()`,
+    [token]
+  );
+  const session = rows[0];
+  // Re-check the district is still active on every request -- this is what
+  // makes access automatically turn off if a district doesn't renew, rather
+  // than staying valid for the full 30-day session regardless of payment status.
+  if (session && session.district_status === 'active') return session;
+  return null;
+}
+
+function setSessionCookie(res, token) {
+  res.setHeader('Set-Cookie', `${SESSION_COOKIE_NAME}=${token}; Path=/; HttpOnly; Max-Age=${30 * 24 * 60 * 60}; SameSite=Lax`);
 }
 
 // ─── Login page ───────────────────────────────────────────────────────────────
@@ -68,21 +133,30 @@ app.get('/login', (req, res) => {
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:'Inter',sans-serif;background:#280b5b;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
     body::after{content:'';display:block;position:fixed;bottom:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#280b5b 0 25%,#2f9c90 25% 50%,#ee8c29 50% 75%,#dc012b 75% 100%);}
-    .card{background:#fff;border-radius:14px;padding:48px 40px;width:100%;max-width:380px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.25);}
+    .card{background:#fff;border-radius:14px;padding:48px 40px;width:100%;max-width:400px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.25);}
     .login-icon{height:52px;width:auto;margin-bottom:12px;}
     .login-wordmark{height:23px;width:auto;margin-bottom:6px;}
     .subline{font-family:'IBM Plex Mono',monospace;font-size:0.66rem;text-transform:uppercase;color:#280b5b;font-weight:700;margin-bottom:4px;letter-spacing:0.04em;}
-    .tag{font-family:'IBM Plex Mono',monospace;font-size:0.68rem;text-transform:uppercase;color:#ee8c29;font-weight:600;letter-spacing:0.1em;margin-bottom:32px;}
-    .err{color:#dc2626;font-size:0.82rem;margin-bottom:10px;display:none;}
-    input{width:100%;padding:12px 14px;border:1.5px solid #e6e1f2;border-radius:8px;font-size:0.95rem;font-family:'Inter',sans-serif;margin-bottom:12px;text-align:center;color:#280b5b;transition:border-color .15s;}
+    .tag{font-family:'IBM Plex Mono',monospace;font-size:0.68rem;text-transform:uppercase;color:#ee8c29;font-weight:600;letter-spacing:0.1em;margin-bottom:28px;}
+    .err{color:#dc2626;font-size:0.82rem;margin-bottom:14px;display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:10px 12px;}
+    .notice{color:#15803d;font-size:0.82rem;margin-bottom:14px;display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:10px 12px;}
+    input{width:100%;padding:12px 14px;border:1.5px solid #e6e1f2;border-radius:8px;font-size:0.95rem;font-family:'Inter',sans-serif;margin-bottom:10px;text-align:center;color:#280b5b;transition:border-color .15s;}
     input:focus{outline:none;border-color:#280b5b;}
-    button{width:100%;padding:13px;background:#ee8c29;color:#1a0740;border:none;border-radius:8px;font-size:0.97rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .15s;}
+    button{width:100%;padding:13px;border:none;border-radius:8px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .15s;}
     button:hover{opacity:0.88;}
-    .links{margin-top:20px;display:flex;justify-content:center;gap:16px;font-size:0.78rem;color:#9ca3af;}
-    .links a{color:#9ca3af;text-decoration:none;}
-    .links a:hover{color:#280b5b;}
+    .btn-google{background:#fff;color:#3c4043;border:1.5px solid #dadce0 !important;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px;}
+    .btn-google img{height:18px;width:18px;}
+    .btn-link{background:#ee8c29;color:#1a0740;}
+    .divider{display:flex;align-items:center;gap:10px;margin:18px 0;font-size:0.76rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;}
+    .divider::before,.divider::after{content:'';flex:1;height:1px;background:#e6e1f2;}
+    .admin-toggle{margin-top:22px;font-size:0.8rem;color:#9ca3af;cursor:pointer;text-decoration:underline;background:none;border:none;padding:0;font-weight:400;width:auto;}
+    .admin-toggle:hover{opacity:1;color:#280b5b;}
+    .admin-section{display:none;margin-top:16px;padding-top:16px;border-top:1px solid #e6e1f2;}
     .signup{margin-top:18px;font-size:0.85rem;color:#75726a;}
     .signup a{color:#280b5b;font-weight:600;text-decoration:none;}
+    .links{margin-top:16px;display:flex;justify-content:center;gap:16px;font-size:0.78rem;color:#9ca3af;}
+    .links a{color:#9ca3af;text-decoration:none;}
+    .links a:hover{color:#280b5b;}
   </style>
 </head>
 <body>
@@ -91,13 +165,65 @@ app.get('/login', (req, res) => {
     <img class="login-wordmark" src="/assets/wordmark.png" alt="Trackument">
     <div class="subline">Employee Discipline</div>
     <div class="tag">Documented. Defensible. Done.</div>
-    <div class="err" id="err">Incorrect password. Please try again.</div>
-    <input type="password" id="pw" placeholder="Beta Password" onkeydown="if(event.key==='Enter')login()">
-    <button onclick="login()">Log in →</button>
+
+    <div class="err" id="err"></div>
+    <div class="notice" id="notice"></div>
+
+    <a href="/api/auth/google" style="text-decoration:none;">
+      <button class="btn-google" type="button">
+        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHBhdGggZmlsbD0iI0ZGQzEwNyIgZD0iTTQzLjYxMSwyMC4wODNINDJWMjBIMjR2OGgxMS4zMDNjLTEuNjQ5LDQuNjU3LTYuMDgsOC0xMS4zMDMsOGMtNi42MjcsMC0xMi01LjM3My0xMi0xMmMwLTYuNjI3LDUuMzczLTEyLDEyLTEyYzMuMDU5LDAsNS44NDIsMS4xNTQsNy45NjEsMy4wMzlsNS42NTctNS42NTdDMzQuMDQ2LDYuMDUzLDI5LjI2OCw0LDI0LDRDMTIuOTU1LDQsNCwxMi45NTUsNCwyNGMwLDExLjA0NSw4Ljk1NSwyMCwyMCwyMGMxMS4wNDUsMCwyMC04Ljk1NSwyMC0yMEM0NCwyMi42NTksNDMuODYyLDIxLjM1LDQzLjYxMSwyMC4wODN6Ii8+PHBhdGggZmlsbD0iI0ZGM0QwMCIgZD0iTTYuMzA2LDE0LjY5MWwyLjE5NCw3LjkyMkMxMi4yNzYsMTUuMDI3LDE3LjcxMSwxMSwyNCwxMWMzLjA1OSwwLDUuODQyLDEuMTU0LDcuOTYxLDMuMDM5bDUuNjU3LTUuNjU3QzM0LjA0Niw2LjA1MywyOS4yNjgsNCwyNCw0QzE2LjMxOCw0LDkuNjU2LDguMzM3LDYuMzA2LDE0LjY5MXoiLz48cGF0aCBmaWxsPSIjNENBRjUwIiBkPSJNMjQsNDRjNS4xNjYsMCw5Ljg2LTEuOTc3LDEzLjQwOS01LjE5bC02LjE5LTUuMjM4QzI5LjIxMSwzNS4wOTEsMjYuNzE1LDM2LDI0LDM2Yy01LjIwMiwwLTkuNjE5LTMuMzE3LTExLjI4My03Ljk0NmwtNi41MjIsNS4wMjVDOS41MDUsMzkuNTU2LDE2LjIyNyw0NCwyNCw0NHoiLz48cGF0aCBmaWxsPSIjMTk3NkQyIiBkPSJNNDMuNjExLDIwLjA4M0g0MlYyMEgyNHY4aDExLjMwM2MtMC43OTIsMi4yMzctMi4yMzEsNC4xNjYtNC4wODcsNS41NzFjMC4wMDEtMC4wMDEsMC4wMDItMC4wMDEsMC4wMDMtMC4wMDJsNi4xOSw1LjIzOEM0Ny4wMDIsMzUuNjM3LDQ0LDQ0LDI0LDQ0YzExLjA0NSwwLDIwLTguOTU1LDIwLTIwQzQ0LDIyLjY1OSw0My44NjIsMjEuMzUsNDMuNjExLDIwLjA4M3oiLz48L3N2Zz4=" alt="">
+        Sign in with Google
+      </button>
+    </a>
+
+    <div class="divider">or</div>
+
+    <input type="email" id="emailInput" placeholder="you@district.k12.ca.us" onkeydown="if(event.key==='Enter')requestLink()">
+    <button class="btn-link" onclick="requestLink()">Email me a sign-in link →</button>
+
     <div class="signup">Don't have access? <a href="/checkout">Sign up →</a></div>
     <div class="links"><a href="/privacy">Privacy Policy</a> · <a href="mailto:help@trackument.com">help@trackument.com</a></div>
+
+    <button class="admin-toggle" type="button" onclick="document.getElementById('adminSection').style.display='block';this.style.display='none';">Trackument staff login</button>
+    <div class="admin-section" id="adminSection">
+      <input type="password" id="pw" placeholder="Admin password" onkeydown="if(event.key==='Enter')login()">
+      <button onclick="login()" style="background:#280b5b;color:#fff;">Log in as admin →</button>
+    </div>
   </div>
   <script>
+    const params = new URLSearchParams(window.location.search);
+    const errorMessages = {
+      invalid_link: 'That sign-in link is invalid.',
+      expired_link: 'That sign-in link has expired or was already used. Request a new one below.',
+      inactive_district: 'We couldn\\'t find an active Trackument subscription for that email\\'s district. Contact help@trackument.com if you think this is a mistake.',
+      google_not_configured: 'Google sign-in isn\\'t set up yet. Try emailing yourself a sign-in link instead.',
+      google_failed: 'Something went wrong signing in with Google. Please try again.',
+      google_email_unverified: 'Your Google account\\'s email isn\\'t verified. Please verify it with Google and try again.',
+    };
+    const errCode = params.get('error');
+    if (errCode && errorMessages[errCode]) {
+      const errEl = document.getElementById('err');
+      errEl.textContent = errorMessages[errCode];
+      errEl.style.display = 'block';
+    }
+
+    async function requestLink() {
+      const email = document.getElementById('emailInput').value.trim();
+      const err = document.getElementById('err');
+      const notice = document.getElementById('notice');
+      err.style.display = 'none';
+      notice.style.display = 'none';
+      if (!email.includes('@')) {
+        err.textContent = 'Please enter a valid email address.';
+        err.style.display = 'block';
+        return;
+      }
+      const res = await fetch('/api/auth/request-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+      const data = await res.json();
+      notice.textContent = data.message || 'Check your email for a sign-in link.';
+      notice.style.display = 'block';
+    }
+
     async function login() {
       const pw = document.getElementById('pw').value;
       const err = document.getElementById('err');
@@ -105,7 +231,7 @@ app.get('/login', (req, res) => {
       const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) });
       const data = await res.json();
       if (data.ok) { window.location.href = '/app'; }
-      else { err.style.display = 'block'; document.getElementById('pw').value = ''; }
+      else { err.textContent = 'Incorrect password. Please try again.'; err.style.display = 'block'; document.getElementById('pw').value = ''; }
     }
   </script>
 </body>
@@ -119,6 +245,122 @@ app.post('/api/login', express.json(), (req, res) => {
     return res.json({ ok: true });
   }
   res.status(401).json({ ok: false });
+});
+
+// ─── District sign-in: magic link ─────────────────────────────────────────────
+// Always returns the same generic response whether or not the email matched an
+// active district -- this avoids letting someone probe which domains are paid
+// customers just by trying different emails and watching for a different reply.
+app.post('/api/auth/request-link', express.json(), async (req, res) => {
+  const email = (req.body.email || '').toLowerCase().trim();
+  if (!email.includes('@')) return res.status(400).json({ error: 'Please enter a valid email address.' });
+
+  try {
+    const domain = emailDomain(email);
+    const district = await findActiveDistrictByDomain(domain);
+
+    if (district) {
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+      await pool.query(
+        `INSERT INTO login_tokens (token, email, district_domain, expires_at) VALUES ($1, $2, $3, $4)`,
+        [token, email, domain, expiresAt]
+      );
+      const link = BASE_URL + '/api/auth/verify?token=' + token;
+      await sendNotificationEmail({
+        to: email,
+        subject: 'Your Trackument sign-in link',
+        text: `Click below to sign in to Trackument for ${district.district_name}:\n\n${link}\n\nThis link expires in 15 minutes and can only be used once. If you didn't request this, you can safely ignore this email.`,
+      });
+    }
+    // Same response either way -- see note above.
+    res.json({ ok: true, message: 'If that email is associated with an active district, a sign-in link is on its way.' });
+  } catch (err) {
+    console.error('request-link failed:', err.message);
+    res.status(500).json({ error: 'Something went wrong. Please try again.' });
+  }
+});
+
+app.get('/api/auth/verify', async (req, res) => {
+  const token = req.query.token;
+  if (!token) return res.redirect('/login?error=invalid_link');
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT * FROM login_tokens WHERE token = $1 AND expires_at > now() AND used_at IS NULL`,
+      [token]
+    );
+    const loginToken = rows[0];
+    if (!loginToken) return res.redirect('/login?error=expired_link');
+
+    const district = await findActiveDistrictByDomain(loginToken.district_domain);
+    if (!district) return res.redirect('/login?error=inactive_district');
+
+    await pool.query(`UPDATE login_tokens SET used_at = now() WHERE token = $1`, [token]);
+    const sessionToken = await createSession(loginToken.email, loginToken.district_domain, 'magic_link');
+    setSessionCookie(res, sessionToken);
+    res.redirect('/app');
+  } catch (err) {
+    console.error('verify failed:', err.message);
+    res.redirect('/login?error=google_failed');
+  }
+});
+
+// ─── District sign-in: Google OAuth ───────────────────────────────────────────
+app.get('/api/auth/google', (req, res) => {
+  if (!GOOGLE_CLIENT_ID) return res.redirect('/login?error=google_not_configured');
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: BASE_URL + '/api/auth/google/callback',
+    response_type: 'code',
+    scope: 'email profile',
+    prompt: 'select_account',
+  });
+  res.redirect('https://accounts.google.com/o/oauth2/v2/auth?' + params.toString());
+});
+
+app.get('/api/auth/google/callback', async (req, res) => {
+  const code = req.query.code;
+  if (!code || !GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) return res.redirect('/login?error=google_failed');
+
+  try {
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: GOOGLE_CLIENT_ID,
+        client_secret: GOOGLE_CLIENT_SECRET,
+        redirect_uri: BASE_URL + '/api/auth/google/callback',
+        grant_type: 'authorization_code',
+      }),
+    });
+    const tokenData = await tokenRes.json();
+    if (!tokenData.access_token) throw new Error('No access token from Google');
+
+    const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: 'Bearer ' + tokenData.access_token },
+    });
+    const userData = await userRes.json();
+    const email = (userData.email || '').toLowerCase();
+    if (!email || !userData.verified_email) return res.redirect('/login?error=google_email_unverified');
+
+    const domain = emailDomain(email);
+    const district = await findActiveDistrictByDomain(domain);
+    if (!district) return res.redirect('/login?error=inactive_district');
+
+    const sessionToken = await createSession(email, domain, 'google');
+    setSessionCookie(res, sessionToken);
+    res.redirect('/app');
+  } catch (err) {
+    console.error('Google sign-in failed:', err.message);
+    res.redirect('/login?error=google_failed');
+  }
+});
+
+app.get('/api/auth/logout', (req, res) => {
+  res.setHeader('Set-Cookie', `${SESSION_COOKIE_NAME}=; Path=/; HttpOnly; Max-Age=0`);
+  res.redirect('/login');
 });
 
 // ─── District data store (Postgres) ───────────────────────────────────────────
@@ -163,6 +405,29 @@ async function initDb() {
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS renewal_reminder_sent_for TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS contact_title TEXT;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS contact_phone TEXT;`);
+
+  // District sign-in: magic-link tokens (short-lived, one-time use) and the
+  // sessions they (or Google sign-in) create once someone's actually logged in.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS login_tokens (
+      token TEXT PRIMARY KEY,
+      email TEXT NOT NULL,
+      district_domain TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      expires_at TIMESTAMPTZ NOT NULL,
+      used_at TIMESTAMPTZ
+    );
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      token TEXT PRIMARY KEY,
+      email TEXT NOT NULL,
+      district_domain TEXT NOT NULL,
+      login_method TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      expires_at TIMESTAMPTZ NOT NULL
+    );
+  `);
   console.log('Database ready: districts and district_settings tables present.');
 }
 
@@ -337,6 +602,11 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
         stripeCustomerId: session.customer,
         stripeSubscriptionId: session.subscription,
         renewalDate,
+      });
+      await sendNotificationEmail({
+        to: SALES_NOTIFY_EMAIL,
+        subject: 'New sale — ' + meta.districtName,
+        text: `${meta.contactName} <${meta.contactEmail || session.customer_email}> from ${meta.districtName} just completed payment.\n\nDomain: ${meta.districtDomain}\nPlan: ${meta.tierLabel}\nAmount: $${(session.amount_total / 100).toLocaleString()}\nRenews: ${renewalDate ? new Date(renewalDate).toLocaleDateString() : 'unknown'}\n\nThey now have access at trackument.com/login using the shared beta password. No further action needed on your end unless you want to reach out personally.`,
       });
     }
   }
