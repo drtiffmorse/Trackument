@@ -471,15 +471,10 @@
       </label>
     </div>
 
-    <div class="agree-row" id="agreeRow" style="display:none;">
-      <input type="checkbox" id="agreeContract" onchange="document.getElementById('checkoutBtn').disabled = !this.checked;">
-      <label for="agreeContract">I have read and agree to the <a href="/terms" target="_blank">Trackument Service Agreement</a>, and I am authorized to approve on behalf of my district.</label>
-    </div>
-
     <div class="error-msg" id="errorMsg"></div>
     <div class="success-msg" id="successMsg"></div>
 
-    <button class="btn-submit" id="checkoutBtn" onclick="handleCheckout()" disabled>Continue to Payment →</button>
+    <button class="btn-submit" id="checkoutBtn" onclick="handleCheckout()">Continue to Payment →</button>
     <div class="secure">🔒 Secured by Stripe · 30-day money-back guarantee</div>
   </div>
 </div>
@@ -613,15 +608,7 @@
     document.getElementById('opt-invoice').classList.toggle('selected', method === 'invoice');
     const btn = document.getElementById('checkoutBtn');
     btn.textContent = method === 'card' ? 'Continue to Payment →' : 'Request Invoice →';
-    document.getElementById('agreeRow').style.display = 'flex';
   }
-
-  // Credit Card is pre-selected by default, so reveal the agreement checkbox
-  // on load too -- otherwise someone who never clicks a payment option (just
-  // accepts the default) would never see it and could get stuck.
-  document.addEventListener('DOMContentLoaded', function () {
-    selectPayment('card');
-  });
 
   async function handleCheckout() {
     const districtName = document.getElementById('districtName').value.trim();
@@ -631,13 +618,10 @@
     const contactEmail = document.getElementById('contactEmail').value.trim();
     const districtDomain = document.getElementById('districtDomain').value.trim().toLowerCase().replace(/^@/, '');
     const method = document.querySelector('input[name="paymentMethod"]:checked').value;
-    const agreed = document.getElementById('agreeContract').checked;
     const wantsTraining = document.getElementById('wantsTraining').checked;
 
     const errEl = document.getElementById('errorMsg');
-    const sucEl = document.getElementById('successMsg');
     errEl.style.display = 'none';
-    sucEl.style.display = 'none';
 
     if (!districtName || !contactName || !contactEmail || !districtDomain) {
       errEl.textContent = 'Please fill in all fields before continuing.';
@@ -649,42 +633,15 @@
       errEl.style.display = 'block';
       return;
     }
-    if (!agreed) {
-      errEl.textContent = 'Please agree to the Service Agreement before continuing.';
-      errEl.style.display = 'block';
-      return;
-    }
 
-    const btn = document.getElementById('checkoutBtn');
-    btn.disabled = true;
-    btn.textContent = 'Processing...';
-
-    try {
-      const res = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ districtName, contactName, contactTitle, contactPhone, contactEmail, districtDomain, tier: selectedTier, agreedToContract: agreed, wantsTraining, method })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Something went wrong.');
-
-      if (method === 'card') {
-        if (data.url) {
-          window.location.href = data.url;
-        } else {
-          throw new Error('Payment could not be started. Please try again, or contact sales@trackument.com.');
-        }
-      } else {
-        sucEl.innerHTML = '<strong>Invoice request received!</strong><br>We\'ll send a formal invoice to ' + contactEmail + ' within 24 hours. Access is activated as soon as payment is received.';
-        sucEl.style.display = 'block';
-        btn.textContent = 'Request Sent ✓';
-      }
-    } catch(err) {
-      errEl.textContent = err.message;
-      errEl.style.display = 'block';
-      btn.disabled = false;
-      btn.textContent = method === 'card' ? 'Continue to Payment →' : 'Request Invoice →';
-    }
+    // Hand off to the Service Agreement page rather than submitting payment
+    // directly -- it reads this back out of sessionStorage and completes the
+    // actual signup once the district has agreed to the terms.
+    sessionStorage.setItem('pendingSignup', JSON.stringify({
+      districtName, contactName, contactTitle, contactPhone, contactEmail,
+      districtDomain, tier: selectedTier, wantsTraining, method
+    }));
+    window.location.href = '/terms';
   }
 </script>
 </body>

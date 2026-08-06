@@ -31,6 +31,15 @@
   .terms-accept-row{ display:flex; align-items:flex-start; gap:12px; margin-bottom:20px; }
   .terms-accept-row input{ width:auto; margin:3px 0 0; flex-shrink:0; }
   .terms-accept-row label{ font-size:1rem; color:var(--text); line-height:1.5; }
+  .terms-summary{
+    background:#f3f0fa; border-radius:10px; padding:16px 20px; margin-bottom:20px;
+    font-size:0.92rem; color:var(--navy);
+  }
+  .terms-summary strong{ display:block; margin-bottom:4px; }
+  .terms-error{
+    background:#fef2f2; border:1px solid #fecaca; border-radius:6px;
+    padding:12px 14px; font-size:0.87rem; color:#dc2626; margin-bottom:16px;
+  }
   .terms-continue-btn{
     display:inline-flex; align-items:center; padding:13px 28px; border-radius:9px;
     background:var(--gold); color:var(--navy); font-weight:700; font-size:1.05rem;
@@ -120,11 +129,13 @@
 
   <div class="terms-accept-wrap">
     <div class="terms-accept-box">
+      <div class="terms-summary" id="termsSummary" style="display:none;"></div>
       <div class="terms-accept-row">
         <input type="checkbox" id="termsAccept">
         <label for="termsAccept">I have read and agree to the Trackument Service Agreement above, and I am authorized to accept it on behalf of my district.</label>
       </div>
-      <button type="button" class="terms-continue-btn" id="termsContinueBtn" disabled onclick="window.location.href='/checkout'">Continue to Sign Up &rarr;</button>
+      <p class="terms-error" id="termsError" style="display:none;"></p>
+      <button type="button" class="terms-continue-btn" id="termsContinueBtn" disabled onclick="completeSignup()">Continue to Sign Up &rarr;</button>
     </div>
   </div>
 </section>
@@ -160,9 +171,76 @@
 
 <script src="assets/reveal.js"></script>
 <script>
+  const TIERS = [
+    { label: 'District — up to 5,000 ADA', price: 5000 },
+    { label: 'District — up to 10,000 ADA', price: 10000 },
+    { label: 'District — up to 20,000 ADA', price: 15000 },
+    { label: 'District — over 20,000 ADA', price: 20000 },
+    { label: 'Individual school site', price: 1000 },
+  ];
+
+  let pending = null;
+  try { pending = JSON.parse(sessionStorage.getItem('pendingSignup') || 'null'); } catch (e) { pending = null; }
+
+  const summaryEl = document.getElementById('termsSummary');
+  const continueBtn = document.getElementById('termsContinueBtn');
+
+  if (pending) {
+    const tier = TIERS[pending.tier] || TIERS[0];
+    const amount = tier.price.toLocaleString();
+    summaryEl.style.display = 'block';
+    summaryEl.innerHTML = '<strong>' + pending.districtName + '</strong>' +
+      tier.label + ' &middot; $' + amount + '/year' +
+      (pending.method === 'invoice' ? ' &middot; Purchase Order / Check' : ' &middot; Credit Card');
+  } else {
+    // Someone landed here without going through checkout first -- send them
+    // there instead of trying to submit a signup with no data behind it.
+    continueBtn.textContent = 'Start Sign Up →';
+    continueBtn.onclick = function () { window.location.href = '/pricing.html'; };
+    continueBtn.disabled = false;
+    document.getElementById('termsAccept').closest('.terms-accept-row').style.display = 'none';
+  }
+
   document.getElementById('termsAccept').addEventListener('change', function () {
-    document.getElementById('termsContinueBtn').disabled = !this.checked;
+    if (pending) continueBtn.disabled = !this.checked;
   });
+
+  async function completeSignup() {
+    if (!pending) return;
+    const errEl = document.getElementById('termsError');
+    errEl.style.display = 'none';
+    continueBtn.disabled = true;
+    continueBtn.textContent = 'Processing...';
+
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.assign({}, pending, { agreedToContract: true }))
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+
+      sessionStorage.removeItem('pendingSignup');
+
+      if (pending.method === 'card') {
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          throw new Error('Payment could not be started. Please try again, or contact sales@trackument.com.');
+        }
+      } else {
+        summaryEl.innerHTML = '<strong>Invoice request received!</strong> We\'ll send a formal invoice to ' + pending.contactEmail + ' within 24 hours. Access is activated as soon as payment is received.';
+        document.querySelector('.terms-accept-row').style.display = 'none';
+        continueBtn.style.display = 'none';
+      }
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+      continueBtn.disabled = false;
+      continueBtn.textContent = 'Continue to Sign Up →';
+    }
+  }
 </script>
 </body>
 </html>
