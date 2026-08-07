@@ -580,12 +580,21 @@ async function sendRenewalReminders() {
 // ─── Stripe webhook (raw body) ────────────────────────────────────────────────
 app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   if (!stripe) return res.status(400).json({ error: 'Stripe not configured' });
+
+  const secretPreview = STRIPE_WEBHOOK_SECRET
+    ? STRIPE_WEBHOOK_SECRET.slice(0, 10) + '...' + STRIPE_WEBHOOK_SECRET.slice(-4) + ' (length ' + STRIPE_WEBHOOK_SECRET.length + ')'
+    : 'NOT SET';
+  console.log('Webhook received. Using STRIPE_WEBHOOK_SECRET:', secretPreview);
+
   let event;
   try {
     event = STRIPE_WEBHOOK_SECRET
       ? stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], STRIPE_WEBHOOK_SECRET)
       : JSON.parse(req.body);
-  } catch (err) { return res.status(400).json({ error: err.message }); }
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).json({ error: err.message });
+  }
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
