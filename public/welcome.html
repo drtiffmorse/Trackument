@@ -59,12 +59,13 @@
       </div>
       <div class="step">
         <div class="step-num">4</div>
-        <div>Have your administrators set up their site profile in the District &amp; Site Settings, takes about 2 minutes.</div>
+        <div>Have your administrators set up their site profile in the District &amp; Site Settings, which takes about 2 minutes.</div>
       </div>
     </div>
 
     <a href="/app" class="btn">Open Trackument &rarr;</a>
     <a href="#" id="manageLink" class="manage-link" style="display:none;">Manage billing or update your card</a>
+    <a href="#" id="agreementLink" class="manage-link" style="display:none;">Download your Service Agreement</a>
     <div class="support">Questions? Email <a href="mailto:help@trackument.com" style="color:#280b5b;">help@trackument.com</a></div>
   </div>
 
@@ -120,6 +121,10 @@
     var link = document.getElementById('manageLink');
     link.href = '/api/billing-portal?session_id=' + encodeURIComponent(sessionId);
     link.style.display = 'block';
+    var agreementLink = document.getElementById('agreementLink');
+    agreementLink.href = '/api/agreement/download?session_id=' + encodeURIComponent(sessionId);
+    agreementLink.target = '_blank';
+    agreementLink.style.display = 'block';
   }
 </script>
 </body>
