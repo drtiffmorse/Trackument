@@ -181,8 +181,8 @@ img{ max-width:100%; display:block; }
   max-width:560px;
   margin:0 0 16px;
 }
-.hero-visual{ flex:1 1 340px; min-width:0; display:flex; justify-content:flex-end; }
-.device-frame-wrap{ max-width:375px; width:100%; margin-top:-68px; transform:perspective(1400px) rotateY(-8deg) rotateX(2deg); }
+.hero-visual{ flex:1 1 460px; min-width:0; display:flex; justify-content:flex-end; }
+.device-frame-wrap{ max-width:460px; width:100%; margin-top:44px; transform:perspective(1400px) rotateY(-8deg) rotateX(2deg); }
 .device-frame{
   background:linear-gradient(155deg,var(--navy),var(--navy-deep));
   border-radius:22px;

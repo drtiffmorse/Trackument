@@ -1110,6 +1110,26 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<!-- Feedback Overlay -->
+<div class="overlay" id="feedbackOverlay">
+  <div class="setup-modal" style="max-width:520px;">
+    <div class="setup-modal-header">
+      <div>
+        <div class="setup-modal-title">Help us make Trackument better</div>
+        <div class="setup-modal-sub">We're reading every submission</div>
+      </div>
+      <button class="btn-close-modal" onclick="closeFeedback()">✕</button>
+    </div>
+    <div class="setup-modal-body">
+      <p style="font-size:0.9rem; color:var(--gray); line-height:1.6; margin-bottom:16px;">Trackument is new, and it is still being shaped by what actually works for administrators doing this job. If something felt confusing, took too long, or just was not quite right, tell us. If something worked well, tell us that too.</p>
+      <textarea id="feedbackText" placeholder="What's on your mind?" style="width:100%; min-height:120px; padding:12px 14px; border:1.5px solid var(--light-gray); border-radius:6px; font-family:inherit; font-size:0.92rem; color:var(--navy); resize:vertical;"></textarea>
+      <div class="error-msg" id="feedbackError" style="display:none; color:#dc2626; font-size:0.85rem; margin-top:10px;"></div>
+      <div class="success-msg" id="feedbackSuccess" style="display:none; background:#f0fdf4; border:1px solid #86efac; border-radius:6px; padding:12px 14px; font-size:0.88rem; color:#15803d; margin-top:10px;"></div>
+      <button id="feedbackSubmitBtn" onclick="submitFeedback()" style="margin-top:16px; background:var(--gold); color:var(--navy); border:none; padding:12px 24px; border-radius:6px; font-weight:700; font-size:0.92rem; cursor:pointer;">Send feedback</button>
+    </div>
+  </div>
+</div>
+
 <!-- District Setup / Settings Overlay -->
 <div class="overlay" id="setupOverlay">
   <div class="setup-modal">
@@ -1365,6 +1385,7 @@ if (window.location.protocol === 'file:') {
     <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.72rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:3px 10px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap;">🔒 Privacy protected</div>
     <a href="/privacy" target="_blank" style="font-size:0.7rem; color:rgba(255,255,255,0.5); text-decoration:none; white-space:nowrap;">Privacy Policy</a>
     <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.06em; text-transform:uppercase;">+ New Writeup</button>
+    <button onclick="openFeedback()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.06em; text-transform:uppercase;">💬 Feedback</button>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;">⚙ District &amp; Site Settings</button>
     <div class="version-badge">v45</div>
   </div>
@@ -5121,6 +5142,58 @@ function openSetup() {
   document.getElementById('setupOverlay').classList.add('visible');
   document.body.style.overflow = 'hidden';
   switchTab('district');
+}
+
+function openFeedback() {
+  document.getElementById('feedbackError').style.display = 'none';
+  document.getElementById('feedbackSuccess').style.display = 'none';
+  document.getElementById('feedbackText').value = '';
+  document.getElementById('feedbackText').style.display = 'block';
+  document.getElementById('feedbackSubmitBtn').style.display = 'block';
+  document.getElementById('feedbackOverlay').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeFeedback() {
+  document.getElementById('feedbackOverlay').classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+async function submitFeedback() {
+  const text = document.getElementById('feedbackText').value.trim();
+  const errEl = document.getElementById('feedbackError');
+  const sucEl = document.getElementById('feedbackSuccess');
+  errEl.style.display = 'none';
+  if (!text) {
+    errEl.textContent = 'Please enter some feedback before sending.';
+    errEl.style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('feedbackSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  try {
+    const res = await fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        feedback: text,
+        page: window.location.pathname,
+        districtDomain: (typeof currentDistrictDomain !== 'undefined' ? currentDistrictDomain : null),
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+    document.getElementById('feedbackText').style.display = 'none';
+    btn.style.display = 'none';
+    sucEl.textContent = 'Thank you. Your feedback has been sent.';
+    sucEl.style.display = 'block';
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Send feedback';
+  }
 }
 
 function openSettings() {
