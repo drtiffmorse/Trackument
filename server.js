@@ -450,8 +450,8 @@ async function getDistrictByDomain(domain) {
 
 async function activateDistrict(info) {
   await pool.query(`
-    INSERT INTO districts (domain, district_name, contact_name, contact_email, sites, status, stripe_session_id, amount_paid, activated_at, stripe_customer_id, stripe_subscription_id, renewal_date, contact_title, contact_phone)
-    VALUES ($1, $2, $3, $4, $5, 'active', $6, $7, now(), $8, $9, $10, $11, $12)
+    INSERT INTO districts (domain, district_name, contact_name, contact_email, sites, status, stripe_session_id, amount_paid, activated_at, stripe_customer_id, stripe_subscription_id, renewal_date, contact_title, contact_phone, agreed_to_contract_at)
+    VALUES ($1, $2, $3, $4, $5, 'active', $6, $7, now(), $8, $9, $10, $11, $12, $13)
     ON CONFLICT (domain) DO UPDATE SET
       district_name = EXCLUDED.district_name,
       contact_name = EXCLUDED.contact_name,
@@ -465,8 +465,9 @@ async function activateDistrict(info) {
       stripe_subscription_id = EXCLUDED.stripe_subscription_id,
       renewal_date = EXCLUDED.renewal_date,
       contact_title = EXCLUDED.contact_title,
-      contact_phone = EXCLUDED.contact_phone
-  `, [info.domain, info.districtName, info.contactName || null, info.contactEmail || null, info.sites || 1, info.stripeSessionId || null, info.amountPaid || null, info.stripeCustomerId || null, info.stripeSubscriptionId || null, info.renewalDate || null, info.contactTitle || null, info.contactPhone || null]);
+      contact_phone = EXCLUDED.contact_phone,
+      agreed_to_contract_at = EXCLUDED.agreed_to_contract_at
+  `, [info.domain, info.districtName, info.contactName || null, info.contactEmail || null, info.sites || 1, info.stripeSessionId || null, info.amountPaid || null, info.stripeCustomerId || null, info.stripeSubscriptionId || null, info.renewalDate || null, info.contactTitle || null, info.contactPhone || null, info.agreedToContractAt || null]);
   console.log('District activated:', info.districtName, info.domain, '| renews:', info.renewalDate);
 }
 
@@ -612,6 +613,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
         stripeCustomerId: session.customer,
         stripeSubscriptionId: session.subscription,
         renewalDate,
+        agreedToContractAt: meta.agreedToContractAt || null,
       });
       await sendNotificationEmail({
         to: SALES_NOTIFY_EMAIL,
@@ -862,6 +864,68 @@ app.get('/welcome',  (req, res) => res.sendFile(path.join(__dirname, 'public', '
 // We look the customer up FROM the checkout session rather than trusting any
 // customer/email value passed in the URL, so this can't be used to view
 // someone else's billing by guessing an ID.
+// Personalized, dated copy of the Service Agreement for a specific district
+// to download after they've signed up -- reads terms.html fresh on every
+// request rather than duplicating the legal text, so it can never drift out
+// of sync with the live version everyone agrees to.
+app.get('/api/agreement/download', async (req, res) => {
+  const sessionId = req.query.session_id;
+  if (!sessionId) return res.status(400).send('Missing session_id.');
+  if (!stripe) return res.status(500).send('Payment system not configured.');
+
+  try {
+    const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId);
+    const domain = checkoutSession.metadata && checkoutSession.metadata.districtDomain;
+    if (!domain) return res.status(400).send('Could not identify district for this session.');
+
+    const { rows } = await pool.query(
+      `SELECT district_name, agreed_to_contract_at FROM districts WHERE domain = $1 LIMIT 1`,
+      [domain]
+    );
+    const district = rows[0];
+    if (!district) return res.status(404).send('District not found.');
+
+    const agreedDate = district.agreed_to_contract_at
+      ? new Date(district.agreed_to_contract_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+      : 'date not on record';
+
+    const termsHtml = fs.readFileSync(path.join(__dirname, 'public', 'terms.html'), 'utf-8');
+    const bodyMatch = termsHtml.match(/<div class="terms-body">[\s\S]*?\n    <\/div>\n  <\/div>/);
+    const termsBody = bodyMatch ? bodyMatch[0].replace(/<div class="terms-body">|\n    <\/div>\n  <\/div>$/g, '') : '<p>Could not load agreement text.</p>';
+
+    res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trackument Service Agreement — ${district.district_name}</title>
+  <style>
+    body{font-family:Georgia,serif;max-width:760px;margin:40px auto;padding:0 24px;color:#1a1a1a;line-height:1.7;}
+    h1{font-family:Arial,sans-serif;font-size:1.4rem;color:#280b5b;margin-bottom:4px;}
+    h2{font-family:Arial,sans-serif;font-size:1.05rem;color:#280b5b;margin-top:28px;}
+    .cover{border-bottom:2px solid #280b5b;padding-bottom:16px;margin-bottom:28px;}
+    .cover-meta{font-family:Arial,sans-serif;font-size:0.9rem;color:#555;}
+    .print-btn{font-family:Arial,sans-serif;background:#ee8c29;color:#280b5b;border:none;padding:10px 20px;border-radius:6px;font-weight:700;cursor:pointer;margin-bottom:24px;}
+    @media print{.print-btn{display:none;}}
+  </style>
+</head>
+<body>
+  <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+  <div class="cover">
+    <h1>Trackument Service Agreement</h1>
+    <div class="cover-meta">
+      District: <strong>${district.district_name}</strong><br>
+      Agreement date: <strong>${agreedDate}</strong>
+    </div>
+  </div>
+  ${termsBody}
+</body>
+</html>`);
+  } catch (err) {
+    console.error('agreement download failed:', err.message);
+    res.status(500).send('Could not generate agreement copy: ' + err.message);
+  }
+});
+
 app.get('/api/billing-portal', async (req, res) => {
   const sessionId = req.query.session_id;
   if (!sessionId) return res.status(400).send('Missing session_id.');
