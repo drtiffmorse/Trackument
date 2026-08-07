@@ -584,7 +584,13 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
   const secretPreview = STRIPE_WEBHOOK_SECRET
     ? STRIPE_WEBHOOK_SECRET.slice(0, 10) + '...' + STRIPE_WEBHOOK_SECRET.slice(-4) + ' (length ' + STRIPE_WEBHOOK_SECRET.length + ')'
     : 'NOT SET';
+  const sigHeader = req.headers['stripe-signature'];
+  const bodyIsBuffer = Buffer.isBuffer(req.body);
+  const bodyLength = bodyIsBuffer ? req.body.length : (typeof req.body === 'string' ? req.body.length : -1);
   console.log('Webhook received. Using STRIPE_WEBHOOK_SECRET:', secretPreview);
+  console.log('  stripe-signature header:', sigHeader ? sigHeader.slice(0, 60) + '...' : 'MISSING');
+  console.log('  req.body is Buffer:', bodyIsBuffer, '| type:', typeof req.body, '| length:', bodyLength);
+  console.log('  content-type header:', req.headers['content-type']);
 
   let event;
   try {
