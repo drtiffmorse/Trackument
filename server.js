@@ -181,7 +181,7 @@ app.get('/login', (req, res) => {
     <input type="email" id="emailInput" placeholder="you@district.k12.ca.us" onkeydown="if(event.key==='Enter')requestLink()">
     <button class="btn-link" onclick="requestLink()">Email me a sign-in link →</button>
 
-    <div class="signup">Don't have access? <a href="/checkout">Sign up →</a></div>
+    <div class="signup">Don't have access? <a href="/checkout">Purchase →</a></div>
     <div class="links"><a href="/privacy">Privacy Policy</a> · <a href="mailto:help@trackument.com">help@trackument.com</a></div>
 
     <button class="admin-toggle" type="button" onclick="document.getElementById('adminSection').style.display='block';this.style.display='none';">Trackument staff login</button>
@@ -502,6 +502,7 @@ async function recordInvoiceRequest(info) {
 // someone from paying or block a contact form from confirming success.
 const SALES_NOTIFY_EMAIL = process.env.SALES_NOTIFY_EMAIL || 'sales@trackument.com';
 const TRAINING_NOTIFY_EMAIL = process.env.TRAINING_NOTIFY_EMAIL || 'tiffany@trackument.com';
+const FEEDBACK_NOTIFY_EMAIL = process.env.FEEDBACK_NOTIFY_EMAIL || 'tiffany@trackument.com';
 
 async function sendNotificationEmail({ to, subject, text }) {
   if (!process.env.RESEND_API_KEY) {
@@ -695,6 +696,27 @@ app.post('/api/contact', express.json(), async (req, res) => {
 
   console.log('=== CONTACT FORM ===\nFrom:', name, email, '\nRole:', role || '(not provided)', '\nPhone:', phone || '(not provided)', '\nMessage:', message);
   res.json({ ok: true });
+});
+
+// In-product feedback, submitted from the "Help us make Trackument better"
+// panel in the app itself. Not gated behind checkBeta's open list since it's
+// only reachable from inside the already-authenticated app.
+app.post('/api/feedback', express.json(), async (req, res) => {
+  const { feedback, page, districtDomain } = req.body;
+  if (!feedback || !feedback.trim()) return res.status(400).json({ error: 'Please enter some feedback before sending.' });
+
+  try {
+    await sendNotificationEmail({
+      to: FEEDBACK_NOTIFY_EMAIL,
+      subject: 'New product feedback' + (districtDomain ? ' — ' + districtDomain : ''),
+      text: `New feedback submitted from inside Trackument.\n\nDistrict: ${districtDomain || 'unknown'}\nPage: ${page || 'unknown'}\n\n${feedback}`,
+    });
+    console.log('=== PRODUCT FEEDBACK ===\nDistrict:', districtDomain || 'unknown', '\nPage:', page || 'unknown', '\nFeedback:', feedback);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('feedback submission failed:', err.message);
+    res.status(500).json({ error: 'Something went wrong. Please try again.' });
+  }
 });
 
 app.post('/api/checkout', async (req, res) => {
