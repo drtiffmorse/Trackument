@@ -260,6 +260,7 @@ app.post('/api/auth/request-link', express.json(), async (req, res) => {
     const district = await findActiveDistrictByDomain(domain);
 
     if (district) {
+      console.log('Magic link requested for', email, '-- matched active district:', district.district_name, '(' + domain + ')');
       const token = crypto.randomBytes(32).toString('hex');
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
       await pool.query(
@@ -272,6 +273,8 @@ app.post('/api/auth/request-link', express.json(), async (req, res) => {
         subject: 'Your Trackument sign-in link',
         text: `Click below to sign in to Trackument for ${district.district_name}:\n\n${link}\n\nThis link expires in 15 minutes and can only be used once. If you didn't request this, you can safely ignore this email.`,
       });
+    } else {
+      console.log('Magic link requested for', email, '-- no active district found for domain:', domain);
     }
     // Same response either way -- see note above.
     res.json({ ok: true, message: 'If that email is associated with an active district, a sign-in link is on its way.' });
@@ -511,7 +514,7 @@ async function sendNotificationEmail({ to, subject, text }) {
     return;
   }
   try {
-    await fetch('https://api.resend.com/emails', {
+    const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + process.env.RESEND_API_KEY,
@@ -522,6 +525,15 @@ async function sendNotificationEmail({ to, subject, text }) {
         to, subject, text,
       }),
     });
+    // fetch() does not throw on 4xx/5xx -- Resend can reject a send (bad
+    // address, rate limit, domain issue) and this would previously look
+    // identical to a successful send with no way to tell the difference.
+    if (!res.ok) {
+      const body = await res.text().catch(() => '(could not read response body)');
+      console.error('Resend rejected the email. Status:', res.status, '| To:', to, '| Subject:', subject, '| Response:', body);
+    } else {
+      console.log('Email sent via Resend. To:', to, '| Subject:', subject);
+    }
   } catch (err) {
     // Never let an email failure break whatever flow triggered it.
     console.error('Failed to send notification email:', err.message);
