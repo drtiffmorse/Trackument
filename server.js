@@ -84,9 +84,10 @@ function emailDomain(email) {
 
 async function findActiveDistrictByDomain(domain) {
   if (!domain) return null;
+  const cleanDomain = domain.replace(/^www\./, '');
   const { rows } = await pool.query(
-    `SELECT domain, district_name, status FROM districts WHERE domain = $1 AND status = 'active' LIMIT 1`,
-    [domain]
+    `SELECT domain, district_name, status FROM districts WHERE regexp_replace(domain, '^www\.', '') = $1 AND status = 'active' LIMIT 1`,
+    [cleanDomain]
   );
   return rows[0] || null;
 }
