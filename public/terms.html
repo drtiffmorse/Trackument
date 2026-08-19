@@ -53,12 +53,7 @@
 <header class="site-header">
   <div class="header-inner">
     <a href="/" class="brand">
-      <img class="icon" src="assets/logo-icon.png" alt="Trackument logo">
-      <div class="brand-text">
-        <img class="wordmark" src="assets/wordmark.png" alt="Trackument">
-        <span class="subline">Employee Discipline</span>
-        <span class="tag">Documented. Defensible. Done.</span>
-      </div>
+      <img class="logo-horizontal" src="assets/logo-horizontal.png" alt="Trackument - Employee Discipline - Documented. Defensible. Done.">
     </a>
     <nav class="primary-nav">
       <a href="/">Home</a>
@@ -78,7 +73,7 @@
   </div>
 
   <div class="terms-body-wrap">
-    <p class="terms-updated">Last updated: August 6, 2026</p>
+
 
     <div class="terms-body">
 
@@ -132,7 +127,7 @@
       <div class="terms-summary" id="termsSummary" style="display:none;"></div>
       <div class="terms-accept-row">
         <input type="checkbox" id="termsAccept">
-        <label for="termsAccept">I have read and agree to the Trackument Service Agreement above, and I am authorized to accept it on behalf of my district.</label>
+        <label for="termsAccept">I have read and agree to the Trackument Service Agreement above, and I am authorized to accept it on behalf of my district, on <span id="agreementDate"></span>.</label>
       </div>
       <p class="terms-error" id="termsError" style="display:none;"></p>
       <button type="button" class="terms-continue-btn" id="termsContinueBtn" disabled onclick="completeSignup()">Continue to Sign Up &rarr;</button>
@@ -145,8 +140,7 @@
     <div class="footer-top">
       <div class="footer-brand">
         <div class="footer-brand-row">
-          <img class="icon" src="assets/logo-icon-white.png" alt="Trackument">
-          <img class="wordmark" src="assets/wordmark-white.png" alt="Trackument">
+          <img class="logo-lockup" src="assets/logo-lockup-white.png" alt="Trackument">
         </div>
         <p>Legally grounded discipline documentation tool for California TK-12 administrators.</p>
       </div>
@@ -178,6 +172,8 @@
     { label: 'District — over 20,000 ADA', price: 20000 },
     { label: 'Individual school site', price: 1000 },
   ];
+
+  document.getElementById('agreementDate').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   let pending = null;
   try { pending = JSON.parse(sessionStorage.getItem('pendingSignup') || 'null'); } catch (e) { pending = null; }
