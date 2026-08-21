@@ -64,7 +64,8 @@ img{ max-width:100%; display:block; }
 .brand-text .wordmark{ height:23px; width:auto; display:block; }
 .logo-lockup{ height:72px; width:auto; display:block; }
 .footer-brand-row .logo-lockup{ height:68px; width:auto; }
-.logo-horizontal{ height:52px; width:auto; display:block; }
+.logo-horizontal{ height:66px; width:auto; display:block; }
+.footer-brand-row .logo-horizontal{ height:52px; width:auto; }
 .brand-text .subline{
   font-family:'IBM Plex Mono',monospace;
   font-size:0.66rem;
@@ -235,7 +236,6 @@ img{ max-width:100%; display:block; }
   color:var(--gold);
   margin:0 0 14px;
 }
-.hiw-eyebrow-shift{ margin-left:-17.33px; }
 .page-hero h1{
   font-size:clamp(1.8rem,4vw,2.8rem);
   font-weight:800;
@@ -494,11 +494,11 @@ img{ max-width:100%; display:block; }
   display:flex; flex-wrap:wrap; justify-content:center; gap:48px;
   padding-bottom:32px; border-bottom:1px solid rgba(255,255,255,0.12); margin-bottom:24px;
 }
-.footer-brand{ display:flex; flex-direction:column; align-items:flex-start; flex:1 1 220px; min-width:200px; max-width:320px; }
+.footer-brand{ display:flex; flex-direction:column; align-items:center; text-align:center; flex:1 1 220px; min-width:200px; max-width:320px; }
 .footer-brand-row{ display:flex; align-items:center; gap:8px; }
 .footer-brand-row img.icon{ height:34px; width:auto; }
 .footer-brand-row img.wordmark{ height:20px; width:auto; }
-.footer-brand p{ font-size:1.05rem; margin-top:14px; max-width:280px; color:rgba(255,255,255,0.55); }
+.footer-brand p{ font-size:0.88rem; margin-top:14px; max-width:280px; color:rgba(255,255,255,0.55); }
 .footer-col{ flex:0 0 160px; }
 .footer-col h4{
   font-family:'IBM Plex Mono',monospace; font-size:0.85rem; text-transform:uppercase;
