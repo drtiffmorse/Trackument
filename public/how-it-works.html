@@ -29,7 +29,7 @@
 
 <section class="page-hero page-hero--fade">
   <div class="page-hero-inner">
-    <p class="page-eyebrow hiw-eyebrow-shift">How it works</p>
+    <p class="page-eyebrow">How it works</p>
     <h1>Employee Discipline: From facts to finished in four steps</h1>
   </div>
 
@@ -125,7 +125,7 @@
     <div class="footer-top">
       <div class="footer-brand">
         <div class="footer-brand-row">
-          <img class="logo-lockup" src="assets/logo-lockup-white.png" alt="Trackument">
+          <img class="logo-horizontal" src="assets/logo-horizontal-white.png" alt="Trackument">
         </div>
         <p>Legally grounded discipline documentation tool for California TK-12 administrators.</p>
       </div>
@@ -149,26 +149,5 @@
 </footer>
 
 <script src="assets/reveal.js"></script>
-  <script>
-    // The shared justification script in reveal.js sets margin-left on the
-    // header subline dynamically, including on resize, so a one-time
-    // override here would get overwritten. Reapply the extra shift after
-    // the same events, on the next tick so it runs after reveal.js's own handler.
-    (function () {
-      var EXTRA_SHIFT = 12.7; // measured width of two spaces at this element's font size
-      function applyExtraShift() {
-        var subline = document.querySelector('.subline');
-        if (!subline) return;
-        var current = parseFloat(subline.style.marginLeft) || 0;
-        subline.style.marginLeft = (current - EXTRA_SHIFT) + 'px';
-      }
-      document.addEventListener('DOMContentLoaded', function () {
-        setTimeout(applyExtraShift, 0);
-      });
-      window.addEventListener('resize', function () {
-        setTimeout(applyExtraShift, 150);
-      });
-    })();
-  </script>
 </body>
 </html>
