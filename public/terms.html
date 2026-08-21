@@ -10,7 +10,14 @@
 <link rel="stylesheet" href="assets/style.css">
 <style>
   .terms-hero{ padding:80px 48px 0; background:var(--cream); }
-  .terms-hero-inner{ max-width:820px; margin:0 auto; }
+  .terms-hero-inner{ max-width:820px; margin:0 auto; padding:0 48px; }
+  .terms-hero-inner h1{
+    font-size:clamp(1.8rem,4vw,2.8rem);
+    font-weight:800;
+    letter-spacing:-0.02em;
+    color:var(--navy);
+    margin:0;
+  }
   .terms-hero-inner .sub{ font-size:1.1rem; color:var(--text-light); margin-top:8px; }
   .terms-body-wrap{
     max-width:820px; margin:44px auto 0;
@@ -28,8 +35,8 @@
     background:#fff; border:1.5px solid var(--rule); border-radius:14px; padding:28px 32px;
     box-shadow:0 2px 10px rgba(40,11,91,0.06);
   }
-  .terms-accept-row{ display:flex; align-items:flex-start; gap:12px; margin-bottom:20px; }
-  .terms-accept-row input{ width:auto; margin:3px 0 0; flex-shrink:0; }
+  .terms-accept-row{ display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+  .terms-accept-row input{ width:auto; margin:0; flex-shrink:0; }
   .terms-accept-row label{ font-size:1rem; color:var(--text); line-height:1.5; }
   .terms-summary{
     background:#f3f0fa; border-radius:10px; padding:16px 20px; margin-bottom:20px;
@@ -46,6 +53,37 @@
     text-decoration:none; border:none; cursor:pointer; transition:opacity .15s ease;
   }
   .terms-continue-btn:disabled{ opacity:0.5; cursor:not-allowed; }
+  .terms-print-btn{
+    display:inline-flex; align-items:center; gap:8px; padding:13px 22px; border-radius:9px;
+    background:#fff; color:var(--navy); font-weight:700; font-size:1.05rem;
+    border:1.5px solid var(--rule); cursor:pointer; margin-left:12px; transition:border-color .15s ease;
+  }
+  .terms-print-btn:hover{ border-color:var(--navy); }
+  .signature-fields{
+    display:grid; grid-template-columns:1fr 1fr 140px; gap:16px; margin-bottom:20px;
+  }
+  .sig-field label{ display:block; font-size:0.82rem; font-weight:700; color:var(--navy); margin-bottom:6px; }
+  .sig-field input{
+    width:100%; padding:11px 12px; border:1.5px solid var(--rule); border-radius:8px;
+    font-size:0.95rem; font-family:'Inter',sans-serif; color:var(--navy);
+  }
+  .sig-field input:focus{ outline:none; border-color:var(--navy); }
+  .sig-field input[readonly]{ background:#f6f4fb; color:var(--text-light); }
+  .print-only{ display:none; }
+  @media print{
+    .site-header, .site-footer, .terms-accept-row, .signature-fields,
+    .terms-print-btn, .terms-continue-btn, .terms-error{ display:none !important; }
+    .terms-hero{ padding-top:0; }
+    .terms-body-wrap{ box-shadow:none; border:none; padding:0; }
+    .print-only{
+      display:block; margin:32px auto 60px; max-width:820px; padding:0 48px;
+      border-top:1px solid var(--rule); padding-top:24px;
+    }
+    .print-sig-row{ display:flex; gap:48px; margin-top:18px; }
+    .print-sig-row div{ flex:1; }
+    .print-sig-row .line{ border-bottom:1px solid var(--navy); min-height:28px; margin-bottom:6px; }
+    .print-sig-row label{ font-size:0.82rem; color:var(--text-light); }
+  }
 </style>
 </head>
 <body>
@@ -129,8 +167,41 @@
         <input type="checkbox" id="termsAccept">
         <label for="termsAccept">I have read and agree to the Trackument Service Agreement above, and I am authorized to accept it on behalf of my district, on <span id="agreementDate"></span>.</label>
       </div>
+      <div class="signature-fields">
+        <div class="sig-field">
+          <label for="sigName">Full name</label>
+          <input type="text" id="sigName" placeholder="Full name">
+        </div>
+        <div class="sig-field">
+          <label for="sigTitle">Title</label>
+          <input type="text" id="sigTitle" placeholder="e.g. Assistant Superintendent">
+        </div>
+        <div class="sig-field">
+          <label for="sigDate">Date</label>
+          <input type="text" id="sigDate" readonly>
+        </div>
+      </div>
       <p class="terms-error" id="termsError" style="display:none;"></p>
       <button type="button" class="terms-continue-btn" id="termsContinueBtn" disabled onclick="completeSignup()">Continue to Sign Up &rarr;</button>
+      <button type="button" class="terms-print-btn" onclick="window.print()">Print / Save as PDF</button>
+    </div>
+
+    <div class="print-only">
+      <p style="font-size:0.9rem;color:var(--text-light);margin:0 0 10px;">Signed electronically via Trackument on <span id="printDate"></span>.</p>
+      <div class="print-sig-row">
+        <div>
+          <div class="line" id="printName"></div>
+          <label>Name</label>
+        </div>
+        <div>
+          <div class="line" id="printTitle"></div>
+          <label>Title</label>
+        </div>
+        <div>
+          <div class="line"></div>
+          <label>Signature</label>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -174,12 +245,16 @@
   ];
 
   document.getElementById('agreementDate').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  document.getElementById('sigDate').value = new Date().toLocaleDateString('en-US');
 
   let pending = null;
   try { pending = JSON.parse(sessionStorage.getItem('pendingSignup') || 'null'); } catch (e) { pending = null; }
 
   const summaryEl = document.getElementById('termsSummary');
   const continueBtn = document.getElementById('termsContinueBtn');
+  const acceptBox = document.getElementById('termsAccept');
+  const sigNameEl = document.getElementById('sigName');
+  const sigTitleEl = document.getElementById('sigTitle');
 
   if (pending) {
     const tier = TIERS[pending.tier] || TIERS[0];
@@ -195,10 +270,21 @@
     continueBtn.onclick = function () { window.location.href = '/pricing.html'; };
     continueBtn.disabled = false;
     document.getElementById('termsAccept').closest('.terms-accept-row').style.display = 'none';
+    document.querySelector('.signature-fields').style.display = 'none';
   }
 
-  document.getElementById('termsAccept').addEventListener('change', function () {
-    if (pending) continueBtn.disabled = !this.checked;
+  function refreshContinueState() {
+    if (!pending) return;
+    continueBtn.disabled = !(acceptBox.checked && sigNameEl.value.trim() && sigTitleEl.value.trim());
+  }
+  acceptBox.addEventListener('change', refreshContinueState);
+  sigNameEl.addEventListener('input', refreshContinueState);
+  sigTitleEl.addEventListener('input', refreshContinueState);
+
+  window.addEventListener('beforeprint', function () {
+    document.getElementById('printDate').textContent = document.getElementById('sigDate').value || new Date().toLocaleDateString('en-US');
+    document.getElementById('printName').textContent = sigNameEl.value.trim();
+    document.getElementById('printTitle').textContent = sigTitleEl.value.trim();
   });
 
   async function completeSignup() {
@@ -212,7 +298,12 @@
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(Object.assign({}, pending, { agreedToContract: true }))
+        body: JSON.stringify(Object.assign({}, pending, {
+          agreedToContract: true,
+          signerName: sigNameEl.value.trim(),
+          signerTitle: sigTitleEl.value.trim(),
+          signedDate: document.getElementById('sigDate').value
+        }))
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Something went wrong.');
