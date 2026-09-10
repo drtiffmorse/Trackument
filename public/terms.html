@@ -3,43 +3,56 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Service Agreement | Trackument</title>
+<title>Trackument Service Agreement</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
 <style>
-  .terms-hero{ padding:80px 48px 0; background:var(--cream); }
+  body{ background:#f6f4fb; }
+  .progress-track{
+    max-width:820px; margin:0 auto; padding:28px 48px 0;
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    font-family:'IBM Plex Mono',monospace; font-size:0.78rem; letter-spacing:0.02em;
+    color:var(--text-light);
+  }
+  .progress-track .step{ white-space:nowrap; }
+  .progress-track .step.current{ color:var(--navy); font-weight:700; }
+  .progress-track .sep{ color:var(--rule); }
+  .terms-hero{ padding:20px 48px 0; background:var(--cream); }
   .terms-hero-inner{ max-width:820px; margin:0 auto; padding:0 48px; }
   .terms-hero-inner h1{
-    font-size:clamp(1.8rem,4vw,2.8rem);
+    font-size:clamp(2.1rem,4.6vw,3.1rem);
     font-weight:800;
     letter-spacing:-0.02em;
     color:var(--navy);
     margin:0;
   }
-  .terms-hero-inner .sub{ font-size:1.1rem; color:var(--text-light); margin-top:8px; }
+  .terms-hero-inner .sub{ font-size:1.15rem; color:var(--text-light); margin-top:16px; }
   .terms-body-wrap{
     max-width:820px; margin:44px auto 0;
-    background:#fff; border:1px solid var(--rule); border-radius:16px;
-    box-shadow:0 2px 10px rgba(40,11,91,0.06); padding:48px;
+    background:#fff; border:1px solid var(--rule); border-radius:14px;
+    box-shadow:0 2px 12px rgba(40,11,91,0.06); padding:56px;
   }
-  .terms-body h2{ font-size:1.25rem; font-weight:800; color:var(--navy); margin:32px 0 10px; }
+  .terms-body h2{ font-size:1.28rem; font-weight:800; color:var(--navy); margin:52px 0 14px; }
   .terms-body h2:first-child{ margin-top:0; }
-  .terms-body p{ font-size:1rem; color:var(--text); line-height:1.7; margin:0 0 12px; }
-  .terms-body ul{ margin:0 0 12px; padding-left:22px; }
-  .terms-body li{ font-size:1rem; color:var(--text); line-height:1.7; margin-bottom:6px; }
+  .terms-body p{ font-size:1.08rem; color:var(--text); line-height:1.8; margin:0 0 14px; }
+  .terms-body ul, .terms-body ol{ margin:0 0 14px; padding-left:24px; }
+  .terms-body li{ font-size:1.08rem; color:var(--text); line-height:1.8; margin-bottom:8px; }
+  .terms-doc-title{ font-size:1.7rem; font-weight:800; color:var(--navy); margin:36px 0 18px; }
+  .terms-doc-title:first-child{ margin-top:0; }
+  .terms-divider{ border:none; border-top:1px solid var(--rule); margin:48px 0 40px; }
   .terms-updated{ font-family:'IBM Plex Mono',monospace; font-size:0.82rem; color:var(--text-light); margin-bottom:28px; }
-  .terms-accept-wrap{ max-width:820px; margin:32px auto 100px; }
+  .terms-accept-wrap{ max-width:820px; margin:32px auto 140px; }
   .terms-accept-box{
-    background:#fff; border:1.5px solid var(--rule); border-radius:14px; padding:28px 32px;
-    box-shadow:0 2px 10px rgba(40,11,91,0.06);
+    background:#fff; border:1px solid var(--rule); border-radius:14px; padding:32px;
+    box-shadow:0 2px 12px rgba(40,11,91,0.06);
   }
-  .terms-accept-row{ display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+  .terms-accept-row{ display:flex; align-items:center; gap:12px; }
   .terms-accept-row input{ width:auto; margin:0; flex-shrink:0; }
-  .terms-accept-row label{ font-size:1rem; color:var(--text); line-height:1.5; }
+  .terms-accept-row label{ font-size:0.98rem; color:var(--text); line-height:1.5; }
   .terms-summary{
-    background:#f3f0fa; border-radius:10px; padding:16px 20px; margin-bottom:20px;
+    background:#f3f0fa; border-radius:10px; padding:16px 20px; margin-bottom:24px;
     font-size:0.92rem; color:var(--navy);
   }
   .terms-summary strong{ display:block; margin-bottom:4px; }
@@ -51,28 +64,39 @@
     display:inline-flex; align-items:center; padding:13px 28px; border-radius:9px;
     background:var(--gold); color:var(--navy); font-weight:700; font-size:1.05rem;
     text-decoration:none; border:none; cursor:pointer; transition:opacity .15s ease;
+    white-space:nowrap;
   }
   .terms-continue-btn:disabled{ opacity:0.5; cursor:not-allowed; }
   .terms-print-btn{
     display:inline-flex; align-items:center; gap:8px; padding:13px 22px; border-radius:9px;
     background:#fff; color:var(--navy); font-weight:700; font-size:1.05rem;
-    border:1.5px solid var(--rule); cursor:pointer; margin-left:12px; transition:border-color .15s ease;
+    border:1px solid var(--rule); cursor:pointer; transition:border-color .15s ease;
   }
   .terms-print-btn:hover{ border-color:var(--navy); }
   .signature-fields{
-    display:grid; grid-template-columns:1fr 1fr 140px; gap:16px; margin-bottom:20px;
+    display:grid; grid-template-columns:1fr 1fr 140px; gap:16px; margin-bottom:24px;
   }
   .sig-field label{ display:block; font-size:0.82rem; font-weight:700; color:var(--navy); margin-bottom:6px; }
   .sig-field input{
-    width:100%; padding:11px 12px; border:1.5px solid var(--rule); border-radius:8px;
+    width:100%; padding:11px 12px; border:1px solid var(--rule); border-radius:8px;
     font-size:0.95rem; font-family:'Inter',sans-serif; color:var(--navy);
   }
   .sig-field input:focus{ outline:none; border-color:var(--navy); }
   .sig-field input[readonly]{ background:#f6f4fb; color:var(--text-light); }
+  .sticky-accept-bar{
+    position:fixed; left:0; right:0; bottom:0; z-index:100;
+    background:#fff; border-top:1px solid var(--rule);
+    box-shadow:0 -6px 20px rgba(40,11,91,0.1);
+  }
+  .sticky-accept-inner{
+    max-width:820px; margin:0 auto; padding:16px 48px;
+    display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap;
+  }
   .print-only{ display:none; }
   @media print{
     .site-header, .site-footer, .terms-accept-row, .signature-fields,
-    .terms-print-btn, .terms-continue-btn, .terms-error{ display:none !important; }
+    .terms-print-btn, .terms-continue-btn, .terms-error,
+    .progress-track, .sticky-accept-bar{ display:none !important; }
     .terms-hero{ padding-top:0; }
     .terms-body-wrap{ box-shadow:none; border:none; padding:0; }
     .print-only{
@@ -103,11 +127,21 @@
   </div>
 </header>
 
+<div class="progress-track">
+  <span class="step">1. Plan</span>
+  <span class="sep">→</span>
+  <span class="step">2. District Info</span>
+  <span class="sep">→</span>
+  <span class="step current">3. Agreement</span>
+  <span class="sep">→</span>
+  <span class="step">4. Payment</span>
+</div>
+
 <section class="terms-hero">
   <div class="terms-hero-inner">
     <p class="page-eyebrow" style="margin-left:0;">Legal</p>
     <h1>Trackument Service Agreement</h1>
-    <p class="sub">Please read this agreement before signing up. Checking the box at checkout confirms your district accepts these terms.</p>
+    <p class="sub">Please review and accept these terms to continue.</p>
   </div>
 
   <div class="terms-body-wrap">
@@ -115,47 +149,329 @@
 
     <div class="terms-body">
 
-      <h2>1. Agreement to Terms</h2>
-      <p>This Service Agreement (the "Agreement") is between the school district, county office of education, or charter school signing up for Trackument (the "District") and Intentional Schools, LLC, a California limited liability company doing business as Trackument ("Trackument," "we," or "us"). By checking the acceptance box during signup, the individual completing the signup represents that they are authorized to accept this Agreement on the District's behalf, and the District agrees to be bound by its terms.</p>
-
-      <h2>2. What Trackument Provides</h2>
-      <p>Trackument is a web-based tool that guides site and district administrators through generating pre-discipline employee documentation, including conference summaries, written warnings, letters of reprimand, and notices of unsatisfactory performance. Trackument is scoped to pre-Skelly documentation only; it does not generate dismissal notices or documents related to formal Skelly proceedings.</p>
-
-      <h2>3. License Grant</h2>
-      <p>Subject to this Agreement and payment of applicable fees, Trackument grants the District a non-exclusive, non-transferable, limited license to access and use Trackument for the District's internal HR and employee discipline documentation purposes, for the plan selected at signup (either a district-wide license covering all sites under the applicable ADA tier, or a single school site license).</p>
-      <p>The District will not sublicense, resell, or share access to Trackument with anyone outside its own administrators and staff without our prior written consent. The District retains all rights to the information it enters into Trackument. We retain all rights to the Trackument software itself, including its underlying code, templates, and system design.</p>
-
-      <h2>4. Fees and Payment</h2>
-      <p>Fees are based on the plan selected at signup, as shown on our <a href="pricing.html" style="color:var(--navy);text-decoration:underline;">Pricing page</a> at the time of signup. Fees are billed annually and are due upon invoice, or charged at checkout if paying by card. Custom training, if requested, is quoted and billed separately.</p>
-
-      <h2>5. Term, Renewal, and Termination</h2>
-      <p>This Agreement begins on the date of signup and continues for one year. It renews automatically for successive one-year terms, and the payment method on file will be charged automatically at renewal, unless the District cancels before the renewal date. We will send a renewal reminder to the District's contact email at least 30 days before each renewal date, including instructions for how to cancel. Either party may otherwise terminate this Agreement for any reason with 60 days' written notice. Upon termination, the District may export any documents it generated through Trackument for 30 days, after which we may remove the District's access and associated data.</p>
-
-      <h2>6. Data Privacy and Security</h2>
-      <p>We maintain the confidentiality of all District data, including employee personnel information, consistent with California Education Code sections 49060–49085 and the Family Educational Rights and Privacy Act (FERPA), and we do not disclose District data except as required by law or with the District's prior written consent. Specifically:</p>
+      <h2 class="terms-doc-title">Trackument Software-as-a-Service Agreement</h2>
+      <p>This Software-as-a-Service Agreement (the “Agreement”) is entered into by and between <strong>Intentional Schools, LLC, a California limited liability company doing business as Trackument </strong>(“Trackument,” “we,” “us,” or “our”) and the school district, county office of education, charter school, or other educational entity identified in the applicable Order Form (“District” or “you”).</p>
+      <p>This Agreement governs District’s access to and use of the Trackument software platform and related services (collectively, the “Services”). By checking the “acceptance box” during signup, the individual completing the signup represents that they are authorized to accept this Agreement on the District’s behalf, and the District agrees to be bound by its terms and conditions.</p>
+      <h2>1. Definitions</h2>
+      <p>For purposes of this Agreement: <strong>“Authorized User” </strong>means an employee, officer, administrator, or authorized contractor of District who is authorized by District to access and use the Services for District’s internal business purposes.</p>
+      <p><strong>“District Data” </strong>means information, text, documents, materials, or other content submitted to the Services by or on behalf of District or its Authorized Users.</p>
+      <p><strong>“Output” </strong>means documents, text, summaries, drafts, or other materials generated by the Services in response to District Data.</p>
+      <p><strong>“Services” </strong>means the Trackument software application and related services made available to District under an applicable Order Form.</p>
+      <p><strong>“Trackument Technology” </strong>means the Services and all underlying software, source code, object code, algorithms, models, workflows, prompts, templates, questionnaires, designs, interfaces, documentation, methodologies, know-how, and other technology or materials developed, owned, or licensed by Trackument, including modifications and improvements thereto.</p>
+      <p><strong>“Order Form” </strong>means an ordering document, subscription confirmation, or other written purchasing document identifying the Services, subscription term, fees, and other applicable commercial terms.</p>
+      <p><strong>“Security Incident” </strong>means a confirmed unauthorized access to, acquisition of, disclosure of, alteration of, or destruction of District Data maintained or processed by Trackument, excluding unsuccessful attempts, routine security scans, or events that do not materially compromise the confidentiality, integrity, or availability of District Data.</p>
+      <h2>2. The Services</h2>
+      <p>Trackument is a web-based administrative documentation tool designed to assist authorized school and district personnel in organizing information and preparing draft employee documentation, which may include conference summaries, written warnings, letters of reprimand, notices of unsatisfactory performance, and similar employment-related documentation. This version of Trackument is designed to generate pre-Skelly documentation only; it does not generate dismissal notices or documents related to formal Skelly or dismissal proceedings.</p>
+      <h2>2.1 Administrative Tool Only</h2>
+      <p>Trackument is an administrative documentation tool. Trackument does not:</p>
       <ul>
-        <li>All data transmitted between District users and Trackument is encrypted in transit over HTTPS.</li>
-        <li>Data at rest is encrypted through our hosting infrastructure, and credentials are stored as encrypted environment variables, never in application code.</li>
-        <li>Before any employee information reaches the underlying AI model, employee names and other identifying details are pseudonymized so the model never processes real identities.</li>
-        <li>Access to Trackument requires authenticated login credentials issued to the District's designated administrators.</li>
-        <li>We do not retain generated documents after a session ends, unless the District separately requests document storage.</li>
+        <li>make employment decisions</li>
+        <li>determine whether discipline is warranted</li>
+        <li>determine the appropriate level or severity of discipline</li>
+        <li>determine whether an employee has engaged in misconduct</li>
+        <li>determine whether an employee should be hired, retained, suspended, demoted, or terminated</li>
+        <li>determine whether a particular legal or procedural requirement applies</li>
+        <li>provide legal advice</li>
+        <li>act as District’s human resources department, legal counsel, or decision-maker</li>
       </ul>
-      <p>We will notify the District in writing within 72 hours of discovering any unauthorized access to or disclosure of District data processed through Trackument.</p>
+      <p>All employment decisions remain solely with District and its authorized personnel. District is solely responsible for reviewing, editing, approving, and determining whether and how any Output is used.</p>
+      <h2>3. AI-Assisted Features and Human Review</h2>
+      <p>The Services may use artificial intelligence, machine learning, natural-language processing, or other automated technologies to assist in organizing information, drafting text, summarizing information, or producing Output.</p>
+      <p>District acknowledges that automated and AI-assisted Output may contain errors, omissions, inaccuracies, inappropriate language, factual errors, or other defects and may not be appropriate for a particular employee or circumstance.</p>
+      <p>District shall independently review all Output before using, communicating, relying upon, or incorporating Output into any employee personnel record or employment action.</p>
+      <p>District shall not use Output as the sole basis for any employment decision.</p>
+      <p>Trackument does not warrant that Output is accurate, complete, unbiased, legally sufficient, nondiscriminatory, or appropriate for any particular employment matter.</p>
+      <p>District remains solely responsible for:</p>
+      <ol>
+        <li>the factual accuracy of information submitted to the Services</li>
+        <li>determining whether discipline is appropriate</li>
+        <li>determining the appropriate level and form of discipline</li>
+        <li>compliance with applicable law</li>
+        <li>compliance with District policies and procedures</li>
+        <li>compliance with applicable collective bargaining agreements</li>
+        <li>compliance with applicable employee procedural rights; and</li>
+        <li>obtaining legal or other professional advice when appropriate</li>
+      </ol>
+      <h2>4. Eligibility and Authorized Users</h2>
+      <p>District may permit Authorized Users to access the Services solely for District’s internal human-resources, personnel-management, and employee-documentation purposes. Each Authorized User shall use an individual account and shall not share account credentials with another individual.</p>
+      <p>District is responsible for:</p>
+      <ul>
+        <li>maintaining the confidentiality of account credentials</li>
+        <li>ensuring that only Authorized Users access the Services</li>
+        <li>promptly disabling accounts of individuals who no longer require access; and</li>
+        <li>all activity conducted through District’s accounts, except to the extent caused by Trackument’s failure to maintain reasonable security controls</li>
+      </ul>
+      <p>District shall not permit any person outside District to access or use the Services without Trackument’s prior written consent.</p>
+      <h2>5. License</h2>
+      <p>Subject to this Agreement and payment of applicable fees, Trackument grants District a limited, non-exclusive, non-transferable, non-sublicensable right during the applicable Subscription Term to access and use the Services for District’s internal business purposes. District shall not:</p>
+      <ul>
+        <li>resell, sublicense, lease, or distribute the Services</li>
+        <li>provide access to unauthorized third parties</li>
+        <li>copy, modify, or create derivative works of the Services</li>
+        <li>reverse engineer, decompile, disassemble, or attempt to discover source code</li>
+        <li>circumvent security or access controls</li>
+        <li>use automated means to scrape or extract information from the Services</li>
+        <li>interfere with the operation of the Services</li>
+        <li>use the Services to develop a competing product or service</li>
+        <li>use the Services in violation of applicable law; or</li>
+        <li>use the Services to make fully automated employment decisions</li>
+      </ul>
+      <h2>6. District Data and Output</h2>
+      <p>As between the parties, District retains all right, title, and interest in District Data.</p>
+      <p>Subject to Trackument’s ownership of Trackument Technology, District may use Output for its internal business purposes. Trackument retains all right, title, and interest in Trackument Technology, including all underlying templates, prompts, workflows, software, methodologies, designs, interfaces, and system architecture.</p>
+      <p>No ownership of Trackument Technology is transferred to District merely because Trackument Technology is incorporated into, reflected in, or used to produce Output.</p>
+      <p>Trackument may use information concerning District’s use of the Services only as necessary to provide, secure, maintain, support, and improve the Services, as expressly permitted by this Agreement or the Data Processing & Security Addendum, or as otherwise permitted by law.</p>
+      <p><strong>*Trackument will not sell District Data.</strong>*</p>
+      <h2>7. District Responsibilities</h2>
+      <p>District is responsible for determining what information is appropriate to submit to the Services.</p>
+      <p>District shall not knowingly submit:</p>
+      <ul>
+        <li>student education records unless expressly authorized under the applicable agreement and Data Processing & Security Addendum</li>
+        <li>Social Security numbers</li>
+        <li>financial account credentials</li>
+        <li>passwords or authentication secrets</li>
+        <li>medical information unrelated to the employment matter</li>
+        <li>information unnecessary for the intended documentation purpose; or</li>
+        <li>other highly sensitive information that is not reasonably necessary to use the Services</li>
+      </ul>
+      <p>If District inadvertently submits prohibited information, District shall promptly notify Trackument where reasonably necessary to enable Trackument to take appropriate protective measures. District shall use the Services in compliance with applicable laws, regulations, District policies, collective bargaining agreements, and other requirements applicable to District’s employment practices.</p>
+      <h2>8. Fees and Payment</h2>
+      <p>Fees for the Services are set forth in the applicable Order Form and are based on the plan selected at signup and any additional add-ons as shown on our Pricing page at the time of signup and/or purchase of additional add-ons. Fees are billed annually in advance and are due upon invoice, or charges at checkout if paying by credit card. Custom training, if requested, is quoted and billed separately.</p>
+      <h2>9. Term and Renewal</h2>
+      <p>The initial subscription term is specified in the applicable Order Form. Unless otherwise stated in the Order Form, the subscription will renew for successive one-year periods upon written renewal confirmation or other renewal authorization consistent with District’s applicable purchasing procedures. Either party may elect not to renew by providing written notice at least thirty (30) days before the end of the then-current Subscription Term. Nothing in this Section requires a public entity to incur an obligation beyond the authority or appropriation available to it under applicable law.</p>
+      <h2>10. Termination</h2>
+      <p>This Agreement begins on the date of signup and continues for one year. It renews automatically for successive one-year terms, and the payment method on file will be charged automatically at renewal, unless the District cancels before the renewal date. We will send a renewal reminder to the District’s contact email at least 30 days before each renewal date, including instructions for how to cancel. Either party may otherwise terminate this Agreement for any reason with 60 days’ written notice.</p>
+      <h2>11. Confidentiality</h2>
+      <p>Each party may receive confidential information of the other party in connection with this Agreement.</p>
+      <p>“Confidential Information” means non-public information disclosed by one party to the other that is identified as confidential or that reasonably should be understood to be confidential given the nature of the information and circumstances of disclosure.</p>
+      <p>The receiving party shall:</p>
+      <ul>
+        <li>use Confidential Information only to perform or exercise rights under this Agreement</li>
+        <li>protect Confidential Information using reasonable safeguards; and</li>
+        <li>disclose Confidential Information only to personnel and service providers who have a legitimate need to know and are subject to confidentiality obligations</li>
+      </ul>
+      <p>Confidential Information does not include information that:</p>
+      <ul>
+        <li>is or becomes publicly available without breach of this Agreement</li>
+        <li>was lawfully known by the receiving party before disclosure</li>
+        <li>is independently developed without use of the disclosing party’s Confidential Information; or</li>
+        <li>is lawfully received from a third party without confidentiality obligations</li>
+      </ul>
+      <p>If disclosure is required by law, subpoena, court order, or other legal process, the receiving party may make the required disclosure and, where legally permitted, will provide reasonable notice to the disclosing party. The confidentiality obligations in this Section survive termination for five (5) years, except that trade secrets will be protected for so long as they remain trade secrets under applicable law.</p>
+      <h2>12. Data Privacy and Security</h2>
+      <p>Trackument’s obligations concerning District Data are set forth in the <a href="#dpa" style="color:var(--navy);text-decoration:underline;font-weight:700;">Data Processing &amp; Security Addendum</a>, which is incorporated into this Agreement. Trackument will maintain reasonable administrative, technical, and physical safeguards designed to protect District Data against unauthorized access, acquisition, disclosure, alteration, or destruction. Trackument encrypts data transmitted to and from the Services using industry-standard transport encryption. Trackument uses encryption or equivalent protections for stored data where supported by its hosting infrastructure. Trackument maintains access controls designed to limit access to District Data to authorized personnel and service providers who require access to perform their responsibilities. Trackument will not knowingly use District Data to train or develop general-purpose artificial-intelligence models.</p>
+      <h2>13. Privacy and FERPA</h2>
+      <p>District is responsible for determining whether information submitted to the Services is subject to FERPA, the California Education Code, California privacy laws, or other legal requirements.</p>
+      <p>The parties acknowledge that ordinary employee personnel information may not constitute a student education record under FERPA. To the extent Trackument receives student education records or other FERPA-protected information under an authorized use of the Services, Trackument will process such information only as necessary to provide the Services and in accordance with the applicable Data Processing & Security Addendum. Nothing in this Agreement authorizes Trackument to use or redisclose FERPA-protected information for purposes unrelated to the Services. The parties intend that, where applicable, Trackument will operate under District’s direction and control with respect to the use and maintenance of FERPA-protected information.</p>
+      <h2>14. Intellectual Property</h2>
+      <p>Trackument and its licensors own all right, title, and interest in Trackument Technology. Except for the limited license expressly granted in this Agreement, no rights are granted to District. District grants Trackument a limited, non-exclusive right to process District Data solely as necessary to provide, secure, maintain, and support the Services and as otherwise permitted by this Agreement. Trackument may use aggregated and de-identified information that cannot reasonably be used to identify District, an employee, or any other individual for legitimate business purposes, including service analytics, security, and product improvement.</p>
+      <h2>15. Warranties</h2>
+      <p>Trackument warrants that:</p>
+      <ol>
+        <li>it has the authority to enter into this Agreement</li>
+        <li>during the applicable Subscription Term, the Services will materially conform to their applicable documentation; and</li>
+        <li>Trackument will provide the Services in a professional manner consistent with generally applicable industry practices</li>
+      </ol>
+      <p>If Trackument materially breaches the warranty in this Section, District’s exclusive remedy will be for Trackument to correct the nonconformity or, if Trackument reasonably determines correction is not commercially practicable, refund the unused portion of prepaid subscription fees attributable to the affected Services.</p>
+      <h2>16. Disclaimers</h2>
+      <p>EXCEPT AS EXPRESSLY PROVIDED IN THIS AGREEMENT, THE SERVICES AND OUTPUT ARE PROVIDED “AS IS” AND “AS AVAILABLE.” TO THE MAXIMUM EXTENT PERMITTED BY LAW, TRACKUMENT DISCLAIMS ALL IMPLIED WARRANTIES, INCLUDING IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT. TRACKUMENT DOES NOT WARRANT THAT THE SERVICES WILL BE UNINTERRUPTED, ERROR-FREE, OR COMPLETELY SECURE. TRACKUMENT DOES NOT WARRANT THAT ANY OUTPUT WILL BE ACCURATE, COMPLETE, APPROPRIATE, NONDISCRIMINATORY, OR LEGALLY SUFFICIENT. TRACKUMENT DOES NOT PROVIDE LEGAL, EMPLOYMENT, HUMAN RESOURCES, OR LABOR-RELATIONS ADVICE. DISTRICT IS SOLELY RESPONSIBLE FOR REVIEWING OUTPUT AND DETERMINING WHETHER AND HOW OUTPUT SHOULD BE USED.</p>
+      <h2>17. Compliance with Laws</h2>
+      <p>Each party shall comply with laws applicable to its respective obligations under this Agreement. District is solely responsible for compliance with laws governing its employment relationships, employee discipline, collective bargaining obligations, employee procedural rights, personnel practices, and employment decisions. Trackument does not represent that use of the Services will independently cause District to comply with any particular law, regulation, collective bargaining agreement, District policy, or employment procedure. District shall not use the Services to discriminate, retaliate, harass, or otherwise violate applicable law.</p>
+      <h2>18. Indemnification</h2>
+      <h2>18.1 Trackument Indemnification</h2>
+      <p>Trackument will defend District against any third-party claims alleging that the Services, when used by District as authorized under this Agreement, infringe a United States patent, copyright, or trademark. Trackument will also defend District against a third-party claim arising directly from Trackument’s gross negligence or willful misconduct in providing the Services. If a claim covered by this Section occurs, Trackument may, at its option:</p>
+      <ol>
+        <li>obtain the right for District to continue using the affected Services</li>
+        <li>modify or replace the affected Services so that they are non-infringing; or</li>
+        <li>terminate the affected Services and refund prepaid fees attributable to the unused portion of the affected Services</li>
+      </ol>
+      <p>Trackument has no obligation under this Section for claims arising from:</p>
+      <ul>
+        <li>District Data</li>
+        <li>Output</li>
+        <li>District’s modification of the Services or Output</li>
+        <li>use of the Services contrary to this Agreement</li>
+        <li>combination of the Services with products or services not supplied by Trackument</li>
+        <li>District’s employment decisions</li>
+        <li>District’s policies or procedures</li>
+        <li>District’s violation of law or collective bargaining obligations; or</li>
+        <li>continued use of allegedly infringing Services after Trackument has provided a reasonable non-infringing alternative</li>
+      </ul>
+      <h2>18.2 District Indemnification</h2>
+      <p>To the extent permitted by applicable law, District will defend and indemnify Trackument against third-party claims arising from:</p>
+      <ol>
+        <li>District’s unlawful use of the Services</li>
+        <li>District Data supplied by District that violates applicable law or third-party rights</li>
+        <li>District’s employment decisions or disciplinary actions</li>
+        <li>District’s violation of a collective bargaining agreement or District policy; or</li>
+        <li>District’s material breach of this Agreement. The indemnified party shall promptly notify the indemnifying party of any claim, provide reasonable cooperation, and permit the indemnifying party to control the defense and settlement, provided that no settlement may impose an admission of wrongdoing or non-monetary obligation on the indemnified party without its consent</li>
+      </ol>
+      <h2>19. Limitation of Liability</h2>
+      <p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, TRACKUMENT’S TOTAL AGGREGATE LIABILITY ARISING OUT OF OR RELATING TO THIS AGREEMENT WILL NOT EXCEED THE FEES PAID OR PAYABLE BY DISTRICT TO TRACKUMENT UNDER THE APPLICABLE ORDER FORM DURING THE TWELVE (12) MONTHS PRECEDING THE EVENT GIVING RISE TO THE CLAIM. TO THE MAXIMUM EXTENT PERMITTED BY LAW, NEITHER PARTY WILL BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES, OR FOR LOST PROFITS, LOST REVENUE, LOST BUSINESS OPPORTUNITIES, OR LOSS OF GOODWILL, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</p>
+      <p>The foregoing limitations do not apply to liability that cannot lawfully be limited or excluded.The parties intend these limitations to allocate risk between them and that the fees charged for the Services reflect this allocation of risk.</p>
+      <h2>20. Insurance</h2>
+      <p>Trackument will maintain commercially reasonable insurance appropriate to the nature and scale of the Services.</p>
+      <p>Upon reasonable request, Trackument will provide District with certificates of insurance identifying applicable coverage. Specific insurance limits or additional insured requirements will apply only if expressly stated in the applicable Order Form.</p>
+      <h2>21. Security Incidents</h2>
+      <p>Trackument will notify District without undue delay and, where reasonably practicable, within seventy-two (72) hours after confirming a Security Incident involving District Data.</p>
+      <p>The notification will include, to the extent reasonably available:</p>
+      <ul>
+        <li>the nature of the Security Incident</li>
+        <li>the categories of information affected</li>
+        <li>the anticipated consequences</li>
+        <li>mitigation measures taken or proposed; and</li>
+        <li>a point of contact for additional information</li>
+      </ul>
+      <p>Trackument will reasonably cooperate with District in investigating and mitigating the Security Incident. District remains responsible for determining whether notifications to employees, affected individuals, regulators, law enforcement, or other governmental entities is required, except to the extent applicable law specifically imposes such obligations on Trackument.</p>
+      <h2>22. Force Majeure</h2>
+      <p>Neither party will be liable for failure or delay in performing an obligation, other than payment obligations, caused by events beyond its reasonable control, including natural disasters, acts of government, war, terrorism, civil unrest, labor disruptions, widespread internet or telecommunications failures, or failures of third-party infrastructure not reasonably within the affected party’s control. The affected party will use commercially reasonable efforts to mitigate the effects of the event.</p>
+      <h2>23. Assignment</h2>
+      <p>District may not assign this Agreement without Trackument’s prior written consent, except as required by applicable law. Trackument may assign this Agreement without District’s consent in connection with a merger, acquisition, corporate reorganization, financing transaction, or sale of all or substantially all of Trackument’s assets, provided that the assignee assumes Trackument’s obligations under this Agreement.</p>
+      <h2>24. Notices</h2>
+      <p>Operational notices may be provided by email to the designated District or Trackument contact.</p>
+      <p>Notices concerning material breach, termination, indemnification claims, or legal proceedings must be provided by a method reasonably calculated to provide confirmation of receipt.</p>
+      <p>The parties may designate specific notice addresses in an Order Form.</p>
+      <h2>25. Purchase Orders and Conflicting Terms</h2>
+      <p>Any terms contained in a District purchase order, procurement portal, vendor registration document, or other District-issued document that conflict with or supplement this Agreement will not modify this Agreement unless expressly accepted in writing by an authorized representative of Trackument. A purchase order may be used for administrative or payment purposes without modifying the parties’ substantive contractual obligations.</p>
+      <h2>26. Order of Precedence</h2>
+      <p>If there is a conflict among the documents governing the Services, the following order of precedence applies:</p>
+      <ol>
+        <li>a mutually executed amendment</li>
+        <li>the applicable Order Form</li>
+        <li>the Data Processing & Security Addendum</li>
+        <li>this Agreement; and</li>
+        <li>other incorporated Trackument policies</li>
+      </ol>
+      <p>A District procurement document does not supersede this Agreement unless expressly agreed in writing by Trackument.</p>
+      <h2>27. Changes to the Services</h2>
+      <p>Trackument may modify or improve the Services from time to time. Trackument will not materially reduce the core functionality of the Services during a paid Subscription Term. Trackument will provide reasonable notice of material changes where required by applicable law or the applicable Order Form. Trackument will not materially change its contractual treatment of District Data during an existing Subscription Term without providing District reasonable notice and, where appropriate, an opportunity to terminate the affected Services.</p>
+      <h2>28. Governing Law and Disputes</h2>
+      <p>This Agreement is governed by the laws of the State of California, without regard to conflict-of-law principles. The parties will first attempt in good faith to resolve any dispute through discussions between representatives with authority to resolve the dispute. If the dispute cannot be resolved through good-faith discussions, either party may pursue available legal remedies in a court of competent jurisdiction. Disputes of $5,000 or less will be resolved in small claims court in the county where the District is located; larger disputes will first go to mediation before any litigation. The prevailing party in any dispute is entitled to reasonable attorney fees.</p>
+      <p>Nothing in this Section prevents either party from seeking emergency injunctive or equitable relief where necessary to protect confidential information, intellectual property, data, or security.</p>
+      <h2>29. Independent Contractor</h2>
+      <p>Trackument is an independent contractor. Nothing in this Agreement creates a partnership, joint venture, agency, fiduciary, employment, or franchise relationship between the parties.</p>
+      <h2>30. Severability and Waiver</h2>
+      <p>If any provision of this Agreement is held unenforceable, the remaining provisions will remain in effect. Failure to enforce a provision does not constitute a waiver of that provision.</p>
+      <h2>31. Entire Agreement</h2>
+      <p>This Agreement, together with applicable Order Forms, the Data Processing & Security Addendum, and any expressly incorporated documents, constitutes the entire agreement between the parties concerning the Services and supersedes prior proposals, communications, and agreements concerning the same subject matter. Any amendment must be in writing and signed or otherwise expressly accepted by authorized representatives of both parties.</p>
+      <h2>32. Counterparts and Electronic Signatures</h2>
+      <p>This Agreement may be executed electronically and in counterparts, each of which will be considered an original and all of which together constitute one agreement.</p>
+      <h2>33. Survival</h2>
+      <p>Provisions that by their nature should survive termination will survive, including provisions concerning confidentiality, intellectual property, District Data, indemnification, limitations of liability, disclaimers, payment obligations, and dispute resolution</p>
 
-      <h2>7. Warranty</h2>
-      <p>We warrant that Trackument will be provided in a professional manner consistent with industry standards, and will substantially conform to the description on our website at the time of signup.</p>
-
-      <h2>8. Compliance and Non-Discrimination</h2>
-      <p>We will comply with all applicable local, state, and federal laws, including those governing student and employee data privacy. We do not discriminate against any employee or applicant on the basis of any legally protected characteristic.</p>
-
-      <h2>9. Indemnification</h2>
-      <p>To the fullest extent permitted by law, we agree to defend, indemnify, and hold harmless the District, its governing board, officers, administrators, and employees from claims, damages, and expenses, including reasonable attorney fees, arising from our breach of this Agreement, any unauthorized disclosure of District data caused by us, or our negligent acts or omissions. This does not apply to damages caused solely by the District's own intentional misconduct. This section survives termination of this Agreement.</p>
-
-      <h2>10. Governing Law and Disputes</h2>
-      <p>This Agreement is governed by California law. Any dispute will first be addressed through good-faith discussion between the parties. Disputes of $5,000 or less will be resolved in small claims court in the county where the District is located; larger disputes will first go to mediation before any litigation. The prevailing party in any dispute is entitled to reasonable attorney fees.</p>
-
-      <h2>11. General</h2>
-      <p>This Agreement is the entire agreement between the parties regarding Trackument and supersedes any prior agreements or communications on the subject. It may only be modified in writing signed by both parties, except that we may update the fees on our Pricing page for future renewal terms with reasonable advance notice. If any part of this Agreement is found unenforceable, the rest remains in effect. Failure to enforce any provision is not a waiver of that provision.</p>
+      <hr class="terms-divider">
+      <h2 id="dpa" class="terms-doc-title">Trackument Data Processing &amp; Security Addendum</h2>
+      <p>This Data Processing & Security Addendum (“DPA”) forms part of the Trackument Software-as-a-Service Agreement between Intentional Schools, LLC dba Trackument (“Trackument”) and the applicable District. This DPA governs Trackument’s processing of District Data on behalf of District.</p>
+      <h2>1. Scope</h2>
+      <p>Trackument will process District Data solely as necessary to provide, maintain, secure, and support the Services and as otherwise permitted by the Agreement. District remains the controller, public agency, or otherwise responsible party for District Data to the extent applicable under law, and Trackument acts as a service provider, contractor, processor, or other applicable service-provider role to the extent required by applicable law. Nothing in this DPA transfers ownership of District Data to Trackument.</p>
+      <h2>2. Data Minimization</h2>
+      <p>Trackument is designed to minimize retention of employee and other personally identifiable information. District should submit only information reasonably necessary to use the Services. Trackument does not intentionally require District to maintain student information or employee personnel information in a persistent Trackument database for the core drafting functionality. Unless otherwise agreed in writing, generated documents are not retained by Trackument after the applicable user session ends.</p>
+      <h2>3. Processing Activities</h2>
+      <p>Trackument may process District Data for the following purposes:</p>
+      <ul>
+        <li>providing the Services</li>
+        <li>generating requested Output</li>
+        <li>authenticating Authorized Users</li>
+        <li>maintaining account security</li>
+        <li>detecting and preventing abuse</li>
+        <li>troubleshooting technical problems</li>
+        <li>maintaining service availability</li>
+        <li>responding to support requests</li>
+        <li>complying with legal obligations; and</li>
+        <li>performing limited internal analytics using information that does not identify individual employees or students</li>
+      </ul>
+      <p>Trackument will not use District Data for targeted advertising or sell District Data.</p>
+      <h2>4. Artificial Intelligence Processing</h2>
+      <p>The Services may use third-party artificial-intelligence or machine-learning services to generate or assist with Output. Trackument will maintain contractual or technical controls designed to ensure that District Data submitted to an AI service is processed only for the purpose of providing the requested functionality. Trackument will not knowingly permit a third-party AI provider to use District Data to train or develop a general-purpose AI model. Where technically feasible and appropriate, Trackument will pseudonymize direct identifiers before submitting employee-related information to an AI provider. Pseudonymization does not constitute a representation that the underlying information is anonymous or incapable of identifying an individual. Trackument will not intentionally submit employee names or other direct identifiers to an AI provider where Trackument’s applicable processing architecture is designed to remove those identifiers before AI processing. Trackument will maintain reasonable controls designed to prevent AI providers from retaining District Data longer than necessary to provide the requested functionality.</p>
+      <h2>5. AI Provider Restrictions</h2>
+      <p>Trackument will require applicable AI subprocessors to:</p>
+      <ol>
+        <li>process District Data only as necessary to provide contracted services</li>
+        <li>maintain appropriate confidentiality obligations</li>
+        <li>maintain reasonable security measures</li>
+        <li>not sell District Data</li>
+        <li>not use District Data to train general-purpose models</li>
+        <li>not disclose District Data except as necessary to provide the contracted services or as required by law; and</li>
+        <li>delete or return District Data in accordance with applicable contractual requirements</li>
+      </ol>
+      <h2>6. Subprocessors</h2>
+      <p>Trackument may engage third-party service providers (“Subprocessors”) to provide hosting, authentication, security, artificial-intelligence processing, analytics, communications, payment processing, or other services necessary to operate Trackument. Trackument remains responsible for its Subprocessors’ performance of obligations relating to District Data to the extent required by applicable law and the Agreement. Trackument will maintain a list of material Subprocessors and will provide District reasonable notice of material changes to Subprocessors that process District Data. District may object to a new Subprocessor on reasonable data-protection grounds. The parties will work in good faith to address a reasonable objection.</p>
+      <h2>7. Confidentiality</h2>
+      <p>Trackument will ensure that personnel with access to District Data are subject to confidentiality obligations. Trackument will limit access to District Data to personnel and Subprocessors who require such access to perform their responsibilities.</p>
+      <h2>8. Security Measures</h2>
+      <p>Trackument will maintain reasonable administrative, technical, and physical safeguards appropriate to the nature of the Services and reasonably designed to protect District Data. These safeguards include, as appropriate:</p>
+      <ul>
+        <li>encryption in transit</li>
+        <li>encryption at rest</li>
+        <li>authentication controls</li>
+        <li>access controls</li>
+        <li>least-privilege principles</li>
+        <li>credential-management controls</li>
+        <li>security monitoring</li>
+        <li>vulnerability management</li>
+        <li>backup and recovery controls</li>
+        <li>incident-response procedures; and</li>
+        <li>reasonable security practices for application development and maintenance</li>
+      </ul>
+      <p>Trackument may modify particular technical controls as technology and security practices evolve, provided that the overall level of protection is not materially reduced.</p>
+      <h2>9. Authentication and Access</h2>
+      <p>Trackument requires authenticated access to the Services.</p>
+      <p>District is responsible for determining which personnel should have access to the Services.</p>
+      <p>Trackument will maintain reasonable controls designed to restrict access to District Data to authorized personnel.</p>
+      <h2>10. Data Retention</h2>
+      <p>Trackument’s core Services are designed not to retain generated employee documents after a user session ends unless District separately requests or authorizes document storage.</p>
+      <p>Trackument may retain limited operational information necessary for:</p>
+      <ul>
+        <li>authentication</li>
+        <li>billing</li>
+        <li>account administration</li>
+        <li>security</li>
+        <li>fraud prevention</li>
+        <li>troubleshooting</li>
+        <li>legal compliance</li>
+        <li>service availability; and</li>
+        <li>audit purposes</li>
+      </ul>
+      <p>Such information may include account identifiers, timestamps, technical logs, security events, and similar operational information.</p>
+      <p>Trackument will not intentionally retain the substantive content of employee disciplinary documents solely for analytics or advertising purposes.</p>
+      <h2>11. Backups</h2>
+      <p>To the extent District Data is temporarily included in system backups, Trackument will maintain reasonable safeguards designed to protect such information.</p>
+      <p>Backup copies will not be restored for ordinary use except as reasonably necessary for disaster recovery, business continuity, or legal requirements.</p>
+      <p>Backup data will be deleted or overwritten in accordance with Trackument’s ordinary backup-retention practices.</p>
+      <h2>12. Data Deletion</h2>
+      <p>Upon District’s written request following termination or expiration, Trackument will delete District Data that Trackument is not legally required to retain.</p>
+      <p>Deletion does not require immediate removal from backup systems that are not reasonably accessible for ordinary processing, provided such information remains protected and is deleted in accordance with Trackument’s ordinary backup-deletion practices.</p>
+      <h2>13. Security Incidents</h2>
+      <p>Trackument will maintain an incident-response process designed to identify, contain, investigate, and remediate Security Incidents.</p>
+      <p>Trackument will notify District without undue delay and, where reasonably practicable, within seventy-two (72) hours after confirming a Security Incident involving District Data.</p>
+      <p>Trackument’s notice will include available information concerning:</p>
+      <ul>
+        <li>the nature of the incident</li>
+        <li>the categories of data affected</li>
+        <li>the systems affected</li>
+        <li>known or reasonably suspected consequences</li>
+        <li>containment and mitigation measures; and</li>
+        <li>a Trackument contact for incident coordination</li>
+      </ul>
+      <p>Trackument will provide reasonable updates as material information becomes available.</p>
+      <p>District is responsible for determining whether it must notify affected employees, students, parents, regulators, law enforcement, bargaining representatives, or other parties, except to the extent applicable law imposes a notification obligation directly upon Trackument.</p>
+      <h2>14. FERPA</h2>
+      <p>To the extent District provides Trackument with personally identifiable information from student education records subject to FERPA, District and Trackument intend that Trackument will operate consistently with the requirements applicable to a school official or other authorized service provider, as determined by the District and applicable law.</p>
+      <p>Trackument will:</p>
+      <ul>
+        <li>use FERPA-protected information only to perform the institutional service for which District provides access</li>
+        <li>remain subject to District’s direction and control concerning the use and maintenance of such information</li>
+        <li>not use such information for advertising or unrelated commercial purposes</li>
+        <li>not sell such information; and</li>
+        <li>not redisclose such information except as authorized by District or permitted or required by law.  The parties acknowledge that ordinary employee personnel records may not constitute FERPA education records</li>
+      </ul>
+      <h2>15. California Privacy Laws</h2>
+      <p>To the extent California privacy laws apply to Trackument’s processing of District Data, Trackument will process personal information only as necessary to provide the Services and for other purposes permitted under the Agreement and applicable law. Trackument will not sell District Data. Trackument will not use District Data for purposes inconsistent with the District’s instructions or the purposes for which the information was provided. Trackument will maintain reasonable safeguards appropriate to the nature of the information processed.</p>
+      <h2>16. Return of Data</h2>
+      <p>During the applicable Subscription Term and for thirty (30) days after expiration or termination, District may request an export of District Data that remains available within the Services.</p>
+      <p>Trackument will provide such information in a reasonably usable electronic format where technically feasible. After the applicable period, Trackument may delete District Data subject to this DPA, applicable law, litigation holds, and backup-retention practices.</p>
+      <h2>17. Survival</h2>
+      <p>Obligations concerning confidentiality, security, permitted use, data protection, and deletion survive termination to the extent necessary to protect District Data retained by Trackument.</p>
 
     </div>
   </div>
@@ -163,10 +479,6 @@
   <div class="terms-accept-wrap">
     <div class="terms-accept-box">
       <div class="terms-summary" id="termsSummary" style="display:none;"></div>
-      <div class="terms-accept-row">
-        <input type="checkbox" id="termsAccept">
-        <label for="termsAccept">I have read and agree to the Trackument Service Agreement above, and I am authorized to accept it on behalf of my district, on <span id="agreementDate"></span>.</label>
-      </div>
       <div class="signature-fields">
         <div class="sig-field">
           <label>Full name</label>
@@ -182,7 +494,6 @@
         </div>
       </div>
       <p class="terms-error" id="termsError" style="display:none;"></p>
-      <button type="button" class="terms-continue-btn" id="termsContinueBtn" disabled onclick="completeSignup()">Continue to Sign Up &rarr;</button>
       <button type="button" class="terms-print-btn" onclick="window.print()">Print / Save as PDF</button>
     </div>
 
@@ -205,6 +516,16 @@
     </div>
   </div>
 </section>
+
+<div class="sticky-accept-bar">
+  <div class="sticky-accept-inner">
+    <div class="terms-accept-row">
+      <input type="checkbox" id="termsAccept">
+      <label for="termsAccept">I have read and agree to the Trackument Service Agreement above, and I am authorized to accept it on behalf of my district, on <span id="agreementDate"></span>.</label>
+    </div>
+    <button type="button" class="terms-continue-btn" id="termsContinueBtn" disabled onclick="completeSignup()">Continue to Sign Up &rarr;</button>
+  </div>
+</div>
 
 <footer class="site-footer">
   <div class="footer-inner">
@@ -238,9 +559,9 @@
 <script>
   const TIERS = [
     { label: 'District — up to 5,000 ADA', price: 5000 },
-    { label: 'District — up to 10,000 ADA', price: 10000 },
-    { label: 'District — up to 20,000 ADA', price: 15000 },
-    { label: 'District — over 20,000 ADA', price: 20000 },
+    { label: 'District — 5,001–10,000 ADA', price: 10000 },
+    { label: 'District — 10,001–20,000 ADA', price: 15000 },
+    { label: 'District — 20,001+ ADA', price: 20000 },
     { label: 'Individual school site', price: 1000 },
   ];
 

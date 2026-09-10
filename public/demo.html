@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Request a Trackument Demo</title>
+<meta name="description" content="See how Trackument can work for your district. Book a time that works for you and we'll walk you through it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .demo-hero{ padding:80px 48px 0; background:var(--cream); }
+  .demo-hero-inner{ max-width:640px; margin:0 auto; text-align:center; }
+  .demo-hero-inner .sub{ font-size:1.15rem; color:var(--text-light); margin-top:10px; }
+  .demo-booking-wrap{
+    max-width:900px; margin:44px auto 24px;
+    background:#fff; border:1px solid var(--rule); border-radius:16px;
+    box-shadow:0 2px 10px rgba(40,11,91,0.06); overflow:hidden;
+  }
+  .demo-booking-frame{ width:100%; height:780px; border:none; display:block; }
+  .demo-fallback{
+    max-width:900px; margin:0 auto 100px; text-align:center;
+    font-size:0.92rem; color:var(--text-light);
+  }
+  .demo-fallback a{ color:var(--navy); font-weight:700; text-decoration:underline; }
+  .demo-perks{
+    max-width:900px; margin:0 auto 8px; display:flex; flex-wrap:wrap;
+    justify-content:center; gap:28px 40px; padding-bottom:8px;
+  }
+  .demo-perk{ display:flex; align-items:center; gap:10px; font-size:1rem; font-weight:700; color:var(--navy); }
+  .demo-perk svg{ width:19px; height:19px; flex-shrink:0; color:var(--teal); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="/" class="brand">
+      <img class="logo-horizontal" src="assets/logo-horizontal.png" alt="Trackument - Employee Discipline - Documented. Defensible. Done.">
+    </a>
+    <nav class="primary-nav">
+      <a href="/">Home</a>
+      <a href="how-it-works.html">How it works</a>
+      <a href="security.html">Security</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="/checkout" class="btn-signup" style="margin-right:10px;">Get Started</a>
+      <a href="/login" class="btn-login">Log in</a>
+    </nav>
+  </div>
+</header>
+
+<section class="demo-hero">
+  <div class="demo-hero-inner">
+    <p class="page-eyebrow" style="margin-left:0;">Request a Demo</p>
+    <h1>See Trackument in action</h1>
+    <p class="sub">Pick a time that works for your district. We'll walk you through exactly how Trackument fits your process, no pressure, just a straight look at the tool.</p>
+  </div>
+
+  <div class="demo-perks">
+    <div class="demo-perk">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+      <span>20-minute walkthrough</span>
+    </div>
+    <div class="demo-perk">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+      <span>Built around your district's process</span>
+    </div>
+    <div class="demo-perk">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+      <span>No obligation</span>
+    </div>
+  </div>
+
+  <div class="demo-booking-wrap">
+    <iframe
+      class="demo-booking-frame"
+      src="https://calendar.app.google/srgvM48WxYz1ajAZ6"
+      title="Book a Trackument demo">
+    </iframe>
+  </div>
+  <p class="demo-fallback">
+    Scheduler not loading? <a href="https://calendar.app.google/srgvM48WxYz1ajAZ6" target="_blank" rel="noopener">Open the booking page in a new tab &rarr;</a>
+  </p>
+</section>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="footer-brand-row">
+          <img class="logo-horizontal" src="assets/logo-horizontal-white.png" alt="Trackument">
+        </div>
+        <p>Legally grounded discipline documentation tool for California TK-12 administrators.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="how-it-works.html">How it works</a>
+        <a href="security.html">Security</a>
+        <a href="pricing.html">Pricing</a>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <a href="mailto:help@trackument.com">help@trackument.com</a>
+        <a href="/login">Log in</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Trackument. All rights reserved.</span>
+      <span>Trackument is a product of Intentional Schools</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/reveal.js"></script>
+</body>
+</html>
