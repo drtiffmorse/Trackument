@@ -48,8 +48,9 @@ async function checkBeta(req, res, next) {
   // Always allow: the public marketing site, login, and its supporting api routes/assets.
   // Everything else, including the real app, stays behind the gate.
   const openExact = [
-    '/', '/login', '/privacy', '/checkout', '/welcome', '/contact', '/terms',
+    '/', '/login', '/privacy', '/checkout', '/welcome', '/contact', '/terms', '/demo',
     '/how-it-works.html', '/security.html', '/pricing.html',
+    '/robots.txt', '/sitemap.xml',
     '/api/checkout', '/api/webhook', '/api/check-access',
     '/api/auth/request-link', '/api/auth/verify', '/api/auth/google', '/api/auth/google/callback',
   ];
@@ -84,10 +85,9 @@ function emailDomain(email) {
 
 async function findActiveDistrictByDomain(domain) {
   if (!domain) return null;
-  const cleanDomain = domain.replace(/^www\./, '');
   const { rows } = await pool.query(
-    `SELECT domain, district_name, status FROM districts WHERE regexp_replace(domain, '^www\.', '') = $1 AND status = 'active' LIMIT 1`,
-    [cleanDomain]
+    `SELECT domain, district_name, status FROM districts WHERE domain = $1 AND status = 'active' LIMIT 1`,
+    [domain]
   );
   return rows[0] || null;
 }
@@ -132,40 +132,34 @@ app.get('/login', (req, res) => {
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'Inter',sans-serif;background:#280b5b;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
-    body::after{content:'';display:block;position:fixed;bottom:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#280b5b 0 25%,#2f9c90 25% 50%,#ee8c29 50% 75%,#dc012b 75% 100%);}
+    body{font-family:'Inter',sans-serif;background:#1a0256;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
+    body::after{content:'';display:block;position:fixed;bottom:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#1a0256 0 25%,#048784 25% 50%,#e05b0e 50% 75%,#c80204 75% 100%);}
     .card{background:#fff;border-radius:14px;padding:48px 40px;width:100%;max-width:400px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.25);}
-    .login-icon{height:52px;width:auto;margin-bottom:12px;}
-    .login-wordmark{height:23px;width:auto;margin-bottom:6px;}
-    .subline{font-family:'IBM Plex Mono',monospace;font-size:0.66rem;text-transform:uppercase;color:#280b5b;font-weight:700;margin-bottom:4px;letter-spacing:0.04em;}
-    .tag{font-family:'IBM Plex Mono',monospace;font-size:0.68rem;text-transform:uppercase;color:#ee8c29;font-weight:600;letter-spacing:0.1em;margin-bottom:28px;}
+    .login-logo{height:66px;width:auto;margin-bottom:24px;}
     .err{color:#dc2626;font-size:0.82rem;margin-bottom:14px;display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:10px 12px;}
     .notice{color:#15803d;font-size:0.82rem;margin-bottom:14px;display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:10px 12px;}
-    input{width:100%;padding:12px 14px;border:1.5px solid #e6e1f2;border-radius:8px;font-size:0.95rem;font-family:'Inter',sans-serif;margin-bottom:10px;text-align:center;color:#280b5b;transition:border-color .15s;}
-    input:focus{outline:none;border-color:#280b5b;}
+    input{width:100%;padding:12px 14px;border:1.5px solid #e6e1f2;border-radius:8px;font-size:0.95rem;font-family:'Inter',sans-serif;margin-bottom:10px;text-align:center;color:#1a0256;transition:border-color .15s;}
+    input:focus{outline:none;border-color:#1a0256;}
     button{width:100%;padding:13px;border:none;border-radius:8px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .15s;}
     button:hover{opacity:0.88;}
     .btn-google{background:#fff;color:#3c4043;border:1.5px solid #dadce0 !important;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px;}
     .btn-google img{height:18px;width:18px;}
-    .btn-link{background:#ee8c29;color:#1a0740;}
+    .btn-link{background:#e05b0e;color:#1a0740;}
     .divider{display:flex;align-items:center;gap:10px;margin:18px 0;font-size:0.76rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;}
     .divider::before,.divider::after{content:'';flex:1;height:1px;background:#e6e1f2;}
     .admin-toggle{margin-top:22px;font-size:0.8rem;color:#9ca3af;cursor:pointer;text-decoration:underline;background:none;border:none;padding:0;font-weight:400;width:auto;}
-    .admin-toggle:hover{opacity:1;color:#280b5b;}
+    .admin-toggle:hover{opacity:1;color:#1a0256;}
     .admin-section{display:none;margin-top:16px;padding-top:16px;border-top:1px solid #e6e1f2;}
     .signup{margin-top:18px;font-size:0.85rem;color:#75726a;}
-    .signup a{color:#280b5b;font-weight:600;text-decoration:none;}
+    .signup a{color:#1a0256;font-weight:600;text-decoration:none;}
     .links{margin-top:16px;display:flex;justify-content:center;gap:16px;font-size:0.78rem;color:#9ca3af;}
     .links a{color:#9ca3af;text-decoration:none;}
-    .links a:hover{color:#280b5b;}
+    .links a:hover{color:#1a0256;}
   </style>
 </head>
 <body>
   <div class="card">
-    <img class="login-icon" src="/assets/logo-icon.png" alt="Trackument logo">
-    <img class="login-wordmark" src="/assets/wordmark.png" alt="Trackument">
-    <div class="subline">Employee Discipline</div>
-    <div class="tag">Documented. Defensible. Done.</div>
+    <img class="login-logo" src="/assets/logo-horizontal.png" alt="Trackument - Employee Discipline - Documented. Defensible. Done.">
 
     <div class="err" id="err"></div>
     <div class="notice" id="notice"></div>
@@ -188,7 +182,7 @@ app.get('/login', (req, res) => {
     <button class="admin-toggle" type="button" onclick="document.getElementById('adminSection').style.display='block';this.style.display='none';">Trackument staff login</button>
     <div class="admin-section" id="adminSection">
       <input type="password" id="pw" placeholder="Admin password" onkeydown="if(event.key==='Enter')login()">
-      <button onclick="login()" style="background:#280b5b;color:#fff;">Log in as admin →</button>
+      <button onclick="login()" style="background:#1a0256;color:#fff;">Log in as admin →</button>
     </div>
   </div>
   <script>
@@ -261,7 +255,6 @@ app.post('/api/auth/request-link', express.json(), async (req, res) => {
     const district = await findActiveDistrictByDomain(domain);
 
     if (district) {
-      console.log('Magic link requested for', email, '-- matched active district:', district.district_name, '(' + domain + ')');
       const token = crypto.randomBytes(32).toString('hex');
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
       await pool.query(
@@ -274,8 +267,6 @@ app.post('/api/auth/request-link', express.json(), async (req, res) => {
         subject: 'Your Trackument sign-in link',
         text: `Click below to sign in to Trackument for ${district.district_name}:\n\n${link}\n\nThis link expires in 15 minutes and can only be used once. If you didn't request this, you can safely ignore this email.`,
       });
-    } else {
-      console.log('Magic link requested for', email, '-- no active district found for domain:', domain);
     }
     // Same response either way -- see note above.
     res.json({ ok: true, message: 'If that email is associated with an active district, a sign-in link is on its way.' });
@@ -404,11 +395,13 @@ async function initDb() {
       county TEXT,
       doc_types JSONB,
       cba_library JSONB,
+      handbook_library JSONB,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `);
   // Safe to run repeatedly -- adds the column if this table already existed from an earlier version.
   await pool.query(`ALTER TABLE district_settings ADD COLUMN IF NOT EXISTS county TEXT;`);
+  await pool.query(`ALTER TABLE district_settings ADD COLUMN IF NOT EXISTS handbook_library JSONB;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS tier_label TEXT;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS agreed_to_contract_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS wants_training BOOLEAN DEFAULT false;`);
@@ -418,7 +411,6 @@ async function initDb() {
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS renewal_reminder_sent_for TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS contact_title TEXT;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS contact_phone TEXT;`);
-  await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS po_number TEXT;`);
 
   // District sign-in: magic-link tokens (short-lived, one-time use) and the
   // sessions they (or Google sign-in) create once someone's actually logged in.
@@ -455,8 +447,8 @@ async function getDistrictByDomain(domain) {
 
 async function activateDistrict(info) {
   await pool.query(`
-    INSERT INTO districts (domain, district_name, contact_name, contact_email, sites, status, stripe_session_id, amount_paid, activated_at, stripe_customer_id, stripe_subscription_id, renewal_date, contact_title, contact_phone, agreed_to_contract_at, po_number, tier_label)
-    VALUES ($1, $2, $3, $4, $5, 'active', $6, $7, now(), $8, $9, $10, $11, $12, $13, $14, $15)
+    INSERT INTO districts (domain, district_name, contact_name, contact_email, sites, status, stripe_session_id, amount_paid, activated_at, stripe_customer_id, stripe_subscription_id, renewal_date, contact_title, contact_phone, agreed_to_contract_at)
+    VALUES ($1, $2, $3, $4, $5, 'active', $6, $7, now(), $8, $9, $10, $11, $12, $13)
     ON CONFLICT (domain) DO UPDATE SET
       district_name = EXCLUDED.district_name,
       contact_name = EXCLUDED.contact_name,
@@ -471,17 +463,15 @@ async function activateDistrict(info) {
       renewal_date = EXCLUDED.renewal_date,
       contact_title = EXCLUDED.contact_title,
       contact_phone = EXCLUDED.contact_phone,
-      agreed_to_contract_at = EXCLUDED.agreed_to_contract_at,
-      po_number = EXCLUDED.po_number,
-      tier_label = EXCLUDED.tier_label
-  `, [info.domain, info.districtName, info.contactName || null, info.contactEmail || null, info.sites || 1, info.stripeSessionId || null, info.amountPaid || null, info.stripeCustomerId || null, info.stripeSubscriptionId || null, info.renewalDate || null, info.contactTitle || null, info.contactPhone || null, info.agreedToContractAt || null, info.poNumber || null, info.tierLabel || null]);
+      agreed_to_contract_at = EXCLUDED.agreed_to_contract_at
+  `, [info.domain, info.districtName, info.contactName || null, info.contactEmail || null, info.sites || 1, info.stripeSessionId || null, info.amountPaid || null, info.stripeCustomerId || null, info.stripeSubscriptionId || null, info.renewalDate || null, info.contactTitle || null, info.contactPhone || null, info.agreedToContractAt || null]);
   console.log('District activated:', info.districtName, info.domain, '| renews:', info.renewalDate);
 }
 
 async function recordInvoiceRequest(info) {
   await pool.query(`
-    INSERT INTO districts (domain, district_name, contact_name, contact_email, sites, status, total_due, requested_at, tier_label, agreed_to_contract_at, wants_training, contact_title, contact_phone, po_number)
-    VALUES ($1, $2, $3, $4, $5, 'pending_invoice', $6, now(), $7, $8, $9, $10, $11, $12)
+    INSERT INTO districts (domain, district_name, contact_name, contact_email, sites, status, total_due, requested_at, tier_label, agreed_to_contract_at, wants_training, contact_title, contact_phone)
+    VALUES ($1, $2, $3, $4, $5, 'pending_invoice', $6, now(), $7, $8, $9, $10, $11)
     ON CONFLICT (domain) DO UPDATE SET
       district_name = EXCLUDED.district_name,
       contact_name = EXCLUDED.contact_name,
@@ -494,9 +484,8 @@ async function recordInvoiceRequest(info) {
       agreed_to_contract_at = EXCLUDED.agreed_to_contract_at,
       wants_training = EXCLUDED.wants_training,
       contact_title = EXCLUDED.contact_title,
-      contact_phone = EXCLUDED.contact_phone,
-      po_number = EXCLUDED.po_number
-  `, [info.districtDomain, info.districtName, info.contactName || null, info.contactEmail || null, info.sitesNum, info.totalDue, info.tierLabel, info.agreedAt, info.wantsTraining || false, info.contactTitle || null, info.contactPhone || null, info.poNumber || null]);
+      contact_phone = EXCLUDED.contact_phone
+  `, [info.districtDomain, info.districtName, info.contactName || null, info.contactEmail || null, info.sitesNum, info.totalDue, info.tierLabel, info.agreedAt, info.wantsTraining || false, info.contactTitle || null, info.contactPhone || null]);
 }
 
 // ─── Email notifications ──────────────────────────────────────────────────────
@@ -519,7 +508,7 @@ async function sendNotificationEmail({ to, subject, text }) {
     return;
   }
   try {
-    const res = await fetch('https://api.resend.com/emails', {
+    await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + process.env.RESEND_API_KEY,
@@ -530,15 +519,6 @@ async function sendNotificationEmail({ to, subject, text }) {
         to, subject, text,
       }),
     });
-    // fetch() does not throw on 4xx/5xx -- Resend can reject a send (bad
-    // address, rate limit, domain issue) and this would previously look
-    // identical to a successful send with no way to tell the difference.
-    if (!res.ok) {
-      const body = await res.text().catch(() => '(could not read response body)');
-      console.error('Resend rejected the email. Status:', res.status, '| To:', to, '| Subject:', subject, '| Response:', body);
-    } else {
-      console.log('Email sent via Resend. To:', to, '| Subject:', subject);
-    }
   } catch (err) {
     // Never let an email failure break whatever flow triggered it.
     console.error('Failed to send notification email:', err.message);
@@ -601,13 +581,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
   const secretPreview = STRIPE_WEBHOOK_SECRET
     ? STRIPE_WEBHOOK_SECRET.slice(0, 10) + '...' + STRIPE_WEBHOOK_SECRET.slice(-4) + ' (length ' + STRIPE_WEBHOOK_SECRET.length + ')'
     : 'NOT SET';
-  const sigHeader = req.headers['stripe-signature'];
-  const bodyIsBuffer = Buffer.isBuffer(req.body);
-  const bodyLength = bodyIsBuffer ? req.body.length : (typeof req.body === 'string' ? req.body.length : -1);
   console.log('Webhook received. Using STRIPE_WEBHOOK_SECRET:', secretPreview);
-  console.log('  stripe-signature header:', sigHeader ? sigHeader.slice(0, 60) + '...' : 'MISSING');
-  console.log('  req.body is Buffer:', bodyIsBuffer, '| type:', typeof req.body, '| length:', bodyLength);
-  console.log('  content-type header:', req.headers['content-type']);
 
   let event;
   try {
@@ -646,13 +620,11 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
         stripeSubscriptionId: session.subscription,
         renewalDate,
         agreedToContractAt: meta.agreedToContractAt || null,
-        poNumber: meta.poNumber || null,
-        tierLabel: meta.tierLabel || null,
       });
       await sendNotificationEmail({
         to: SALES_NOTIFY_EMAIL,
         subject: 'New sale — ' + meta.districtName,
-        text: `${meta.contactName} <${meta.contactEmail || session.customer_email}> from ${meta.districtName} just completed payment.\n\nDomain: ${meta.districtDomain}\nPlan: ${meta.tierLabel}\nAmount: $${(session.amount_total / 100).toLocaleString()}\nPO number: ${meta.poNumber || 'not provided'}\nRenews: ${renewalDate ? new Date(renewalDate).toLocaleDateString() : 'unknown'}\n\nThey can now sign in at trackument.com/login with Google or a magic link using their district email. No further action needed on your end unless you want to reach out personally.`,
+        text: `${meta.contactName} <${meta.contactEmail || session.customer_email}> from ${meta.districtName} just completed payment.\n\nDomain: ${meta.districtDomain}\nPlan: ${meta.tierLabel}\nAmount: $${(session.amount_total / 100).toLocaleString()}\nRenews: ${renewalDate ? new Date(renewalDate).toLocaleDateString() : 'unknown'}\n\nThey now have access at trackument.com/login using the shared beta password. No further action needed on your end unless you want to reach out personally.`,
       });
     }
   }
@@ -756,7 +728,7 @@ app.post('/api/feedback', express.json(), async (req, res) => {
 });
 
 app.post('/api/checkout', async (req, res) => {
-  const { districtName, contactName, contactTitle, contactPhone, contactEmail, districtDomain, tier, agreedToContract, wantsTraining, method, poNumber } = req.body;
+  const { districtName, contactName, contactTitle, contactPhone, contactEmail, districtDomain, tier, agreedToContract, wantsTraining, method } = req.body;
   if (!districtName || !contactEmail || !districtDomain) return res.status(400).json({ error: 'Missing required fields.' });
   if (!agreedToContract) return res.status(400).json({ error: 'You must agree to the Service Agreement before continuing.' });
 
@@ -771,13 +743,13 @@ app.post('/api/checkout', async (req, res) => {
   }
 
   if (method === 'invoice') {
-    await recordInvoiceRequest({ districtName, contactName, contactEmail, districtDomain, sitesNum, totalDue: totalCents / 100, tierLabel: selectedTier.label, agreedAt, wantsTraining, contactTitle, contactPhone, poNumber });
+    await recordInvoiceRequest({ districtName, contactName, contactEmail, districtDomain, sitesNum, totalDue: totalCents / 100, tierLabel: selectedTier.label, agreedAt, wantsTraining, contactTitle, contactPhone });
     await sendNotificationEmail({
       to: SALES_NOTIFY_EMAIL,
       subject: 'Invoice requested — ' + districtName,
-      text: `${contactName}${contactTitle ? ' (' + contactTitle + ')' : ''} <${contactEmail}> from ${districtName} requested an invoice at signup.\n\nPhone: ${contactPhone || 'not provided'}\nPO number: ${poNumber || 'not provided'}\nDomain: ${districtDomain}\nPlan: ${selectedTier.label}\nAmount: $${(totalCents / 100).toLocaleString()}\nWants training: ${wantsTraining ? 'Yes' : 'No'}\n\nSend a formal invoice to ${contactEmail} within 24 hours per our published terms.`,
+      text: `${contactName}${contactTitle ? ' (' + contactTitle + ')' : ''} <${contactEmail}> from ${districtName} requested an invoice at signup.\n\nPhone: ${contactPhone || 'not provided'}\nDomain: ${districtDomain}\nPlan: ${selectedTier.label}\nAmount: $${(totalCents / 100).toLocaleString()}\nWants training: ${wantsTraining ? 'Yes' : 'No'}\n\nSend a formal invoice to ${contactEmail} within 24 hours per our published terms.`,
     });
-    console.log('=== INVOICE REQUEST ===\nDistrict:', districtName, '\nContact:', contactName, contactTitle, contactEmail, contactPhone, '\nPO number:', poNumber || 'not provided', '\nDomain:', districtDomain, '\nTier:', selectedTier.label, '\nAmount: $' + (totalCents / 100), '\nAgreed to contract:', agreedAt, '\nWants training:', !!wantsTraining);
+    console.log('=== INVOICE REQUEST ===\nDistrict:', districtName, '\nContact:', contactName, contactTitle, contactEmail, contactPhone, '\nDomain:', districtDomain, '\nTier:', selectedTier.label, '\nAmount: $' + (totalCents / 100), '\nAgreed to contract:', agreedAt, '\nWants training:', !!wantsTraining);
     return res.json({ ok: true, method: 'invoice' });
   }
 
@@ -803,7 +775,7 @@ app.post('/api/checkout', async (req, res) => {
       subscription_data: {
         metadata: { districtName, contactName, contactEmail, districtDomain, tierLabel: selectedTier.label, contactTitle: contactTitle || '', contactPhone: contactPhone || '' },
       },
-      metadata: { districtName, contactName, contactEmail, districtDomain, tierLabel: selectedTier.label, agreedToContractAt: agreedAt, wantsTraining: String(!!wantsTraining), contactTitle: contactTitle || '', contactPhone: contactPhone || '', poNumber: poNumber || '' },
+      metadata: { districtName, contactName, contactEmail, districtDomain, tierLabel: selectedTier.label, agreedToContractAt: agreedAt, wantsTraining: String(!!wantsTraining), contactTitle: contactTitle || '', contactPhone: contactPhone || '' },
       success_url: BASE_URL + '/welcome?session_id={CHECKOUT_SESSION_ID}',
       cancel_url: BASE_URL + '/checkout',
     });
@@ -842,6 +814,7 @@ app.get('/api/district-settings', async (req, res) => {
       county: row.county,
       docTypes: row.doc_types || [],
       cbaLibrary: row.cba_library || [],
+      handbookLibrary: row.handbook_library || [],
       updatedAt: row.updated_at,
     });
   } catch (err) {
@@ -852,19 +825,20 @@ app.get('/api/district-settings', async (req, res) => {
 app.post('/api/district-settings', async (req, res) => {
   const domain = (req.body.domain || '').trim().toLowerCase();
   if (!domain) return res.status(400).json({ error: 'Missing domain.' });
-  const { districtName, bpURL, county, docTypes, cbaLibrary } = req.body;
+  const { districtName, bpURL, county, docTypes, cbaLibrary, handbookLibrary } = req.body;
   try {
     await pool.query(`
-      INSERT INTO district_settings (domain, district_name, bp_url, county, doc_types, cba_library, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, now())
+      INSERT INTO district_settings (domain, district_name, bp_url, county, doc_types, cba_library, handbook_library, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, now())
       ON CONFLICT (domain) DO UPDATE SET
         district_name = EXCLUDED.district_name,
         bp_url = EXCLUDED.bp_url,
         county = EXCLUDED.county,
         doc_types = EXCLUDED.doc_types,
         cba_library = EXCLUDED.cba_library,
+        handbook_library = EXCLUDED.handbook_library,
         updated_at = now()
-    `, [domain, districtName || '', bpURL || '', county || '', JSON.stringify(docTypes || []), JSON.stringify(cbaLibrary || [])]);
+    `, [domain, districtName || '', bpURL || '', county || '', JSON.stringify(docTypes || []), JSON.stringify(cbaLibrary || []), JSON.stringify(handbookLibrary || [])]);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Server error: ' + err.message });
@@ -891,6 +865,7 @@ app.get('/privacy',  (req, res) => res.sendFile(path.join(__dirname, 'public', '
 app.get('/terms',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'terms.html')));
 app.get('/checkout', (req, res) => res.sendFile(path.join(__dirname, 'public', 'checkout.html')));
 app.get('/contact', (req, res) => res.sendFile(path.join(__dirname, 'public', 'contact.html')));
+app.get('/demo', (req, res) => res.sendFile(path.join(__dirname, 'public', 'demo.html')));
 app.get('/welcome',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'welcome.html')));
 
 // Generates a real, one-time Stripe billing portal link for whoever just
@@ -913,7 +888,7 @@ app.get('/api/agreement/download', async (req, res) => {
     if (!domain) return res.status(400).send('Could not identify district for this session.');
 
     const { rows } = await pool.query(
-      `SELECT district_name, agreed_to_contract_at, contact_name, contact_title, contact_email, contact_phone, tier_label, amount_paid, po_number, renewal_date, status FROM districts WHERE domain = $1 LIMIT 1`,
+      `SELECT district_name, agreed_to_contract_at FROM districts WHERE domain = $1 LIMIT 1`,
       [domain]
     );
     const district = rows[0];
@@ -922,32 +897,10 @@ app.get('/api/agreement/download', async (req, res) => {
     const agreedDate = district.agreed_to_contract_at
       ? new Date(district.agreed_to_contract_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
       : 'date not on record';
-    const renewalDateFormatted = district.renewal_date
-      ? new Date(district.renewal_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-      : null;
-    const amountFormatted = district.amount_paid
-      ? '$' + (district.amount_paid / 100).toLocaleString()
-      : null;
 
     const termsHtml = fs.readFileSync(path.join(__dirname, 'public', 'terms.html'), 'utf-8');
     const bodyMatch = termsHtml.match(/<div class="terms-body">[\s\S]*?\n    <\/div>\n  <\/div>/);
     const termsBody = bodyMatch ? bodyMatch[0].replace(/<div class="terms-body">|\n    <\/div>\n  <\/div>$/g, '') : '<p>Could not load agreement text.</p>';
-
-    const summaryRows = [
-      ['District', district.district_name],
-      ['Plan', district.tier_label],
-      ['Annual fee', amountFormatted],
-      ['Primary contact', district.contact_name + (district.contact_title ? ', ' + district.contact_title : '')],
-      ['Contact email', district.contact_email],
-      ['Contact phone', district.contact_phone],
-      ['Purchase order number', district.po_number],
-      ['Agreement date', agreedDate],
-      ['Renews', renewalDateFormatted],
-    ].filter(([, val]) => val);
-
-    const summaryHtml = summaryRows.map(([label, val]) =>
-      `<tr><td style="padding:6px 16px 6px 0;color:#555;">${label}</td><td style="padding:6px 0;font-weight:600;">${val}</td></tr>`
-    ).join('');
 
     res.send(`<!DOCTYPE html>
 <html lang="en">
@@ -956,13 +909,11 @@ app.get('/api/agreement/download', async (req, res) => {
   <title>Trackument Service Agreement — ${district.district_name}</title>
   <style>
     body{font-family:Georgia,serif;max-width:760px;margin:40px auto;padding:0 24px;color:#1a1a1a;line-height:1.7;}
-    h1{font-family:Arial,sans-serif;font-size:1.4rem;color:#280b5b;margin-bottom:4px;}
-    h2{font-family:Arial,sans-serif;font-size:1.05rem;color:#280b5b;margin-top:28px;}
-    .cover{border-bottom:2px solid #280b5b;padding-bottom:16px;margin-bottom:16px;}
+    h1{font-family:Arial,sans-serif;font-size:1.4rem;color:#1a0256;margin-bottom:4px;}
+    h2{font-family:Arial,sans-serif;font-size:1.05rem;color:#1a0256;margin-top:28px;}
+    .cover{border-bottom:2px solid #1a0256;padding-bottom:16px;margin-bottom:28px;}
     .cover-meta{font-family:Arial,sans-serif;font-size:0.9rem;color:#555;}
-    .order-summary{font-family:Arial,sans-serif;font-size:0.9rem;background:#f7f6fb;border:1px solid #e0dbee;border-radius:8px;padding:16px 20px;margin-bottom:28px;}
-    .order-summary-title{font-weight:700;color:#280b5b;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:10px;}
-    .print-btn{font-family:Arial,sans-serif;background:#ee8c29;color:#280b5b;border:none;padding:10px 20px;border-radius:6px;font-weight:700;cursor:pointer;margin-bottom:24px;}
+    .print-btn{font-family:Arial,sans-serif;background:#e05b0e;color:#1a0256;border:none;padding:10px 20px;border-radius:6px;font-weight:700;cursor:pointer;margin-bottom:24px;}
     @media print{.print-btn{display:none;}}
   </style>
 </head>
@@ -970,11 +921,10 @@ app.get('/api/agreement/download', async (req, res) => {
   <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
   <div class="cover">
     <h1>Trackument Service Agreement</h1>
-    <div class="cover-meta">District: <strong>${district.district_name}</strong></div>
-  </div>
-  <div class="order-summary">
-    <div class="order-summary-title">Order Summary</div>
-    <table>${summaryHtml}</table>
+    <div class="cover-meta">
+      District: <strong>${district.district_name}</strong><br>
+      Agreement date: <strong>${agreedDate}</strong>
+    </div>
   </div>
   ${termsBody}
 </body>
