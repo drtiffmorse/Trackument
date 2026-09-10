@@ -7,12 +7,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --navy: #280b5b;
+    --navy: #1a0256;
     --navy-deep: #1a0740;
-    --gold: #ee8c29;
+    --gold: #e05b0e;
     --gold-light: #f4ab5f;
-    --teal: #2f9c90;
-    --red: #dc012b;
+    --teal: #048784;
+    --red: #c80204;
     --cream: #fbfaff;
     --white: #ffffff;
     --gray: #6b7280;
@@ -1261,6 +1261,62 @@
         </div>
       </div>
 
+      <!-- Employee Handbooks -->
+      <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--light-gray);">
+        <div class="setup-section-title" style="margin-top:0; padding-top:0; border-top:none;">Employee Handbooks</div>
+        <div class="setup-section-sub">Store employee handbooks here. Saved handbooks are read alongside your Board Policy and CBA when Trackument identifies applicable citations, and are shared across every site in your district.</div>
+
+        <div id="setupHandbookList" style="margin-bottom:10px;">
+          <div id="setupHandbookEmpty" style="font-size:0.85rem;color:var(--gray);font-style:italic;padding:8px 0;">No handbooks saved yet.</div>
+        </div>
+
+        <button class="btn btn-secondary" onclick="toggleSetupHandbookForm()" id="setupHandbookToggleBtn" style="font-size:0.78rem;">+ Add Handbook</button>
+
+        <div id="setupHandbookForm" style="display:none;margin-top:14px;padding:16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:3px;">
+          <div class="row-2">
+            <div>
+              <label style="margin-top:0;">Handbook Name</label>
+              <input type="text" id="setupHandbookName" placeholder="e.g. Classified Employee Handbook">
+            </div>
+            <div>
+              <label style="margin-top:0;">Applies To</label>
+              <select id="setupHandbookUnit" style="width:100%;">
+                <option value="">-- Select --</option>
+                <option value="all">All Staff</option>
+                <option value="certificated">Certificated</option>
+                <option value="classified">Classified</option>
+                <option value="management">Management / Confidential</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <label>Handbook Document</label>
+          <div style="display:flex;gap:10px;margin-bottom:12px;">
+            <button id="handbookTabUpload" onclick="setHandbookInputMode('upload')" style="flex:1;padding:9px;border:2px solid var(--navy);border-radius:3px;background:var(--navy);color:var(--white);font-size:0.8rem;font-weight:700;cursor:pointer;">Upload PDF / Word Doc</button>
+            <button id="handbookTabLink" onclick="setHandbookInputMode('link')" style="flex:1;padding:9px;border:2px solid var(--light-gray);border-radius:3px;background:var(--white);color:var(--gray);font-size:0.8rem;font-weight:700;cursor:pointer;">Link to URL</button>
+          </div>
+          <div id="handbookUploadMode">
+            <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:18px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="handbookDropZone" onclick="document.getElementById('handbookFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleHandbookDrop(event)">
+              <div style="font-size:0.85rem;color:var(--gray);">Click to upload or drag and drop</div>
+              <div style="font-size:0.75rem;color:var(--gray);margin-top:4px;">PDF or Word document (.pdf, .docx)</div>
+              <input type="file" id="handbookFileInput" accept=".pdf,application/pdf" style="display:none;" onchange="handleHandbookFile(this.files[0])">
+            </div>
+            <div id="handbookFilePreview" style="display:none;padding:10px 13px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);display:flex;align-items:center;justify-content:space-between;">
+              <span id="handbookFileName"></span>
+              <button onclick="clearHandbookFile()" style="font-size:0.72rem;color:var(--gray);background:transparent;border:none;cursor:pointer;text-decoration:underline;">Remove</button>
+            </div>
+          </div>
+          <div id="handbookLinkMode" style="display:none;">
+            <input type="text" id="setupHandbookLink" placeholder="https://your-district.org/handbook-2024.pdf or Google Drive link">
+            <div style="font-size:0.75rem;color:var(--gray);margin-top:6px;">The tool will extract relevant handbook language when generating memos.</div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:12px;">
+            <button class="btn btn-primary" onclick="saveSetupHandbook()" style="font-size:0.8rem;padding:10px 20px;">Save Handbook</button>
+            <button class="btn btn-secondary" onclick="toggleSetupHandbookForm()" style="font-size:0.8rem;padding:10px 16px;">Cancel</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Merit District / Personnel Commission -->
       <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--light-gray);">
         <div class="setup-section-title" style="margin-top:0; padding-top:0; border-top:none;">Personnel Commission Rules</div>
@@ -1759,6 +1815,16 @@ if (window.location.protocol === 'file:') {
           <div class="add-custom">
             <input type="text" id="customCBARef" placeholder="Add a specific article reference manually...">
             <button class="btn-add" onclick="addCustomCitation('cbaRefList', 'customCBARef')">+ Add</button>
+          </div>
+        </div>
+
+        <div class="prepop-group" id="handbookGroup" style="margin-bottom:20px;">
+          <div style="font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px;">Employee Handbook</div>
+          <div id="handbookRefNotice" style="font-size:0.83rem; color:var(--gray); font-style:italic; padding:6px 0; display:none;"></div>
+          <div class="citation-list" id="handbookRefList"></div>
+          <div class="add-custom">
+            <input type="text" id="customHandbookRef" placeholder="Add a specific handbook section manually...">
+            <button class="btn-add" onclick="addCustomCitation('handbookRefList', 'customHandbookRef')">+ Add</button>
           </div>
         </div>
 
@@ -2580,6 +2646,12 @@ async function generateMemo() {
       console.warn('CBA file is not a PDF -- skipping document attachment. CBA name will still be referenced in the prompt.');
     }
   }
+  (await getHandbookLibrary()).forEach(h => {
+    if (h.sourceType === 'file' && isPDFData(h.sourceData)) {
+      const [, b64] = h.sourceData.split(',');
+      messageContent.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 }, title: h.name });
+    }
+  });
   (window._priorDocFiles || []).forEach(f => {
     if (isPDFData(f.data)) {
       const [, b64] = f.data.split(',');
@@ -2692,6 +2764,7 @@ function collectData() {
     otherCitations: getCheckedCitations('otherCiteList'),
     bpCitations: getCheckedCitations('bpList'),
     cbaRef: getCheckedCitations('cbaRefList'),
+    handbookRef: getCheckedCitations('handbookRefList'),
     ruleNotes: document.getElementById('ruleNotes').value,
     ruleNotes: document.getElementById('ruleNotes').value,
     impactStudents: (() => {
@@ -2794,6 +2867,7 @@ ${d.otherCitations ? 'Other applicable citations: ' + d.otherCitations : ''}
 Board Policy/AR (USE ONLY THESE — never add your own): ${d.bpCitations || 'None — omit board policy citations entirely'}
 ${d.cbaRef ? 'CBA citations selected by administrator (USE THESE VERBATIM in the citations section):\n' + d.cbaRef : 'No CBA citations selected — do not include any CBA citations.'}
 ${window._activeCBAEntry ? '(CBA document: ' + window._activeCBAEntry.name + ')' : ''}
+${d.handbookRef ? 'Employee Handbook citations selected by administrator (USE THESE VERBATIM in the citations section):\n' + d.handbookRef : 'No Employee Handbook citations selected — do not include any handbook citations.'}
 ${d.ruleNotes ? 'Additional context: ' + d.ruleNotes : ''}
 Impact: ${impactNote}
 Directives: ${d.directives || 'Draft specific, actionable directives based on the facts.'}
@@ -3064,7 +3138,7 @@ function startOver() {
   const memoDate = document.getElementById('memoDate');
   if (memoDate) memoDate.value = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   // Clear citation lists and analysis state
-  ['edcodeList', 'bpList', 'cbaRefList', 'cvcList', 'otherCiteList'].forEach(id => {
+  ['edcodeList', 'bpList', 'cbaRefList', 'handbookRefList', 'cvcList', 'otherCiteList'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = '';
   });
@@ -3540,6 +3614,19 @@ async function analyzeAndSuggestCitations() {
   const hasCBAFile = cbaEntry && cbaEntry.sourceType === 'file' && cbaEntry.sourceData;
   const hasCBALink = cbaEntry && cbaEntry.sourceType === 'link' && cbaEntry.sourceData;
 
+  const isPDFSource = (dataStr) => dataStr && (
+    dataStr.startsWith('data:application/pdf') ||
+    (dataStr.includes(';base64,') && !dataStr.includes('word') && !dataStr.includes('docx') && !dataStr.includes('msword'))
+  );
+  const handbookLibrary = await getHandbookLibrary();
+  const handbookFiles = handbookLibrary.filter(h => h.sourceType === 'file' && isPDFSource(h.sourceData));
+  const handbookLinks = handbookLibrary.filter(h => h.sourceType === 'link' && h.sourceData);
+  const handbookInstruction = handbookLibrary.length === 0
+    ? 'No employee handbook saved.'
+    : (handbookFiles.length > 0
+        ? 'Employee handbook document(s) attached (' + handbookFiles.map(h => h.name).join(', ') + ') — extract only the single most relevant sentence per applicable section.'
+        : 'Employee handbook(s) on file: ' + handbookLibrary.map(h => h.name + (h.sourceType === 'link' ? ' (available at ' + h.sourceData + ' — no document uploaded, so cite section types typically applicable)' : '')).join('; '));
+
   const bpInstruction = bpURL
     ? `DISTRICT BOARD POLICY SITE: ${bpURL}
 Suggest the standard California (CSBA) board policy numbers most applicable to this conduct. The administrator will verify against their district's adopted policy site using the link provided.`
@@ -3556,6 +3643,8 @@ ${bpInstruction}
 
 ${hasCBAFile ? 'CBA document attached — extract only the single most relevant sentence per applicable article.' : hasCBALink ? 'CBA: ' + cbaEntry.name + ' (available at ' + cbaEntry.sourceData + ' — no document was uploaded, so cite article types typically applicable to this conduct for this unit).' : cbaEntry ? 'CBA: ' + cbaEntry.name + '. No document uploaded — cite article types typically applicable.' : 'No CBA saved.'}
 
+${handbookInstruction}
+
 Return ONLY a JSON object — no preamble, no markdown backticks, no explanation:
 {
   "edcode": [{"code": "Ed Code § XXXXX", "desc": "Direct verbatim quote of the most relevant 1-sentence clause"}],
@@ -3563,6 +3652,7 @@ Return ONLY a JSON object — no preamble, no markdown backticks, no explanation
   "other": [{"code": "Citation name § number", "desc": "Direct verbatim quote — only for health code, DMV, or non-Ed Code regulatory citations when directly relevant. County health department entries are the one exception: use a plain-language verification note instead of a quote, as instructed above."}],
   "boardpolicy": [{"code": "BP XXXX", "desc": "Direct verbatim quote of the most relevant 1-sentence clause"}],
   "cba": [{"code": "Article X.X — Title", "desc": "Direct verbatim quote of the single most relevant sentence only"}],
+  "handbook": [{"code": "Handbook Section X.X — Title", "desc": "Direct verbatim quote of the single most relevant sentence only"}],
   "notes": "One sentence summarizing the primary rules violated"
 }
 
@@ -3586,6 +3676,7 @@ AUTOMATIC EXCLUSIONS — exclude immediately without further analysis:
 - CBA Article 3 (District Rights) or equivalent — ALWAYS exclude regardless of how it is worded
 - CBA Management Rights, Zipper, Recognition, Grievance, Duration articles
 - CBA articles where the District is the subject ("The District will...", "The District shall...")
+- Employee Handbook sections about benefits, grievance procedures, at-will disclaimers, or general administrative/HR process — not employee conduct standards
 - CVC sections about bicycles, pedestrians, or vehicles unrelated to the specific violation
 - Any citation not directly tied to the specific conduct in the facts
 
@@ -3649,28 +3740,38 @@ REQUIRED citations for food service/nutrition/cafeteria violations (food handlin
 
 For CBA: only cite if the article specifically addresses: attendance, punctuality, safe work practices, compliance with laws while on duty, professional conduct, or leave notification. A CBA article about employee safety/assault reporting does NOT apply to a traffic violation.
 
+For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section must state an employee obligation or conduct standard directly relevant to the facts, not a district/administrative procedure. Only cite handbook sections that would not already be redundant with an Ed Code or Board Policy citation already selected.
+
 - Ed Code: Classified = 45xxx performance/conduct sections only. Certificated = 44xxx performance/conduct sections only. Max 4.
 - CVC: Bus drivers, van drivers, any driver — cite the specific code sections violated. Return [] if not a driving situation.
 - Food Code / County Environmental Health: Nutrition services, cafeteria, food service staff — cite California Retail Food Code sections violated, plus a county verification note if a county was provided. Return [] if not a food-service situation.
 - Board Policy: Correct series by classification. Classified = 4200 series. Certificated = 4100 series. Management = 4300 series. Max 3.
-- CBA: Max 3 articles that directly state employee obligations. Strict relevance to the actual conduct.`;
+- CBA: Max 3 articles that directly state employee obligations. Strict relevance to the actual conduct.
+- Employee Handbook: Max 3 sections that directly state employee obligations. Strict relevance to the actual conduct. Return [] if no handbook was saved.`;
 
 
-  // Build message content -- include CBA file only if it's actually a PDF
+  // Build message content -- include CBA and handbook files only if they're actually PDFs
   let messageContent;
   const cbaIsPDF = hasCBAFile && (
     cbaEntry.sourceData.startsWith('data:application/pdf') ||
     !cbaEntry.sourceData.includes('word') && !cbaEntry.sourceData.includes('docx') && !cbaEntry.sourceData.includes('msword')
   );
+  const documentBlocks = [];
   if (cbaIsPDF) {
     const [, b64] = cbaEntry.sourceData.split(',');
-    messageContent = [
-      { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 }, title: cbaEntry.name },
-      { type: 'text', text: prompt }
-    ];
+    documentBlocks.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 }, title: cbaEntry.name });
+  } else if (hasCBAFile) {
+    console.warn('CBA is not a PDF -- analyzing without document attachment.');
+  }
+  handbookFiles.forEach(h => {
+    const [, b64] = h.sourceData.split(',');
+    documentBlocks.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 }, title: h.name });
+  });
+
+  if (documentBlocks.length > 0) {
+    messageContent = [...documentBlocks, { type: 'text', text: prompt }];
   } else {
     messageContent = prompt;
-    if (hasCBAFile) console.warn('CBA is not a PDF -- analyzing without document attachment.');
   }
 
   try {
@@ -3746,6 +3847,19 @@ For CBA: only cite if the article specifically addresses: attendance, punctualit
       // Fall back to showing the agreement entry
       autoSelectCBAForClassification(classification);
       updateCBARef();
+    }
+
+    // Render Employee Handbook citations the same way
+    if (data.handbook && data.handbook.length > 0) {
+      renderCitations('handbookRefList', data.handbook);
+      const hNotice = document.getElementById('handbookRefNotice');
+      if (hNotice) hNotice.style.display = 'none';
+    } else {
+      const hNotice = document.getElementById('handbookRefNotice');
+      if (hNotice) {
+        hNotice.style.display = handbookLibrary.length > 0 ? 'block' : 'none';
+        hNotice.textContent = 'No applicable handbook section identified for this conduct.';
+      }
     }
 
     // Show BP site link
@@ -4704,6 +4818,7 @@ async function pushDistrictSettings() {
         if (r?.value) cbaLibrary.push(JSON.parse(r.value));
       } catch (e) {}
     }
+    const handbookLibrary = await getHandbookLibrary();
     await fetch('/api/district-settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -4713,7 +4828,8 @@ async function pushDistrictSettings() {
         bpURL: document.getElementById('setupBPURL')?.value.trim() || '',
         county: document.getElementById('setupCounty')?.value.trim() || '',
         docTypes: getCheckedDocTypes(),
-        cbaLibrary
+        cbaLibrary,
+        handbookLibrary
       })
     });
   } catch (err) {
@@ -4752,6 +4868,12 @@ async function pullDistrictSettings(domain) {
         await store.set(entry.key, JSON.stringify(entry));
       }
     }
+    // Same for shared handbook entries.
+    for (const entry of (data.handbookLibrary || [])) {
+      if (entry && entry.key) {
+        await store.set(entry.key, JSON.stringify(entry));
+      }
+    }
 
     window._districtProfile = profile;
     return true;
@@ -4781,6 +4903,7 @@ async function checkDistrictDomain() {
     if (found) {
       applyDistrictProfile(window._districtProfile);
       await loadSetupCBAList();
+      await loadSetupHandbookList();
       await loadCBALibrary();
       if (resultEl) {
         resultEl.style.display = 'block';
@@ -4832,6 +4955,7 @@ function switchTab(tab) {
   if (tab === 'schools') loadSchoolProfileList();
   if (tab === 'district') {
     loadSetupCBAList();
+    loadSetupHandbookList();
     loadMeritRulesList();
     // Always read fresh from storage and populate fields -- guaranteed to work
     store.get('district:profile').then(r => {
@@ -5441,6 +5565,189 @@ async function deleteSetupCBA(key) {
     showToast('Agreement removed');
   } catch (err) {
     showToast('Error removing agreement');
+  }
+}
+
+// ─── Employee Handbook library (setup) ────────────────────────────────────────
+
+function toggleSetupHandbookForm() {
+  const form = document.getElementById('setupHandbookForm');
+  const btn = document.getElementById('setupHandbookToggleBtn');
+  const visible = form.style.display !== 'none';
+  form.style.display = visible ? 'none' : 'block';
+  btn.textContent = visible ? '+ Add Handbook' : 'Cancel';
+  if (form.style.display !== 'none') setHandbookInputMode('upload');
+}
+
+window._handbookFileBase64 = null;
+window._handbookFileName = null;
+window._handbookInputMode = 'upload';
+
+function setHandbookInputMode(mode) {
+  window._handbookInputMode = mode;
+  const uploadBtn = document.getElementById('handbookTabUpload');
+  const linkBtn = document.getElementById('handbookTabLink');
+  const uploadDiv = document.getElementById('handbookUploadMode');
+  const linkDiv = document.getElementById('handbookLinkMode');
+  if (mode === 'upload') {
+    uploadBtn.style.background = 'var(--navy)'; uploadBtn.style.color = 'var(--white)'; uploadBtn.style.borderColor = 'var(--navy)';
+    linkBtn.style.background = 'var(--white)'; linkBtn.style.color = 'var(--gray)'; linkBtn.style.borderColor = 'var(--light-gray)';
+    uploadDiv.style.display = 'block'; linkDiv.style.display = 'none';
+  } else {
+    linkBtn.style.background = 'var(--navy)'; linkBtn.style.color = 'var(--white)'; linkBtn.style.borderColor = 'var(--navy)';
+    uploadBtn.style.background = 'var(--white)'; uploadBtn.style.color = 'var(--gray)'; uploadBtn.style.borderColor = 'var(--light-gray)';
+    linkDiv.style.display = 'block'; uploadDiv.style.display = 'none';
+  }
+}
+
+function handleHandbookFile(file) {
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    alert('Please upload a PDF file. The handbook must be in PDF format for the AI to read it.\n\nIf your handbook is a Word document, open it in Word and choose File → Save As → PDF.');
+    return;
+  }
+  showStatus('Reading handbook document...', file.name);
+  const reader = new FileReader();
+  reader.onload = e => {
+    window._handbookFileBase64 = e.target.result;
+    window._handbookFileName = file.name;
+    const preview = document.getElementById('handbookFilePreview');
+    document.getElementById('handbookFileName').textContent = file.name;
+    preview.style.display = 'flex';
+    document.getElementById('handbookDropZone').style.borderColor = 'var(--success)';
+    hideStatus();
+  };
+  reader.onerror = () => hideStatus();
+  reader.readAsDataURL(file);
+}
+
+function handleHandbookDrop(e) {
+  e.preventDefault();
+  document.getElementById('handbookDropZone').style.borderColor = 'var(--light-gray)';
+  const file = e.dataTransfer.files[0];
+  if (file) handleHandbookFile(file);
+}
+
+function clearHandbookFile() {
+  window._handbookFileBase64 = null;
+  window._handbookFileName = null;
+  document.getElementById('handbookFilePreview').style.display = 'none';
+  document.getElementById('handbookFileInput').value = '';
+  document.getElementById('handbookDropZone').style.borderColor = 'var(--light-gray)';
+}
+
+async function saveSetupHandbook() {
+  const name = document.getElementById('setupHandbookName').value.trim();
+  const unit = document.getElementById('setupHandbookUnit').value.trim();
+  if (!name) { alert('Please provide a handbook name.'); return; }
+
+  let sourceType, sourceData, sourceLabel;
+
+  if (window._handbookInputMode === 'upload') {
+    if (!window._handbookFileBase64) { alert('Please upload a handbook document.'); return; }
+    sourceType = 'file';
+    sourceData = window._handbookFileBase64;
+    sourceLabel = window._handbookFileName;
+  } else {
+    const link = document.getElementById('setupHandbookLink').value.trim();
+    if (!link) { alert('Please enter a URL for the handbook document.'); return; }
+    sourceType = 'link';
+    sourceData = link;
+    sourceLabel = link;
+  }
+
+  const key = 'handbook:' + Date.now();
+  const entry = { key, name, unit, sourceType, sourceData, sourceLabel, savedAt: new Date().toLocaleDateString() };
+
+  try {
+    showStatus('Saving handbook...', 'This may take 1–3 minutes for large files');
+    await store.set(key, JSON.stringify(entry));
+    hideStatus();
+    // Reset form
+    document.getElementById('setupHandbookName').value = '';
+    document.getElementById('setupHandbookUnit').value = '';
+    document.getElementById('setupHandbookLink').value = '';
+    clearHandbookFile();
+    toggleSetupHandbookForm();
+    await loadSetupHandbookList();
+    pushDistrictSettings();
+    showToast('✓ Handbook saved');
+  } catch (err) {
+    hideStatus();
+    alert('Error saving handbook. If uploading a file, try a smaller document or use a link instead.');
+  }
+}
+
+async function loadSetupHandbookList() {
+  const list = document.getElementById('setupHandbookList');
+  if (!list) return;
+  try {
+    const result = await store.list('handbook:');
+    const keys = result?.keys || [];
+    const entries = [];
+    for (const key of keys) {
+      try {
+        const r = await store.get(key);
+        if (r?.value) entries.push(JSON.parse(r.value));
+      } catch (e) {}
+    }
+    entries.sort((a, b) => a.name.localeCompare(b.name));
+
+    if (entries.length === 0) {
+      list.innerHTML = '<div style="font-size:0.85rem;color:var(--gray);font-style:italic;padding:8px 0;">No handbooks saved yet.</div>';
+      return;
+    }
+    list.innerHTML = entries.map(e => `
+      <div class="cba-card">
+        <div class="cba-card-info">
+          <div class="cba-card-name">${e.name}${e.unit ? ' <span style="font-weight:400;color:var(--gray);">— ' + e.unit + '</span>' : ''}</div>
+          <div class="cba-card-preview">
+            ${e.sourceType === 'file' ? '📄 ' + e.sourceLabel : '🔗 ' + e.sourceLabel}
+          </div>
+          <div style="font-size:0.72rem;color:var(--gray);margin-top:3px;">Saved ${e.savedAt}</div>
+        </div>
+        <div class="cba-card-actions">
+          <button class="btn-cba-delete" data-key="${e.key}" data-type="handbook">Remove</button>
+        </div>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('[data-type="handbook"]').forEach(btn => {
+      btn.addEventListener('click', () => deleteSetupHandbook(btn.getAttribute('data-key')));
+    });
+  } catch (err) {
+    list.innerHTML = '<div style="font-size:0.85rem;color:var(--warn);">Error loading handbooks.</div>';
+  }
+}
+
+async function deleteSetupHandbook(key) {
+  try {
+    await store.delete(key);
+    await loadSetupHandbookList();
+    pushDistrictSettings();
+    showToast('Handbook removed');
+  } catch (err) {
+    showToast('Error removing handbook');
+  }
+}
+
+// Returns every saved handbook entry (all of them are attached/considered
+// together, since handbooks are typically not classification-specific the
+// way a CBA is).
+async function getHandbookLibrary() {
+  try {
+    const result = await store.list('handbook:');
+    const keys = result?.keys || [];
+    const entries = [];
+    for (const key of keys) {
+      try {
+        const r = await store.get(key);
+        if (r?.value) entries.push(JSON.parse(r.value));
+      } catch (e) {}
+    }
+    return entries;
+  } catch (e) {
+    return [];
   }
 }
 
