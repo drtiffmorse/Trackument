@@ -1,3 +1,4 @@
+// BUILD: 2026-09-13-r1
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -135,7 +136,7 @@ app.get('/login', (req, res) => {
     body{font-family:'Inter',sans-serif;background:#1a0256;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
     body::after{content:'';display:block;position:fixed;bottom:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#1a0256 0 25%,#048784 25% 50%,#e05b0e 50% 75%,#c80204 75% 100%);}
     .card{background:#fff;border-radius:14px;padding:48px 40px;width:100%;max-width:400px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.25);}
-    .login-logo{height:66px;width:auto;max-width:100%;display:block;margin:0 auto 24px;}
+    .login-logo{width:280px;max-width:100%;height:auto;display:block;margin:0 auto 24px;}
     .err{color:#dc2626;font-size:0.82rem;margin-bottom:14px;display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:10px 12px;}
     .notice{color:#15803d;font-size:0.82rem;margin-bottom:14px;display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:10px 12px;}
     input{width:100%;padding:12px 14px;border:1.5px solid #e6e1f2;border-radius:8px;font-size:0.95rem;font-family:'Inter',sans-serif;margin-bottom:10px;text-align:center;color:#1a0256;transition:border-color .15s;}
@@ -144,7 +145,7 @@ app.get('/login', (req, res) => {
     button:hover{opacity:0.88;}
     .btn-google{background:#fff;color:#3c4043;border:1.5px solid #dadce0 !important;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px;}
     .btn-google img{height:18px;width:18px;}
-    .btn-link{background:#e05b0e;color:#1a0740;}
+    .btn-link{background:#e05b0e;color:#fff;}
     .divider{display:flex;align-items:center;gap:10px;margin:18px 0;font-size:0.76rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;}
     .divider::before,.divider::after{content:'';flex:1;height:1px;background:#e6e1f2;}
     .admin-toggle{margin-top:22px;font-size:0.8rem;color:#9ca3af;cursor:pointer;text-decoration:underline;background:none;border:none;padding:0;font-weight:400;width:auto;}
@@ -176,14 +177,8 @@ app.get('/login', (req, res) => {
     <input type="email" id="emailInput" placeholder="you@district.k12.ca.us" onkeydown="if(event.key==='Enter')requestLink()">
     <button class="btn-link" onclick="requestLink()">Email me a sign-in link →</button>
 
-    <div class="signup">Don't have access? <a href="/checkout">Purchase →</a></div>
+    <div class="signup">Don't have access? <a href="/checkout">Purchase</a></div>
     <div class="links"><a href="/privacy">Privacy Policy</a> · <a href="mailto:help@trackument.com">help@trackument.com</a></div>
-
-    <button class="admin-toggle" type="button" onclick="document.getElementById('adminSection').style.display='block';this.style.display='none';">Trackument staff login</button>
-    <div class="admin-section" id="adminSection">
-      <input type="password" id="pw" placeholder="Admin password" onkeydown="if(event.key==='Enter')login()">
-      <button onclick="login()" style="background:#1a0256;color:#fff;">Log in as admin →</button>
-    </div>
   </div>
   <script>
     const params = new URLSearchParams(window.location.search);
