@@ -1,4 +1,4 @@
-/* BUILD: 2026-09-13-r4 */
+/* BUILD: 2026-09-13-r6 */
 :root{
   --navy: #1a0256;
   --navy-deep: #1a0740;
@@ -509,8 +509,8 @@ img{ max-width:100%; display:block; }
 .cta-actions{ display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
 .btn-gold{
   display:inline-flex; align-items:center; padding:14px 28px; border-radius:8px;
-  background:var(--gold); color:var(--navy-deep) !important; font-weight:700; font-size:1.15rem;
-  text-decoration:none; box-shadow:0 10px 24px rgba(238,140,41,0.3);
+  background:var(--gold); color:#fff !important; font-weight:700; font-size:1.15rem;
+  text-decoration:none; box-shadow:0 10px 24px rgba(224,91,14,0.35);
   transition:transform .15s ease;
 }
 .btn-gold:hover{ transform:translateY(-2px); }
