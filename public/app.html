@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-14-r6 -->
+<!-- BUILD: 2026-09-15-r6 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -59,14 +59,13 @@
   }
 
   .version-badge {
-    background: var(--gold);
-    color: var(--navy);
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
+    background: transparent;
+    color: rgba(255,255,255,0.35);
+    font-size: 0.62rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    padding: 5px 12px;
-    border-radius: 2px;
+    padding: 0 2px;
   }
 
   .container {
@@ -162,7 +161,7 @@
     background: var(--white);
     border: 1px solid var(--light-gray);
     border-top: 4px solid var(--gold);
-    padding: 36px 40px;
+    padding: 36px 48px;
     margin-bottom: 20px;
     box-shadow: 0 2px 12px rgba(26,39,68,0.06);
   }
@@ -231,9 +230,9 @@
 
   label {
     display: block;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     font-weight: 700;
-    letter-spacing: 0.07em;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--navy);
     margin-bottom: 7px;
@@ -276,7 +275,9 @@
     line-height: 1.65;
   }
 
-  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+
+  .field-ready { border-color: var(--gold) !important; background: var(--white) !important; box-shadow: 0 0 0 3px rgba(224,91,14,0.15); transition: box-shadow 0.3s ease, border-color 0.3s ease; }
   .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
 
   /* Situation checkboxes */
@@ -300,10 +301,21 @@
     font-size: 0.85rem;
     font-weight: 500;
     color: var(--text);
+    position: relative;
   }
 
   .sit-checkbox:hover { border-color: var(--gold); background: var(--white); }
-  .sit-checkbox.selected { border-color: var(--navy); background: var(--navy); color: var(--white); }
+  .sit-checkbox.selected { border-color: var(--navy); background: var(--navy); color: var(--white); font-weight: 700; padding-right: 30px; }
+  .sit-checkbox.selected::after {
+    content: "\2713";
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gold-light);
+    font-weight: 800;
+    font-size: 0.95rem;
+  }
   .sit-checkbox input { display: none; }
 
   /* Pre-pop section */
@@ -435,12 +447,12 @@
     background: var(--gold);
     color: var(--navy);
     border: 2px solid var(--gold);
-    font-weight: 800;
+    font-weight: 700;
     font-size: 0.88rem;
-    padding: 14px 36px;
-    box-shadow: 0 2px 8px rgba(224,91,14,0.35);
+    padding: 12px 30px;
+    box-shadow: 0 1px 4px rgba(224,91,14,0.25);
   }
-  .btn-next:hover { background: #b84b0b; border-color: #b84b0b; box-shadow: 0 3px 12px rgba(224,91,14,0.5); }
+  .btn-next:hover { background: #b84b0b; border-color: #b84b0b; box-shadow: 0 2px 8px rgba(224,91,14,0.35); }
   .btn-generate:hover { background: var(--navy); color: var(--gold); }
 
 
@@ -966,7 +978,7 @@
     display: flex;
     gap: 24px;
     align-items: flex-start;
-    max-width: 1100px;
+    max-width: 1250px;
     margin: 0 auto;
     padding: 36px 24px 60px;
   }
@@ -1016,7 +1028,7 @@
   }
 
   .side-nav-item.locked {
-    opacity: 0.45;
+    opacity: 0.72;
     cursor: default;
   }
   .side-nav-item.locked:hover { background: transparent; border-color: transparent; }
@@ -1488,8 +1500,7 @@ if (window.location.protocol === 'file:') {
     <div class="district-header-name" id="headerDistrictName" style="display:none; font-size:0.8rem; font-weight:600; color:var(--gold);"></div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;">
-    <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.72rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:3px 10px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap;">🔒 Privacy protected</div>
-    <a href="/privacy" target="_blank" style="font-size:0.7rem; color:rgba(255,255,255,0.5); text-decoration:none; white-space:nowrap;">Privacy Policy</a>
+    <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.72rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:3px 10px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap; display:flex; align-items:center; gap:6px;">🔒 Privacy protected<a href="/privacy" target="_blank" style="font-size:0.65rem; color:rgba(255,255,255,0.4); text-decoration:underline;">policy</a></div>
     <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.06em; text-transform:uppercase;">+ New Writeup</button>
     <button onclick="openFeedback()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.06em; text-transform:uppercase;">💬 Feedback</button>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;">⚙ District &amp; Site Settings</button>
@@ -1550,7 +1561,7 @@ if (window.location.protocol === 'file:') {
       <div class="card-header">
         <div class="element-badge">1</div>
         <div>
-          <div class="card-title">Employee Information</div>
+          <div class="card-title">Employee Info</div>
           <div class="card-desc">Complete the fields below for this memo. District information is pulled from your saved profile.</div>
         </div>
       </div>
@@ -1570,9 +1581,9 @@ if (window.location.protocol === 'file:') {
 
         <!-- Selector shown when no school is chosen -->
         <div id="schoolSelectorWrap">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
             <span style="font-size:0.8rem; color:var(--navy); font-weight:600;">Click your site below to select it:</span>
-            <button onclick="openSettings(); switchTab('schools')" style="font-size:0.72rem; color:var(--gold); font-weight:700; background:transparent; border:none; cursor:pointer; text-decoration:underline;">+ Add a Site</button>
+            <button onclick="openSettings(); switchTab('schools')" style="font-size:0.72rem; color:var(--navy); font-weight:700; background:var(--white); border:1px solid var(--light-gray); border-radius:3px; padding:4px 10px; cursor:pointer; white-space:nowrap;">+ Add a Site</button>
           </div>
           <div id="schoolSelectorList" style="display:flex; flex-wrap:wrap; gap:8px;">
             <div id="schoolSelectorEmpty" style="font-size:0.85rem; color:var(--gray); font-style:italic; width:100%;">No sites saved yet. Add your sites in Settings → Sites tab.</div>
@@ -1609,6 +1620,10 @@ if (window.location.protocol === 'file:') {
 
       <div class="row-2" style="margin-top:18px;">
         <div>
+          <label>Employee Name</label>
+          <input type="text" id="employeeName" placeholder="Full legal name">
+        </div>
+        <div>
           <label>Employee Salutation</label>
           <select id="employeeSalutation" style="width:100%;">
             <option value="">— Select —</option>
@@ -1618,10 +1633,6 @@ if (window.location.protocol === 'file:') {
             <option value="Dr.">Dr.</option>
             <option value="Mx.">Mx.</option>
           </select>
-        </div>
-        <div>
-          <label>Employee Name</label>
-          <input type="text" id="employeeName" placeholder="Full legal name">
         </div>
       </div>
       <div class="row-2">
@@ -1661,7 +1672,7 @@ if (window.location.protocol === 'file:') {
       <input type="text" id="situationOther" placeholder="Describe the nature of the situation..." style="display:none; margin-top:8px;">
 
       <div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--light-gray); display:flex; justify-content:flex-end;">
-        <button class="btn btn-next" onclick="nextStep(0)" style="padding:14px 40px; font-size:0.9rem;">Next: Facts &rarr;</button>
+        <button class="btn btn-next" onclick="nextStep(0)">Next: Facts &rarr;</button>
       </div>
     </div>
   </div>
@@ -1776,7 +1787,7 @@ if (window.location.protocol === 'file:') {
 
       <div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--light-gray); display:flex; justify-content:space-between; align-items:center;">
         <button class="btn btn-secondary" onclick="prevStep(1)">&larr; Back</button>
-        <button class="btn btn-next" onclick="nextStep(1)" style="padding:14px 40px; font-size:0.9rem;">Next: Citations &rarr;</button>
+        <button class="btn btn-next" onclick="nextStep(1)">Next: Citations &rarr;</button>
       </div>
     </div>
   </div>
@@ -1879,7 +1890,7 @@ if (window.location.protocol === 'file:') {
 
       <div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--light-gray); display:flex; justify-content:space-between; align-items:center;">
         <button class="btn btn-secondary" onclick="prevStep(2)">&larr; Back</button>
-        <button class="btn btn-next" onclick="nextStep(2)" style="padding:14px 40px; font-size:0.9rem;">Next: Impact &rarr;</button>
+        <button class="btn btn-next" onclick="nextStep(2)">Next: Impact &rarr;</button>
       </div>
     </div>
   </div>
@@ -1971,7 +1982,7 @@ if (window.location.protocol === 'file:') {
 
       <div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--light-gray); display:flex; justify-content:space-between; align-items:center;">
         <button class="btn btn-secondary" onclick="prevStep(3)">&larr; Back</button>
-        <button class="btn btn-next" onclick="nextStep(3)" style="padding:14px 40px; font-size:0.9rem;">Next: Directives &rarr;</button>
+        <button class="btn btn-next" onclick="nextStep(3)">Next: Directives &rarr;</button>
       </div>
     </div>
   </div>
@@ -2034,7 +2045,7 @@ if (window.location.protocol === 'file:') {
 
       <div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--light-gray); display:flex; justify-content:space-between; align-items:center;">
         <button class="btn btn-secondary" onclick="prevStep(4)">&larr; Back</button>
-        <button class="btn btn-next" onclick="nextStep(4)" style="padding:14px 40px; font-size:0.9rem;">Next: Closing &rarr;</button>
+        <button class="btn btn-next" onclick="nextStep(4)">Next: Closing &rarr;</button>
       </div>
     </div>
   </div>
@@ -2106,7 +2117,7 @@ if (window.location.protocol === 'file:') {
 
       <div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--light-gray); display:flex; justify-content:space-between; align-items:center;">
         <button class="btn btn-secondary" onclick="prevStep(5)">&larr; Back</button>
-        <button class="btn btn-next" onclick="nextStep(5)" style="padding:14px 40px; font-size:0.9rem;">Next: Generate &rarr;</button>
+        <button class="btn btn-next" onclick="nextStep(5)">Next: Generate &rarr;</button>
       </div>
     </div>
   </div>
@@ -2185,7 +2196,7 @@ if (window.location.protocol === 'file:') {
       </div>
     </div>
     <div style="margin-top:16px; text-align:center;">
-      <button class="btn btn-next" onclick="nextStep(7)" style="padding:12px 32px;">Next Steps &rarr;</button>
+      <button class="btn btn-next" onclick="nextStep(7)">Next Steps &rarr;</button>
     </div>
   </div><!-- end step-7 -->
 
@@ -2246,7 +2257,7 @@ if (window.location.protocol === 'file:') {
 </div><!-- end main-content -->
 </div><!-- end page-layout -->
 
-<div style="text-align:center; padding:14px 20px 24px; font-size:0.72rem; color:var(--gray);">Trackument is a product of Intentional Schools</div>
+<div style="text-align:center; padding:14px 20px 24px; font-size:0.72rem; color:var(--gray);">Trackument is developed by Intentional Schools LLC</div>
 
 <script>
 // ─── Citation Database ───────────────────────────────────────────────────────
@@ -5088,6 +5099,7 @@ function populateAuthorDropdown(school) {
 
   if (admins.length === 0) {
     select.innerHTML = '<option value="">— No administrators saved —</option>';
+    select.classList.remove('field-ready');
     if (note) note.style.display = 'block';
     return;
   }
@@ -5105,6 +5117,10 @@ function populateAuthorDropdown(school) {
 
   // Auto-select if only one
   if (admins.length === 1) select.value = '0';
+
+  // Clear visual signal that this field just became usable
+  select.classList.add('field-ready');
+  setTimeout(() => select.classList.remove('field-ready'), 1200);
 }
 
 function getSelectedAuthor() {
