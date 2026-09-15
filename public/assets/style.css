@@ -1,4 +1,4 @@
-/* BUILD: 2026-09-15-r7 */
+/* BUILD: 2026-09-15-r9 */
 :root{
   --navy: #1a0256;
   --navy-deep: #1a0740;
@@ -231,7 +231,7 @@ img{ max-width:100%; display:block; }
 }
 .hero-trust svg{ width:16px; height:16px; flex-shrink:0; color:var(--teal); }
 .hero-visual{ flex:1 1 600px; min-width:0; display:flex; justify-content:center; }
-.device-frame-wrap{ max-width:934px; width:100%; margin-top:20px; transform:perspective(1400px) translateX(-30px) rotateY(-8deg) rotateX(2deg); }
+.device-frame-wrap{ max-width:1046px; width:100%; margin-top:20px; transform:perspective(1400px) translateX(-45px) rotateY(-8deg) rotateX(2deg); }
 .device-frame{
   background:linear-gradient(155deg,var(--navy),var(--navy-deep));
   border-radius:16px;
@@ -243,7 +243,7 @@ img{ max-width:100%; display:block; }
 
 /* ---------- About (landing) ---------- */
 .about-section{
-  padding:var(--space-section) 48px 40px;
+  padding:52px 48px 25px;
   background:#fff;
   border-top:1px solid var(--rule);
 }
@@ -257,8 +257,8 @@ img{ max-width:100%; display:block; }
 }
 .about-inner p{ font-size:var(--fs-body); line-height:var(--lh-body); color:var(--text); margin:0 0 32px; }
 .about-inner p:last-child{ margin-bottom:0; }
-.credibility-row{ display:flex; flex-wrap:wrap; column-gap:40px; row-gap:20px; align-items:center; margin-bottom:34px; }
-.credibility-item{ display:flex; align-items:center; gap:10px; font-size:1.18rem; font-weight:700; color:var(--navy); }
+.credibility-row{ display:flex; flex-wrap:wrap; column-gap:28px; row-gap:14px; align-items:center; margin-bottom:30px; }
+.credibility-item{ display:flex; align-items:center; gap:8px; font-size:1.05rem; font-weight:700; color:var(--navy); white-space:nowrap; }
 .credibility-item svg{ width:20px; height:20px; flex-shrink:0; color:var(--teal); }
 
 /* ---------- Trust strip (landing) ---------- */
@@ -318,7 +318,7 @@ img{ max-width:100%; display:block; }
   margin:0;
   text-align:left;
 }
-.section-header{ padding:38px 32px 30px; }
+.section-header{ padding:38px 0 30px; }
 
 /* ---------- How it works: setup note + steps ---------- */
 .section-body{ max-width:var(--content-max); margin:0 auto; padding:0 0 24px; }
@@ -455,10 +455,10 @@ img{ max-width:100%; display:block; }
 
 .trust-banner{
   display:flex; align-items:flex-start; gap:18px;
-  background:#eafaf6; border:1.5px solid #9adfd0; border-radius:16px;
+  background:rgba(26,2,86,0.05); border:1.5px solid rgba(26,2,86,0.25); border-radius:16px;
   padding:26px var(--space-card-padding); max-width:var(--content-max); margin:0 auto 32px;
 }
-.trust-banner svg{ width:30px; height:30px; flex-shrink:0; color:#1a7a4c; margin-top:2px; }
+.trust-banner svg{ width:30px; height:30px; flex-shrink:0; color:var(--navy); margin-top:2px; }
 .trust-banner h2{ font-size:1.35rem; font-weight:800; color:var(--navy); margin:0 0 var(--space-heading-gap); }
 .trust-banner p{ font-size:var(--fs-body); color:var(--text); line-height:var(--lh-body); margin:0; }
 
@@ -606,7 +606,7 @@ img{ max-width:100%; display:block; }
 .site-footer{ background:var(--navy-deep); color:rgba(255,255,255,0.7); padding:96px 48px 32px; }
 .footer-inner{ max-width:1300px; margin:0 auto; }
 .footer-top{
-  display:flex; align-items:flex-start;
+  display:flex; align-items:flex-start; justify-content:center;
   gap:64px;
   padding-top:44px; padding-bottom:40px;
 }
