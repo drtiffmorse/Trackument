@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-13-r7 -->
+<!-- BUILD: 2026-09-15-r3 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,10 +9,26 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://www.trackument.com/#organization",
+      "name": "Trackument",
+      "url": "https://www.trackument.com",
+      "logo": "https://www.trackument.com/assets/logo-horizontal.png",
+      "description": "Trackument provides employee discipline documentation software for K-12 school districts.",
+      "email": "help@trackument.com"
+    }
+  ]
+}
+</script>
 <style>
   body{ background:#f6f4fb; }
   .progress-track{
-    max-width:820px; margin:0 auto; padding:28px 48px 0;
+    max-width:850px; margin:0 auto; padding:28px 48px 0;
     display:flex; align-items:center; gap:10px; flex-wrap:wrap;
     font-family:'IBM Plex Mono',monospace; font-size:0.78rem; letter-spacing:0.02em;
     color:var(--text-light);
@@ -21,7 +37,7 @@
   .progress-track .step.current{ color:var(--navy); font-weight:700; }
   .progress-track .sep{ color:var(--rule); }
   .terms-hero{ padding:20px 48px 0; background:var(--cream); }
-  .terms-hero-inner{ max-width:820px; margin:0 auto; padding:0 48px; }
+  .terms-hero-inner{ max-width:850px; margin:0 auto; padding:0 48px; }
   .terms-hero-inner h1{
     font-size:clamp(2.1rem,4.6vw,3.1rem);
     font-weight:800;
@@ -31,20 +47,20 @@
   }
   .terms-hero-inner .sub{ font-size:1.15rem; color:var(--text-light); margin-top:16px; }
   .terms-body-wrap{
-    max-width:820px; margin:44px auto 0;
+    max-width:850px; margin:44px auto 0;
     background:#fff; border:1px solid var(--rule); border-radius:14px;
     box-shadow:0 2px 12px rgba(40,11,91,0.06); padding:56px;
   }
-  .terms-body h2{ font-size:1.28rem; font-weight:800; color:var(--navy); margin:52px 0 14px; }
+  .terms-body h2{ font-size:1.28rem; font-weight:800; color:var(--navy); margin:64px 0 16px; }
   .terms-body h2:first-child{ margin-top:0; }
-  .terms-body p{ font-size:1.08rem; color:var(--text); line-height:1.8; margin:0 0 14px; }
-  .terms-body ul, .terms-body ol{ margin:0 0 14px; padding-left:24px; }
-  .terms-body li{ font-size:1.08rem; color:var(--text); line-height:1.8; margin-bottom:8px; }
+  .terms-body p{ font-size:1.14rem; color:var(--text); line-height:1.85; margin:0 0 18px; }
+  .terms-body ul, .terms-body ol{ margin:0 0 18px; padding-left:24px; }
+  .terms-body li{ font-size:1.14rem; color:var(--text); line-height:1.85; margin-bottom:10px; }
   .terms-doc-title{ font-size:1.7rem; font-weight:800; color:var(--navy); margin:36px 0 18px; }
   .terms-doc-title:first-child{ margin-top:0; }
   .terms-divider{ border:none; border-top:1px solid var(--rule); margin:48px 0 40px; }
   .terms-updated{ font-family:'IBM Plex Mono',monospace; font-size:0.82rem; color:var(--text-light); margin-bottom:28px; }
-  .terms-accept-wrap{ max-width:820px; margin:32px auto 140px; }
+  .terms-accept-wrap{ max-width:850px; margin:32px auto 140px; }
   .terms-accept-box{
     background:#fff; border:1px solid var(--rule); border-radius:14px; padding:32px;
     box-shadow:0 2px 12px rgba(40,11,91,0.06);
@@ -63,7 +79,7 @@
   }
   .terms-continue-btn{
     display:inline-flex; align-items:center; padding:13px 28px; border-radius:9px;
-    background:var(--gold); color:var(--navy); font-weight:700; font-size:1.05rem;
+    background:var(--gold); color:#fff; font-weight:700; font-size:1.05rem;
     text-decoration:none; border:none; cursor:pointer; transition:opacity .15s ease;
     white-space:nowrap;
   }
@@ -90,7 +106,7 @@
     box-shadow:0 -6px 20px rgba(40,11,91,0.1);
   }
   .sticky-accept-inner{
-    max-width:820px; margin:0 auto; padding:16px 48px;
+    max-width:850px; margin:0 auto; padding:16px 48px;
     display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap;
   }
   .print-only{ display:none; }
@@ -101,7 +117,7 @@
     .terms-hero{ padding-top:0; }
     .terms-body-wrap{ box-shadow:none; border:none; padding:0; }
     .print-only{
-      display:block; margin:32px auto 60px; max-width:820px; padding:0 48px;
+      display:block; margin:32px auto 60px; max-width:850px; padding:0 48px;
       border-top:1px solid var(--rule); padding-top:24px;
     }
     .print-sig-row{ display:flex; gap:48px; margin-top:18px; }
