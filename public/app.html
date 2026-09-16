@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-16-r4 -->
+<!-- BUILD: 2026-09-16-r6 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -281,7 +281,7 @@
     line-height: 1.65;
   }
 
-  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 18px; }
 
   .field-ready { border-color: var(--gold) !important; background: var(--white) !important; box-shadow: 0 0 0 3px rgba(224,91,14,0.15); transition: box-shadow 0.3s ease, border-color 0.3s ease; }
   #memoDate{ background:#eceaf6 !important; }
@@ -1530,11 +1530,11 @@ if (window.location.protocol === 'file:') {
     <div class="district-header-name" id="headerDistrictName" style="display:none; font-size:0.8rem; font-weight:600; color:var(--gold-light); background:rgba(147,112,219,0.1); padding:3px 14px; border-radius:20px; margin-left:26px;"></div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;">
-    <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.72rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:5px 12px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap;">🔒 Privacy protected</div>
-    <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">+ New Writeup</button>
-    <button onclick="openFeedback()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">💬 Feedback</button>
-    <a href="mailto:help@trackument.com" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.02em; text-decoration:none; display:inline-flex; align-items:center;">❓ Help</a>
-    <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.02em;">⚙ District &amp; Site Settings</button>
+    <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.8rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:5px 12px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap;">🔒 Privacy protected</div>
+    <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">+ New Writeup</button>
+    <button onclick="openFeedback()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">💬 Feedback</button>
+    <a href="mailto:help@trackument.com" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em; text-decoration:none; display:inline-flex; align-items:center;">❓ Help</a>
+    <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.83rem;font-weight:600;cursor:pointer;letter-spacing:0.02em;">⚙ District &amp; Site Settings</button>
     <div style="position:relative;">
       <button onclick="toggleHeaderMenu()" id="headerMenuBtn" style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); font-weight:700; font-size:0.9rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:2px; letter-spacing:0;"><span style="color:var(--gold);">•</span><span style="color:var(--red);">•</span><span style="color:var(--teal);">•</span></button>
       <div id="headerMenuDropdown" style="display:none; position:absolute; right:0; top:40px; background:#fff; border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.2); min-width:170px; overflow:hidden; z-index:50;">
@@ -1635,12 +1635,13 @@ document.addEventListener('click', function(e){
         <!-- Selector shown when no school is chosen -->
         <div id="schoolSelectorWrap">
           <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-            <span style="font-size:0.8rem; color:var(--navy); font-weight:600;">Click your site below to select it:</span>
+            <span style="font-size:0.8rem; color:var(--navy); font-weight:600;">Select your site:</span>
             <button onclick="openSettings(); switchTab('schools')" style="font-size:0.82rem; color:var(--navy); font-weight:700; background:var(--white); border:1.5px solid var(--navy); border-radius:4px; padding:8px 16px; cursor:pointer; white-space:nowrap;">+ Add a Site</button>
           </div>
-          <div id="schoolSelectorList" style="display:flex; flex-wrap:wrap; gap:8px;">
-            <div id="schoolSelectorEmpty" style="font-size:0.85rem; color:var(--gray); font-style:italic; width:100%;">No sites saved yet. Add your sites in Settings → Sites tab.</div>
-          </div>
+          <select id="schoolSelectorDropdown" onchange="if(this.value) selectSchool(this.value);" style="width:100%;">
+            <option value="">— Select a site —</option>
+          </select>
+          <div id="schoolSelectorEmpty" style="display:none; font-size:0.85rem; color:var(--gray); font-style:italic; width:100%; margin-top:6px;">No sites saved yet. Add your sites in Settings → Sites tab.</div>
         </div>
       </div>
 
@@ -1671,7 +1672,7 @@ document.addEventListener('click', function(e){
         <div id="noAuthorsNote" style="display:none; font-size:0.8rem; color:var(--warn); margin-top:6px;">No administrators saved for this school. <button onclick="openSettings(); switchTab('schools')" style="background:none;border:none;color:var(--gold);font-weight:700;cursor:pointer;font-size:0.8rem;text-decoration:underline;">Add administrators in Site Settings →</button></div>
       </div>
 
-      <div class="row-2" style="margin-top:18px;">
+      <div class="row-2">
         <div>
           <label>Employee Name</label>
           <input type="text" id="employeeName" placeholder="Full legal name">
@@ -5122,25 +5123,22 @@ async function loadSchoolProfiles() {
 }
 
 function renderSchoolSelector(schools) {
-  const list = document.getElementById('schoolSelectorList');
+  const dropdown = document.getElementById('schoolSelectorDropdown');
   const empty = document.getElementById('schoolSelectorEmpty');
-  if (!list) return;
+  if (!dropdown) return;
 
   if (schools.length === 0) {
-    list.innerHTML = '';
-    if (empty) { list.appendChild(empty); empty.style.display = 'block'; }
+    dropdown.innerHTML = '<option value="">— Select a site —</option>';
+    dropdown.style.display = 'none';
+    if (empty) empty.style.display = 'block';
     return;
   }
+  dropdown.style.display = 'block';
   if (empty) empty.style.display = 'none';
 
-  list.innerHTML = schools.map(s => {
-    const isActive = window._selectedSchool?.key === s.key;
-    return `
-      <button onclick="selectSchool('${s.key}')" onmouseover="if(!${isActive}){this.style.borderColor='var(--navy)';this.style.boxShadow='0 2px 6px rgba(0,0,0,0.12)';}" onmouseout="if(!${isActive}){this.style.borderColor='var(--light-gray)';this.style.boxShadow='none';}"
-        style="padding:7px 18px; border-radius:20px; border:2px solid ${isActive ? 'var(--navy)' : 'var(--light-gray)'}; background:${isActive ? 'var(--navy)' : 'var(--white)'}; color:${isActive ? 'var(--white)' : 'var(--text)'}; font-size:0.83rem; font-weight:600; cursor:pointer; transition:all 0.15s;">
-        ${isActive ? '✓ ' : ''}${s.name}
-      </button>`;
-  }).join('');
+  const currentKey = window._selectedSchool?.key || '';
+  dropdown.innerHTML = '<option value="">— Select a site —</option>' +
+    schools.map(s => `<option value="${s.key}" ${s.key === currentKey ? 'selected' : ''}>${s.name}</option>`).join('');
 }
 
 function addAdminRow() {
@@ -5331,6 +5329,13 @@ async function saveSchoolProfile() {
     toggleSchoolForm();
     await loadSchoolProfileList();
     await loadSchoolProfiles();
+    // If we just edited the school currently selected on the main form, refresh
+    // its in-memory copy and the Document Administrator dropdown immediately --
+    // otherwise a newly added admin doesn't show up until the page is reloaded.
+    if (window._selectedSchool?.key === key) {
+      window._selectedSchool = entry;
+      populateAuthorDropdown(entry);
+    }
     switchTab('schools');
     showToast('✓ Site profile saved');
     const msg = document.getElementById('sitesSavedMsg');
