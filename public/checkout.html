@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-15-r13 -->
+<!-- BUILD: 2026-09-15-r18 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -136,19 +136,19 @@
       background:var(--white);
       border:1px solid var(--border);
       border-radius:14px;
-      padding:48px;
+      padding:40px 44px;
       box-shadow:0 2px 12px rgba(40,11,91,0.06);
       margin-top:8px;
       max-width:720px;margin-left:auto;margin-right:auto;
     }
     .checkout-card h2{
       font-size:1.5rem;font-weight:800;color:var(--indigo);
-      letter-spacing:-0.01em;margin-bottom:6px;
+      letter-spacing:-0.01em;margin-bottom:5px;
     }
-    .checkout-card .sub{font-size:0.92rem;color:var(--muted);margin-bottom:28px;}
+    .checkout-card .sub{font-size:0.92rem;color:var(--muted);margin-bottom:22px;}
 
-    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
-    .form-row{margin-bottom:14px;}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+    .form-row{margin-bottom:12px;}
     .form-row label,.form-col label{
       display:block;font-size:0.8rem;font-weight:600;
       color:var(--indigo);margin-bottom:5px;letter-spacing:0.02em;
@@ -167,7 +167,7 @@
     /* ── Calculator ── */
     .calc{
       background:#f3f0fa;border-radius:10px;
-      padding:20px 22px;margin-bottom:24px;
+      padding:16px 20px;margin-bottom:18px;
     }
     .calc-label{
       font-family:'IBM Plex Mono',monospace;
@@ -189,12 +189,12 @@
 
     /* ── Tier selector (replaces old site-count input) ── */
     .tier-label{
-      font-family:'IBM Plex Mono',monospace;
-      font-size:0.72rem;text-transform:uppercase;
-      letter-spacing:0.08em;color:var(--orange);
-      font-weight:600;margin-bottom:12px;
+      font-family:'Inter',sans-serif;
+      font-size:0.8rem;font-weight:600;
+      color:var(--indigo);letter-spacing:0.02em;
+      margin-bottom:10px;
     }
-    .tier-options{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+    .tier-options{display:flex;flex-direction:column;gap:7px;margin-bottom:16px;}
     .tier-opt{
       display:flex;align-items:center;justify-content:space-between;
       border:1.5px solid var(--border);border-radius:8px;
@@ -208,12 +208,13 @@
     /* ── Contract agreement ── */
     .agree-row{
       display:flex;align-items:flex-start;gap:10px;
-      margin:20px 0;font-size:0.88rem;color:var(--muted);line-height:1.5;
+      margin:14px 0;font-size:0.88rem;color:var(--muted);line-height:1.5;
     }
     .agree-row input{width:auto;margin:3px 0 0;flex-shrink:0;}
     .agree-row a{color:var(--indigo);font-weight:600;}
-    .training-row{background:#fdf5ea;padding:10px 14px;align-items:center;}
+    .training-row{background:#fdf5ea;padding:12px 14px;align-items:center;}
     .training-row input{margin-top:0;}
+    .training-row label{color:var(--text);font-weight:500;}
     .training-note{display:block;color:var(--muted);font-size:0.82rem;margin-top:2px;}
     .site-row label{font-size:0.9rem;color:var(--muted);flex:1;}
     .site-row input{
@@ -228,7 +229,7 @@
     .privacy-note{
       display:flex; align-items:center; gap:10px;
       background:#f3f0fb; border:1px solid var(--border); border-radius:10px;
-      padding:12px 16px; margin-bottom:20px;
+      padding:12px 16px; margin-bottom:16px;
       font-size:0.9rem; font-weight:600; color:var(--indigo);
     }
     .privacy-note svg{ width:18px; height:18px; flex-shrink:0; color:var(--teal); }
@@ -236,7 +237,7 @@
       font-size:0.8rem;font-weight:600;color:var(--indigo);
       letter-spacing:0.02em;margin-bottom:10px;
     }
-    .payment-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+    .payment-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
     .pay-opt{
       border:2px solid var(--border);border-radius:10px;
       padding:16px;cursor:pointer;
@@ -262,6 +263,16 @@
     .btn-submit:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(224,91,14,0.3);}
     .btn-submit:disabled{background:var(--border);color:var(--muted);cursor:not-allowed;transform:none;box-shadow:none;}
     .secure{text-align:center;font-size:0.78rem;color:var(--muted);margin-top:10px;}
+    .procurement-callout{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+      background:#f8f6fd;border:1px solid var(--border);border-radius:8px;
+      padding:12px 16px;margin-bottom:20px;font-size:0.85rem;color:var(--text);
+    }
+    .procurement-btn{
+      display:inline-flex;align-items:center;white-space:nowrap;
+      background:var(--indigo);color:#fff;font-weight:700;font-size:0.78rem;
+      padding:7px 14px;border-radius:6px;text-decoration:none;
+    }
 
     .error-msg{
       background:#fef2f2;border:1px solid #fecaca;border-radius:6px;
@@ -285,9 +296,18 @@
       font-size:1.6rem;font-weight:800;color:var(--indigo);
       letter-spacing:-0.01em;margin-bottom:20px;
     }
-    .faq-item{border-bottom:1px solid var(--border);padding:18px 0;}
-    .faq-item h3{font-size:0.97rem;font-weight:700;color:var(--indigo);margin-bottom:7px;}
-    .faq-item p{font-size:0.9rem;color:var(--muted);line-height:1.65;}
+    .faq-item{border-bottom:1px solid var(--border);padding:14px 0;}
+    .faq-item summary{
+      font-size:0.97rem;font-weight:700;color:var(--indigo);cursor:pointer;
+      list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;
+    }
+    .faq-item summary::-webkit-details-marker{display:none;}
+    .faq-item summary::after{
+      content:'+';font-size:1.3rem;font-weight:400;color:var(--muted);flex-shrink:0;
+      transition:transform .15s ease;
+    }
+    .faq-item[open] summary::after{content:'\2212';}
+    .faq-item p{font-size:0.9rem;color:var(--muted);line-height:1.65;margin-top:10px;}
 
     /* ── Footer ── */
     footer{
@@ -500,7 +520,7 @@
         <input type="radio" name="paymentMethod" value="card" checked onchange="selectPayment('card')">
         <div class="pay-icon">💳</div>
         <div class="pay-name">Credit Card</div>
-        <div class="pay-sub">Pay now — begin onboarding immediately</div>
+        <div class="pay-sub">Pay now, begin onboarding immediately</div>
       </label>
       <label class="pay-opt" id="opt-invoice" onclick="document.querySelector('input[value=invoice]').checked = true; selectPayment('invoice');">
         <input type="radio" name="paymentMethod" value="invoice" onchange="selectPayment('invoice')">
@@ -508,6 +528,11 @@
         <div class="pay-name">Purchase Order / Check</div>
         <div class="pay-sub">Invoice within 24 hours</div>
       </label>
+    </div>
+
+    <div class="procurement-callout" id="procurementCallout">
+      <span>Need a quote, PO, or vendor packet?</span>
+      <a href="mailto:sales@trackument.com?subject=Vendor%20Documents%20Request" class="procurement-btn">Request Vendor Documents</a>
     </div>
 
     <div class="form-row" id="poNumberRow" style="display:none;">
@@ -519,47 +544,33 @@
     <div class="success-msg" id="successMsg"></div>
 
     <button class="btn-submit" id="checkoutBtn" onclick="handleCheckout()">Continue to Payment →</button>
-    <div class="secure">🔒 Secured by Stripe · 30-day money-back guarantee</div>
-  </div>
-</div>
-
-<div class="info-band">
-  <div class="info-band-inner">
-    <h2>Need a quote, PO, or vendor packet?</h2>
-    <p>Select "Purchase Order / Check" above and we'll send a formal invoice within 24 hours, no separate request needed. If your district's procurement process requires a formal quote, W9, insurance certificate, or vendor registration packet first, email <a href="mailto:sales@trackument.com" style="color:var(--indigo);font-weight:700;">sales@trackument.com</a> and we'll get you what you need.</p>
-  </div>
-</div>
-
-<div class="info-band info-band-alt">
-  <div class="info-band-inner">
-    <h2>Your data stays private</h2>
-    <p>Employee names, administrator names, and dates are replaced with placeholders before any information reaches the AI. Real employee names never leave your browser. <a href="/privacy" style="color:var(--indigo);font-weight:700;">See our Privacy Policy.</a></p>
+    <div class="secure" id="stripeSecureNote">🔒 Payment secured by Stripe</div>
   </div>
 </div>
 
 <!-- FAQ -->
 <div class="faq-section">
   <h2>Common questions</h2>
-  <div class="faq-item">
-    <h3>Do I need to pay for both a school site and a district license?</h3>
+  <details class="faq-item">
+    <summary>Do I need to pay for both a school site and a district license?</summary>
     <p>No. You sign up one way or the other, either as a district (covering every school and department under your ADA tier) or as an individual school site. You're never charged for both.</p>
-  </div>
-  <div class="faq-item">
-    <h3>What counts as a "school site"?</h3>
+  </details>
+  <details class="faq-item">
+    <summary>What counts as a "school site"?</summary>
     <p>This applies only if you're purchasing an individual site license rather than a district license. In that case, each school, continuation school, alternative education site, or district office location where administrators will use Trackument counts as one site. A district license already covers every school and department under your ADA tier, including the district office, at no extra charge.</p>
-  </div>
-  <div class="faq-item">
-    <h3>How many administrators can use Trackument?</h3>
+  </details>
+  <details class="faq-item">
+    <summary>How many administrators can use Trackument?</summary>
     <p>Every principal, assistant principal, and district administrator at your included sites can use Trackument at no additional cost.</p>
-  </div>
-  <div class="faq-item">
-    <h3>What does custom training include?</h3>
+  </details>
+  <details class="faq-item">
+    <summary>What does custom training include?</summary>
     <p>Training is built around what your team actually needs. Common options include best practices for employee discipline documentation generally, hands-on training on using Trackument itself, onboarding sessions for new administrators, or a refresher for your team after a policy or bargaining agreement change. Check the box during signup and we'll follow up with you.</p>
-  </div>
-  <div class="faq-item">
-    <h3>What if we need to add sites mid-year?</h3>
+  </details>
+  <details class="faq-item">
+    <summary>What if we need to add sites mid-year?</summary>
     <p>Contact us at <a href="mailto:sales@trackument.com" style="color:var(--indigo);">sales@trackument.com</a> and we'll send a prorated invoice for the additional sites.</p>
-  </div>
+  </details>
 </div>
 
 <footer>
@@ -671,6 +682,7 @@
     const btn = document.getElementById('checkoutBtn');
     btn.textContent = method === 'card' ? 'Continue to Payment →' : 'Submit Purchase Request';
     document.getElementById('poNumberRow').style.display = method === 'invoice' ? 'block' : 'none';
+    document.getElementById('stripeSecureNote').style.display = method === 'card' ? 'block' : 'none';
   }
 
   async function handleCheckout() {
