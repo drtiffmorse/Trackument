@@ -1,4 +1,4 @@
-// BUILD: 2026-09-13-r1
+// BUILD: 2026-09-15-r2
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -360,6 +360,23 @@ app.get('/api/auth/google/callback', async (req, res) => {
 app.get('/api/auth/logout', (req, res) => {
   res.setHeader('Set-Cookie', `${SESSION_COOKIE_NAME}=; Path=/; HttpOnly; Max-Age=0`);
   res.redirect('/login');
+});
+
+// Lets the frontend ask "who am I logged in as" without being able to read the
+// HttpOnly session cookie directly. Used on /app load to automatically pull the
+// right district's saved profile, instead of only relying on this browser's own
+// local storage (which is empty on a new device even for a valid, logged-in session).
+app.get('/api/me', async (req, res) => {
+  try {
+    const cookies = parseCookies(req.headers.cookie);
+    if (!cookies[SESSION_COOKIE_NAME]) return res.json({ loggedIn: false });
+    const session = await getValidSession(cookies[SESSION_COOKIE_NAME]);
+    if (!session) return res.json({ loggedIn: false });
+    res.json({ loggedIn: true, email: session.email, domain: session.district_domain });
+  } catch (err) {
+    console.error('api/me failed:', err.message);
+    res.json({ loggedIn: false });
+  }
 });
 
 // ─── District data store (Postgres) ───────────────────────────────────────────
