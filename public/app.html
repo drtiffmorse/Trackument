@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-15-r16 -->
+<!-- BUILD: 2026-09-16-r4 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -430,7 +430,7 @@
     white-space: nowrap;
   }
 
-  .btn-add:hover { background: var(--gold); color: var(--navy); }
+  .btn-add:hover { background: var(--gold); color: #fff; }
 
   /* Buttons */
   .btn-row {
@@ -456,7 +456,7 @@
   }
 
   .btn-primary { background: var(--navy); color: var(--white); }
-  .btn-primary:hover { background: var(--gold); color: var(--navy); }
+  .btn-primary:hover { background: var(--gold); color: #fff; }
   .btn-secondary { background: transparent; color: var(--gray); border: 1px solid var(--light-gray); }
   .btn-secondary:hover { border-color: var(--navy); color: var(--navy); }
   .btn-action {
@@ -468,7 +468,7 @@
   .btn-action:hover { background: #155a3e; border-color: #155a3e; }
   .btn-next {
     background: var(--gold);
-    color: var(--navy);
+    color: #fff;
     border: 2px solid var(--gold);
     font-weight: 700;
     font-size: 0.8rem;
@@ -724,7 +724,7 @@
     letter-spacing: 0.05em;
     text-transform: uppercase;
   }
-  .btn-cba-use:hover { background: var(--gold); color: var(--navy); }
+  .btn-cba-use:hover { background: var(--gold); color: #fff; }
   .btn-cba-delete {
     padding: 5px 10px;
     background: transparent;
@@ -1175,7 +1175,7 @@
       <textarea id="feedbackText" placeholder="What's on your mind?" style="width:100%; min-height:120px; padding:12px 14px; border:1.5px solid var(--light-gray); border-radius:6px; font-family:inherit; font-size:0.92rem; color:var(--navy); resize:vertical;"></textarea>
       <div class="error-msg" id="feedbackError" style="display:none; color:#dc2626; font-size:0.85rem; margin-top:10px;"></div>
       <div class="success-msg" id="feedbackSuccess" style="display:none; background:#f0fdf4; border:1px solid #86efac; border-radius:6px; padding:12px 14px; font-size:0.88rem; color:#15803d; margin-top:10px;"></div>
-      <button id="feedbackSubmitBtn" onclick="submitFeedback()" style="margin-top:16px; background:var(--gold); color:var(--navy); border:none; padding:12px 24px; border-radius:6px; font-weight:700; font-size:0.92rem; cursor:pointer;">Send feedback</button>
+      <button id="feedbackSubmitBtn" onclick="submitFeedback()" style="margin-top:16px; background:var(--gold); color:#fff; border:none; padding:12px 24px; border-radius:6px; font-weight:700; font-size:0.92rem; cursor:pointer;">Send feedback</button>
     </div>
   </div>
 </div>
@@ -1224,7 +1224,7 @@
 
       <label>County</label>
       <input type="text" id="setupCounty" name="county" autocomplete="off" placeholder="e.g. Ventura">
-      <div class="setup-section-sub" style="margin-top:-6px;">Used for food-service/nutrition writeups only. Trackument cites the California Retail Food Code directly, and adds a note pointing administrators to your county's Environmental Health Department for anything beyond state code.</div>
+      <div class="setup-section-sub" style="margin-top:6px;">Used for food-service/nutrition writeups only. Trackument cites the California Retail Food Code directly, and adds a note pointing administrators to your county's Environmental Health Department for anything beyond state code.</div>
 
       <!-- Configurable document types -->
       <div style="margin-top:20px; padding-top:18px; border-top:1px solid var(--light-gray);">
@@ -1286,8 +1286,8 @@
           <div id="cbaUploadMode">
             <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:18px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="cbaDropZone" onclick="document.getElementById('cbaFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleCBADrop(event)">
               <div style="font-size:0.85rem;color:var(--gray);margin-bottom:10px;">Drag and drop, or</div>
-              <button type="button" onclick="document.getElementById('cbaFileInput').click()" style="background:var(--gold);color:var(--navy);border:none;border-radius:3px;padding:9px 20px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
-              <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF or Word document (.pdf, .docx)</div>
+              <button type="button" onclick="event.stopPropagation(); document.getElementById('cbaFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:9px 20px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
+              <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF only. Word documents must be saved as PDF first.</div>
               <input type="file" id="cbaFileInput" accept=".pdf,application/pdf" style="display:none;" onchange="handleCBAFile(this.files[0])">
             </div>
             <div id="cbaFilePreview" style="display:none;padding:10px 13px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);display:flex;align-items:center;justify-content:space-between;">
@@ -1344,8 +1344,8 @@
           <div id="handbookUploadMode">
             <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:18px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="handbookDropZone" onclick="document.getElementById('handbookFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleHandbookDrop(event)">
               <div style="font-size:0.85rem;color:var(--gray);margin-bottom:10px;">Drag and drop, or</div>
-              <button type="button" onclick="document.getElementById('handbookFileInput').click()" style="background:var(--gold);color:var(--navy);border:none;border-radius:3px;padding:9px 20px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
-              <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF or Word document (.pdf, .docx)</div>
+              <button type="button" onclick="event.stopPropagation(); document.getElementById('handbookFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:9px 20px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
+              <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF only. Word documents must be saved as PDF first.</div>
               <input type="file" id="handbookFileInput" accept=".pdf,application/pdf" style="display:none;" onchange="handleHandbookFile(this.files[0])">
             </div>
             <div id="handbookFilePreview" style="display:none;padding:10px 13px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);display:flex;align-items:center;justify-content:space-between;">
@@ -1382,7 +1382,7 @@
           <div id="meritUploadMode">
             <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:18px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="meritDropZone" onclick="document.getElementById('meritFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleMeritDrop(event)">
               <div style="font-size:0.85rem;color:var(--gray);margin-bottom:10px;">Drag and drop, or</div>
-              <button type="button" onclick="document.getElementById('meritFileInput').click()" style="background:var(--gold);color:var(--navy);border:none;border-radius:3px;padding:9px 20px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
+              <button type="button" onclick="event.stopPropagation(); document.getElementById('meritFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:9px 20px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
               <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF document</div>
               <input type="file" id="meritFileInput" accept=".pdf,application/pdf" style="display:none;" onchange="handleMeritFile(this.files[0])">
             </div>
@@ -1531,11 +1531,12 @@ if (window.location.protocol === 'file:') {
   </div>
   <div style="display:flex;align-items:center;gap:10px;">
     <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.72rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:5px 12px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap;">🔒 Privacy protected</div>
-    <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.06em; text-transform:uppercase;">+ New Writeup</button>
-    <button onclick="openFeedback()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.06em; text-transform:uppercase;">💬 Feedback</button>
-    <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;">⚙ District &amp; Site Settings</button>
+    <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">+ New Writeup</button>
+    <button onclick="openFeedback()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">💬 Feedback</button>
+    <a href="mailto:help@trackument.com" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.72rem; font-weight:600; cursor:pointer; letter-spacing:0.02em; text-decoration:none; display:inline-flex; align-items:center;">❓ Help</a>
+    <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.02em;">⚙ District &amp; Site Settings</button>
     <div style="position:relative;">
-      <button onclick="toggleHeaderMenu()" id="headerMenuBtn" style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:#fff; font-weight:700; font-size:0.78rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">•••</button>
+      <button onclick="toggleHeaderMenu()" id="headerMenuBtn" style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); font-weight:700; font-size:0.9rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:2px; letter-spacing:0;"><span style="color:var(--gold);">•</span><span style="color:var(--red);">•</span><span style="color:var(--teal);">•</span></button>
       <div id="headerMenuDropdown" style="display:none; position:absolute; right:0; top:40px; background:#fff; border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.2); min-width:170px; overflow:hidden; z-index:50;">
         <a href="/api/auth/logout" style="display:block; padding:11px 16px; font-size:0.82rem; color:var(--navy); font-weight:700; text-decoration:none; border-bottom:1px solid var(--light-gray);">Log out</a>
         <a href="/privacy" target="_blank" style="display:block; padding:11px 16px; font-size:0.82rem; color:var(--navy); text-decoration:none; border-bottom:1px solid var(--light-gray);">Privacy Policy</a>
@@ -4772,6 +4773,28 @@ window._districtProfile = null;
 
 async function loadDistrictProfile() {
   try {
+    // First, ask the server who's logged in and pull that district's saved
+    // profile directly. This is what makes Google login actually restore your
+    // district on a new device or browser, instead of only working when this
+    // specific browser already has a local copy saved.
+    try {
+      const meRes = await fetch('/api/me');
+      const me = await meRes.json();
+      if (me.loggedIn && me.domain) {
+        const found = await pullDistrictSettings(me.domain);
+        if (found) {
+          applyDistrictProfile(window._districtProfile);
+          await loadSetupCBAList();
+          await loadSetupHandbookList();
+          await loadCBALibrary();
+          return;
+        }
+      }
+    } catch (e) {
+      // If /api/me is unreachable for any reason, fall through to the local check below
+      // rather than blocking the app from loading.
+    }
+
     const profileResult = await store.get('district:profile');
     if (profileResult?.value) {
       window._districtProfile = JSON.parse(profileResult.value);
