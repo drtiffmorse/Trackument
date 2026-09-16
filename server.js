@@ -1,4 +1,4 @@
-// BUILD: 2026-09-15-r2
+// BUILD: 2026-09-16-r1
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -411,6 +411,21 @@ async function initDb() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `);
+  // Stores the actual bytes of uploaded CBA/handbook/merit-rule documents. The
+  // browser previously stored these as base64 text in its own local storage,
+  // which has a hard per-key size limit (a few MB) -- easy to hit with a real
+  // multi-page contract, and it failed silently with no error to the user.
+  // Keeping the real file server-side, referenced only by a small id in local
+  // storage and in district_settings, removes that ceiling entirely.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS documents (
+      id TEXT PRIMARY KEY,
+      filename TEXT NOT NULL,
+      content_type TEXT,
+      data BYTEA NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
   // Safe to run repeatedly -- adds the column if this table already existed from an earlier version.
   await pool.query(`ALTER TABLE district_settings ADD COLUMN IF NOT EXISTS county TEXT;`);
   await pool.query(`ALTER TABLE district_settings ADD COLUMN IF NOT EXISTS handbook_library JSONB;`);
@@ -664,7 +679,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
   res.json({ received: true });
 });
 
-app.use(express.json({ limit: '20mb' }));
+app.use(express.json({ limit: '30mb' }));
 
 // ─── Apply beta gate to all routes ───────────────────────────────────────────
 app.use(checkBeta);
@@ -854,6 +869,50 @@ app.post('/api/district-settings', async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Server error: ' + err.message });
+  }
+});
+
+// Stores an uploaded CBA/handbook/merit-rule document server-side and returns
+// a small id to reference it by. Accepts PDF and Word documents -- the
+// district-facing tool now accepts .doc/.docx directly instead of requiring a
+// manual PDF conversion first.
+app.post('/api/documents', async (req, res) => {
+  try {
+    const { filename, contentType, dataBase64 } = req.body;
+    if (!filename || !dataBase64) return res.status(400).json({ error: 'Missing filename or file data.' });
+    const lower = filename.toLowerCase();
+    const allowed = ['.pdf', '.doc', '.docx'].some(ext => lower.endsWith(ext));
+    if (!allowed) return res.status(400).json({ error: 'Only PDF and Word documents are supported.' });
+
+    // dataBase64 arrives as a full data: URL (e.g. "data:application/pdf;base64,....");
+    // strip the prefix before decoding to raw bytes.
+    const base64 = dataBase64.includes(',') ? dataBase64.split(',')[1] : dataBase64;
+    const buffer = Buffer.from(base64, 'base64');
+    const id = crypto.randomUUID();
+    await pool.query(
+      'INSERT INTO documents (id, filename, content_type, data) VALUES ($1, $2, $3, $4)',
+      [id, filename, contentType || '', buffer]
+    );
+    res.json({ id, filename });
+  } catch (err) {
+    console.error('Document upload failed:', err.message);
+    res.status(500).json({ error: 'Upload failed: ' + err.message });
+  }
+});
+
+// Retrieves a previously uploaded document by id, used both for letting an
+// administrator re-download what they uploaded and for the AI drafting step
+// to read the actual contract/handbook content.
+app.get('/api/documents/:id', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT filename, content_type, data FROM documents WHERE id = $1', [req.params.id]);
+    if (rows.length === 0) return res.status(404).json({ error: 'Document not found.' });
+    const doc = rows[0];
+    res.setHeader('Content-Type', doc.content_type || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${doc.filename.replace(/"/g, '')}"`);
+    res.send(doc.data);
+  } catch (err) {
+    res.status(500).json({ error: 'Could not retrieve document: ' + err.message });
   }
 });
 
