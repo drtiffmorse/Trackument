@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-17-r11 -->
+<!-- BUILD: 2026-09-17-r13 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -367,10 +367,12 @@
   }
 
   .auto-tag {
+    display: inline-flex;
+    align-items: center;
     background: var(--gold);
     color: #fff;
-    font-size: 0.72rem;
-    padding:4px 8px;
+    font-size: 0.7rem;
+    padding: 2px 8px;
     border-radius: 10px;
     letter-spacing: 0.03em;
     font-weight: 700;
@@ -1657,9 +1659,9 @@ document.addEventListener('click', function(e){
 
         <!-- Selector shown when no school is chosen -->
         <div id="schoolSelectorWrap">
-          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
             <span style="font-size:0.8rem; color:var(--navy); font-weight:600;">Select your site:</span>
-            <button onclick="openSettings(); switchTab('schools')" style="font-size:0.82rem; color:var(--navy); font-weight:700; background:var(--white); border:1.5px solid var(--navy); border-radius:4px; padding:8px 16px; cursor:pointer; white-space:nowrap;">+ Add a Site</button>
+            <button onclick="openSettings(); switchTab('schools')" style="font-size:0.75rem; color:var(--navy); font-weight:700; background:var(--white); border:1.5px solid var(--navy); border-radius:4px; padding:4px 8px; cursor:pointer; white-space:nowrap;">+ Add a Site</button>
           </div>
           <select id="schoolSelectorDropdown" onchange="if(this.value) selectSchool(this.value);" style="width:100%;">
             <option value="">— Select a site —</option>
@@ -1772,14 +1774,14 @@ document.addEventListener('click', function(e){
         <div>
           <label>Date(s) of Incident(s)</label>
           <div style="display:flex; gap:8px; align-items:center; margin-bottom:4px;">
-            <select id="dateEntryMode" onchange="updateDateEntryMode()" style="width:100%; margin:0;">
+            <select id="dateEntryMode" onchange="updateDateEntryMode()" style="flex:0 0 auto; width:180px; margin:0;">
               <option value="single">Single date</option>
               <option value="multiple">Multiple dates</option>
               <option value="range">Date range</option>
             </select>
           </div>
           <div id="dateEntrySingle">
-            <input type="date" id="incidentDateSingle" oninput="syncIncidentDates()" style="width:100%; font-family:'Source Sans 3', sans-serif; font-size:0.92rem;">
+            <input type="date" id="incidentDateSingle" oninput="syncIncidentDates()" style="width:180px; font-family:'Source Sans 3', sans-serif; font-size:0.92rem;">
           </div>
           <div id="dateEntryMultiple" style="display:none;">
             <div id="multiDateList" style="display:flex; flex-direction:column; gap:4px; margin-bottom:4px;"></div>
@@ -1788,11 +1790,11 @@ document.addEventListener('click', function(e){
           <div id="dateEntryRange" style="display:none; display:flex; gap:8px; align-items:center;">
             <div style="flex:1;">
               <div style="font-size:0.78rem; color:var(--gray); margin-bottom:4px;">From</div>
-              <input type="date" id="dateRangeFrom" oninput="syncIncidentDates()" style="width:100%; font-family:'Source Sans 3', sans-serif; font-size:0.92rem;">
+              <input type="date" id="dateRangeFrom" oninput="syncIncidentDates()" style="width:180px; font-family:'Source Sans 3', sans-serif; font-size:0.92rem;">
             </div>
             <div style="flex:1;">
               <div style="font-size:0.78rem; color:var(--gray); margin-bottom:4px;">To</div>
-              <input type="date" id="dateRangeTo" oninput="syncIncidentDates()" style="width:100%; font-family:'Source Sans 3', sans-serif; font-size:0.92rem;">
+              <input type="date" id="dateRangeTo" oninput="syncIncidentDates()" style="width:180px; font-family:'Source Sans 3', sans-serif; font-size:0.92rem;">
             </div>
           </div>
           <!-- Hidden field that stores the formatted date string for the document -->
@@ -1821,11 +1823,10 @@ document.addEventListener('click', function(e){
           <input type="hidden" id="incidentTimes">
         </div>
       </div>
-      <div style="height:14px;"></div>
 
       <!-- Guidance block stays visible while typing -->
-      <div style="background:var(--cream); border:1px solid var(--light-gray); border-left:3px solid var(--gold); border-radius:3px; padding:8px 16px; margin-bottom:8px; font-size:0.83rem; line-height:1.65; color:var(--text);">
-        <div style="font-weight:700; color:var(--navy); margin-bottom:4px;">What to include:</div>
+      <div style="background:var(--cream); border:1px solid var(--light-gray); border-left:3px solid var(--gold); border-radius:3px; padding:16px; margin-top:24px; margin-bottom:16px; font-size:0.92rem; line-height:1.65; color:var(--text);">
+        <div style="font-weight:700; color:var(--navy); margin-bottom:8px;">What to include:</div>
         <div style="margin-bottom:4px;">• <strong>Who</strong> was involved — names, titles, and their role in the incident</div>
         <div style="margin-bottom:4px;">• <strong>What</strong> happened — observable behaviors and direct quotes, not conclusions</div>
         <div style="margin-bottom:4px;">• <strong>When and where</strong> — specific dates, times, and locations</div>
@@ -1839,7 +1840,7 @@ document.addEventListener('click', function(e){
       <!-- Witness statements -->
       <div style="margin-top:16px;">
         <label style="margin-top:40px; margin-bottom:8px;">Witness Statements <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:0.78rem; color:var(--gray);">(optional)</span></label>
-        <div style="font-size:0.82rem; color:var(--gray); margin-bottom:8px;">Upload any written witness statements. Attached documents will be included as reference when generating the memo.</div>
+        <div style="font-size:0.82rem; color:var(--gray); margin-bottom:8px;">Upload any written witness statements. Attached documents will be included as reference when generating the final document.</div>
         <div id="witnessFileList" style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;"></div>
         <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; margin-top:0; font-size:0.78rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0; border:1px solid var(--light-gray); border-radius:2px; padding:8px 16px; background:var(--white);">
           <span>📎 Attach Witness Statement</span>
@@ -1858,7 +1859,7 @@ document.addEventListener('click', function(e){
           <span>📎 Attach Prior Writeup (optional)</span>
           <input type="file" id="priorDocFileInput" accept=".pdf,.doc,.docx,application/pdf" multiple style="display:none;" onchange="handlePriorDocFiles(this.files)">
         </label>
-        <div style="font-size:0.72rem; color:var(--gray); margin-top:4px;">PDF or Word. Attached documents will be included as reference when generating the memo.</div>
+        <div style="font-size:0.72rem; color:var(--gray); margin-top:4px;">PDF or Word. Attached documents will be included as reference when generating the final document.</div>
       </div>
 
       <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray); display:flex; justify-content:space-between; align-items:center;">
@@ -1887,7 +1888,7 @@ document.addEventListener('click', function(e){
 
       <div id="ruleCitationSection" style="display:none;">
 
-        <div style="background:#faf7f0; border:1px solid #d4c896; border-left:3px solid var(--gold); border-radius:3px; padding:8px 16px; margin-bottom:16px; font-size:0.83rem; color:var(--text); font-weight:500;">
+        <div style="background:#faf7f0; border:1px solid #d4c896; border-left:3px solid var(--gold); border-radius:3px; padding:8px 16px; margin-top:24px; margin-bottom:16px; font-size:0.83rem; color:var(--text); font-weight:500;">
           Check all citations that apply to this situation. Uncheck any that are not relevant. Use the "Add" fields to include additional references.
         </div>
 
@@ -1925,7 +1926,7 @@ document.addEventListener('click', function(e){
           </div>
         </div>
 
-        <div class="prepop-group" id="bpGroup" style="margin-bottom:16px;">
+        <div class="prepop-group" id="bpGroup" style="margin-top:24px; margin-bottom:16px;">
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
             <div style="font-size:0.88rem; font-weight:700; color:var(--navy);">Board Policy &amp; Administrative Regulations</div>
             <span id="bpSiteLink" style="display:none;"><a id="bpSiteLinkAnchor" href="#" target="_blank" style="font-size:0.78rem; color:var(--gold); font-weight:700;">Open your board policy site →</a></span>
@@ -1938,7 +1939,7 @@ document.addEventListener('click', function(e){
           </div>
         </div>
 
-        <div class="prepop-group" id="cbaGroup" style="margin-bottom:16px;">
+        <div class="prepop-group" id="cbaGroup" style="margin-top:24px; margin-bottom:16px;">
           <div style="font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px;">Collective Bargaining Agreement</div>
           <div id="cbaRefNotice" style="font-size:0.83rem; color:var(--gray); font-style:italic; padding:4px 0; display:none;"></div>
           <div class="citation-list" id="cbaRefList"></div>
@@ -1948,7 +1949,7 @@ document.addEventListener('click', function(e){
           </div>
         </div>
 
-        <div class="prepop-group" id="handbookGroup" style="margin-bottom:16px;">
+        <div class="prepop-group" id="handbookGroup" style="margin-top:24px; margin-bottom:16px; display:none;">
           <div style="font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px;">Employee Handbook</div>
           <div id="handbookRefNotice" style="font-size:0.83rem; color:var(--gray); font-style:italic; padding:4px 0; display:none;"></div>
           <div class="citation-list" id="handbookRefList"></div>
@@ -1958,7 +1959,7 @@ document.addEventListener('click', function(e){
           </div>
         </div>
 
-        <label style="margin-top:4px;">Additional Notes for Citations</label>
+        <label style="margin-top:24px;">Additional Notes for Citations</label>
         <textarea id="ruleNotes" placeholder="Any other relevant rules, prior directives given to this employee, or regulatory context..." style="min-height:70px;"></textarea>
 
       </div>
@@ -2076,8 +2077,8 @@ document.addEventListener('click', function(e){
       </div>
 
       <!-- Suggested directives by situation -->
-      <div id="suggestedDirectivesWrap" style="display:none; margin-bottom:16px;">
-        <div style="font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px;">Suggested Directives <span class="auto-tag">Based on situation</span></div>
+      <div id="suggestedDirectivesWrap" style="display:none; margin-bottom:40px;">
+        <div style="display:flex; align-items:center; gap:8px; font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px;">Suggested Directives <span class="auto-tag">Based on situation</span></div>
         <div style="font-size:0.83rem; color:var(--navy); margin-bottom:8px; font-weight:600; padding:8px 8px; background:#faf7f0; border-left:3px solid var(--gold); border-radius:2px;">All applicable directives are pre-checked. Uncheck any that don't apply, and click the text to edit.</div>
         <div id="suggestedDirectivesList" style="display:flex; flex-direction:column; gap:8px;"></div>
       </div>
@@ -2089,8 +2090,8 @@ document.addEventListener('click', function(e){
         <button onclick="addCustomDirectiveRow()" class="btn btn-secondary" style="font-size:0.78rem; padding:8px 16px;">+ Add Directive</button>
         <button onclick="saveDirectivesToDatabase()" class="btn btn-secondary" style="font-size:0.78rem; padding:8px 16px;">💾 Save to My Directives</button>
       </div>
-      <div id="savedDirectivesWrap" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--light-gray); display:none;">
-        <div style="font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px; text-transform:none; letter-spacing:0;">My Saved Directives <span class="auto-tag">From previous writeups</span></div>
+      <div id="savedDirectivesWrap" style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray); display:none;">
+        <div style="display:flex; align-items:center; gap:8px; font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px; text-transform:none; letter-spacing:0;">My Saved Directives <span class="auto-tag">From previous writeups</span></div>
         <div id="savedDirectivesList" style="display:flex; flex-direction:column; gap:4px;"></div>
       </div>
 
@@ -2098,8 +2099,8 @@ document.addEventListener('click', function(e){
       <textarea id="directives" style="display:none;"></textarea>
 
       <!-- Support resources -->
-      <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--light-gray);">
-        <div style="font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px;">Support Resources <span class="auto-tag">Suggested</span></div>
+      <div style="margin-top:40px; padding-top:16px; border-top:1px solid var(--light-gray);">
+        <div style="display:flex; align-items:center; gap:8px; font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px;">Support Resources <span class="auto-tag">Suggested</span></div>
         <div style="font-size:0.83rem; color:var(--navy); margin-bottom:8px; font-weight:600; padding:8px 8px; background:#faf7f0; border-left:3px solid var(--gold); border-radius:2px;">All applicable resources are pre-checked. Uncheck any that don't apply, and click the text to edit.</div>
         <div id="suggestedSupportList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:8px;"></div>
         <label style="margin-top:8px;">Additional Support Resources</label>
@@ -2109,8 +2110,8 @@ document.addEventListener('click', function(e){
           <button onclick="addCustomSupportRow()" class="btn btn-secondary" style="font-size:0.78rem; padding:8px 16px;">+ Add Support Resource</button>
           <button onclick="saveSupportToDatabase()" class="btn btn-secondary" style="font-size:0.78rem; padding:8px 16px;">💾 Save additional support resource for future use</button>
         </div>
-        <div id="savedSupportWrap" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--light-gray); display:none;">
-          <div style="font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px; text-transform:none; letter-spacing:0;">My Saved Support Resources <span class="auto-tag">From previous writeups</span></div>
+        <div id="savedSupportWrap" style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray); display:none;">
+          <div style="display:flex; align-items:center; gap:8px; font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px; text-transform:none; letter-spacing:0;">My Saved Support Resources <span class="auto-tag">From previous writeups</span></div>
           <div id="savedSupportList" style="display:flex; flex-direction:column; gap:4px;"></div>
         </div>
         <textarea id="supportOffered" style="display:none;"></textarea>
@@ -3021,6 +3022,9 @@ ${authorName}
 
 Signature: ______________________  Date: ${isConference ? '______________________' : today}
 
+
+
+
 ${d.employeeDisplayName || d.employeeName}${d.employeeTitle ? '\n' + d.employeeTitle : ''}
 
 
@@ -3028,7 +3032,6 @@ ${d.employeeDisplayName || d.employeeName}${d.employeeTitle ? '\n' + d.employeeT
 Signature: ______________________  Date: ______________________
 
 Signature acknowledges receipt of this ${docNoun} and does not constitute agreement with its contents.
-${d.respondRight ? d.respondRight : 'The employee has the right to respond to this document per applicable Education Code and/or collective bargaining agreement provisions.'}
 
 ABSOLUTE RULES:
 - If the employee is a bus driver, van driver, or any driver role, include California Vehicle Code citations where applicable
@@ -4002,15 +4005,22 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
     }
 
     // Render Employee Handbook citations the same way
-    if (data.handbook && data.handbook.length > 0) {
-      renderCitations('handbookRefList', data.handbook);
-      const hNotice = document.getElementById('handbookRefNotice');
-      if (hNotice) hNotice.style.display = 'none';
+    const handbookGroupEl = document.getElementById('handbookGroup');
+    if (handbookLibrary.length === 0) {
+      // No handbook was ever uploaded for this district -- don't show an empty section at all
+      if (handbookGroupEl) handbookGroupEl.style.display = 'none';
     } else {
-      const hNotice = document.getElementById('handbookRefNotice');
-      if (hNotice) {
-        hNotice.style.display = handbookLibrary.length > 0 ? 'block' : 'none';
-        hNotice.textContent = 'No applicable handbook section identified for this conduct.';
+      if (handbookGroupEl) handbookGroupEl.style.display = 'block';
+      if (data.handbook && data.handbook.length > 0) {
+        renderCitations('handbookRefList', data.handbook);
+        const hNotice = document.getElementById('handbookRefNotice');
+        if (hNotice) hNotice.style.display = 'none';
+      } else {
+        const hNotice = document.getElementById('handbookRefNotice');
+        if (hNotice) {
+          hNotice.style.display = 'block';
+          hNotice.textContent = 'No applicable handbook section identified for this conduct.';
+        }
       }
     }
 
