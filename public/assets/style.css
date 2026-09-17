@@ -1,4 +1,4 @@
-/* BUILD: 2026-09-15-r15 */
+/* BUILD: 2026-09-17-r1 */
 :root{
   --navy: #1a0256;
   --navy-deep: #1a0740;
@@ -156,7 +156,7 @@ img{ max-width:100%; display:block; }
 .hero{
   position:relative;
   overflow:hidden;
-  padding:var(--space-section) 48px;
+  padding:44px 48px var(--space-section);
   background:linear-gradient(120deg,var(--cream) 0%,var(--cream) 45%,rgba(40,11,91,0.4) 75%,rgba(26,7,64,0.65) 100%);
 }
 .hero-inner{
@@ -611,12 +611,12 @@ img{ max-width:100%; display:block; }
 .btn-ghost-invert:hover{ transform:translateY(-2px); box-shadow:0 8px 18px rgba(0,0,0,0.25); }
 
 /* ---------- Footer (shared) ---------- */
-.site-footer{ background:var(--navy-deep); color:rgba(255,255,255,0.7); padding:78px 48px 26px; }
+.site-footer{ background:var(--navy-deep); color:rgba(255,255,255,0.7); padding:52px 48px 20px; }
 .footer-inner{ max-width:1300px; margin:0 auto; }
 .footer-top{
   display:flex; align-items:flex-start; justify-content:center;
   gap:64px;
-  padding-top:44px; padding-bottom:40px;
+  padding-top:0; padding-bottom:24px;
 }
 .footer-brand{ display:flex; flex-direction:column; align-items:flex-start; text-align:left; }
 .footer-brand-row{ display:flex; align-items:center; gap:8px; }
