@@ -1,10 +1,11 @@
-// BUILD: 2026-09-17-r1
+// BUILD: 2026-09-17-r3
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
 const path = require('path');
 const fs = require('fs');
 const { Pool } = require('pg');
+const pdfParse = require('pdf-parse');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -973,6 +974,65 @@ app.post('/api/admin/board-policies', async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Saves many policies for a district in one request -- used by the bulk-paste
+// flow, where a whole policy manual (or section of one) gets parsed client-side
+// into individual policies first, then all saved together here.
+app.post('/api/admin/board-policies/bulk', async (req, res) => {
+  const { adminKey, domain, policies } = req.body;
+  if (adminKey !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'Unauthorized' });
+  const d = (domain || '').trim().toLowerCase();
+  if (!d) return res.status(400).json({ error: 'Missing domain.' });
+  if (!Array.isArray(policies) || policies.length === 0) return res.status(400).json({ error: 'No policies provided.' });
+
+  const client = await pool.connect();
+  let saved = 0;
+  const failed = [];
+  try {
+    await client.query('BEGIN');
+    for (const p of policies) {
+      const num = (p.policyNumber || '').trim();
+      const text = (p.policyText || '').trim();
+      if (!num || !text) { failed.push(p.policyNumber || '(missing number)'); continue; }
+      await client.query(`
+        INSERT INTO board_policies (domain, policy_number, title, policy_text, updated_at)
+        VALUES ($1, $2, $3, $4, now())
+        ON CONFLICT (domain, policy_number) DO UPDATE SET
+          title = EXCLUDED.title,
+          policy_text = EXCLUDED.policy_text,
+          updated_at = now()
+      `, [d, num, (p.title || '').trim(), text]);
+      saved++;
+    }
+    await client.query('COMMIT');
+    res.json({ ok: true, saved, failed });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Extracts raw text from an uploaded PDF for the admin bulk-upload flow. Does
+// not store anything -- the extracted text is parsed into individual policies
+// client-side (same parser used for pasted text) and only saved once the admin
+// reviews the preview and clicks Save.
+app.post('/api/admin/extract-pdf-text', async (req, res) => {
+  const { adminKey, filename, dataBase64 } = req.body;
+  if (adminKey !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'Unauthorized' });
+  if (!dataBase64) return res.status(400).json({ error: 'Missing file data.' });
+  try {
+    const base64 = dataBase64.includes(',') ? dataBase64.split(',')[1] : dataBase64;
+    const buffer = Buffer.from(base64, 'base64');
+    const parser = new pdfParse.PDFParse({ data: buffer });
+    const result = await parser.getText();
+    res.json({ filename: filename || '', text: result.text, pages: result.total });
+  } catch (err) {
+    console.error('PDF extraction failed for', filename, ':', err.message);
+    res.status(500).json({ error: 'Could not read this PDF: ' + err.message });
   }
 });
 
