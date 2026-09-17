@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-16-r1 -->
+<!-- BUILD: 2026-09-17-r3 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -143,7 +143,10 @@
     </div>
 
     <div class="card" id="addCard" style="display:none;">
-      <h2 id="formTitle">Add a policy</h2>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <h2 id="formTitle" style="margin:0;">Add a policy</h2>
+        <button class="toggle-link" onclick="showBulkMode()">Paste multiple policies at once instead →</button>
+      </div>
       <div class="row-2">
         <div>
           <label>Policy number</label>
@@ -161,6 +164,61 @@
         <button class="btn-secondary" id="cancelEditBtn" style="display:none;" onclick="resetForm()">Cancel edit</button>
       </div>
       <div class="status" id="saveStatus"></div>
+    </div>
+
+    <div class="card" id="bulkCard" style="display:none;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+        <h2 style="margin:0;">Add multiple policies at once</h2>
+        <button class="toggle-link" onclick="showSingleMode()">← Back to one at a time</button>
+      </div>
+      <p style="font-size:0.85rem; color:var(--muted); margin:0 0 16px;">
+        Upload one or more policy PDFs, in any series, not just the 4000s. Each one starting its own line with a number like
+        <strong>BP 4118</strong>, <strong>AR 4118.1</strong>, <strong>BB 9270</strong>, or similar is read as a policy.
+        A single PDF containing more than one document (a policy plus an attached exhibit, for example) is split correctly.
+      </p>
+
+      <label>Upload PDFs</label>
+      <div id="pdfDropZone" style="background:#fff; border:2px dashed var(--light-gray); border-radius:6px; padding:24px; text-align:center; cursor:pointer;" onclick="document.getElementById('pdfFileInput').click()" ondragover="event.preventDefault(); this.style.borderColor='var(--gold)';" ondragleave="this.style.borderColor='var(--light-gray)';" ondrop="handlePdfDrop(event)">
+        <div style="font-size:0.9rem; color:var(--gray); margin-bottom:10px;">Drag and drop PDF files here, or</div>
+        <button type="button" onclick="event.stopPropagation(); document.getElementById('pdfFileInput').click()" style="background:var(--gold); color:#fff; border:none; border-radius:6px; padding:9px 20px; font-size:0.85rem; font-weight:700; cursor:pointer;">Choose Files</button>
+        <div style="font-size:0.75rem; color:var(--gray); margin-top:10px;">You can select multiple PDFs at once.</div>
+        <input type="file" id="pdfFileInput" accept="application/pdf" multiple style="display:none;" onchange="handlePdfFiles(this.files)">
+      </div>
+      <div id="pdfFileList" style="margin-top:12px;"></div>
+      <div style="margin-top:14px;">
+        <button class="btn-primary" id="extractBtn" onclick="extractAndParsePdfs()" style="display:none;">Extract text and preview policies</button>
+      </div>
+      <div class="status" id="extractStatus"></div>
+
+      <div style="display:flex; align-items:center; gap:12px; margin:24px 0;">
+        <div style="flex:1; height:1px; background:var(--light-gray);"></div>
+        <div style="font-size:0.75rem; font-weight:700; color:var(--gray);">OR PASTE TEXT MANUALLY</div>
+        <div style="flex:1; height:1px; background:var(--light-gray);"></div>
+      </div>
+
+      <label>Pasted text</label>
+      <textarea id="bulkPasteText" style="min-height:180px;" placeholder="BP 4118  Suspension/Disciplinary Action
+The Governing Board may suspend...
+
+AR 4118.1  Notice of Suspension
+Prior to any suspension...
+
+BB 9270  Conflict of Interest
+..."></textarea>
+      <div style="margin-top:14px;">
+        <button class="btn-primary" onclick="parseBulkPaste()">Preview policies found</button>
+      </div>
+      <div id="bulkPreviewWrap" style="display:none; margin-top:20px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+          <div style="font-size:0.9rem; font-weight:700; color:var(--indigo);"><span id="bulkPreviewCount">0</span> policies found</div>
+        </div>
+        <div id="bulkPreviewList"></div>
+        <div style="margin-top:16px; display:flex; gap:10px; align-items:center;">
+          <button class="btn-primary" onclick="saveBulkPolicies()">Save all to this district</button>
+          <button class="btn-secondary" onclick="document.getElementById('bulkPreviewWrap').style.display='none';">Cancel</button>
+        </div>
+        <div class="status" id="bulkSaveStatus"></div>
+      </div>
     </div>
 
     <div class="card" id="listCard" style="display:none;">
@@ -204,6 +262,7 @@ async function loadPolicies() {
   currentDomain = domain;
 
   document.getElementById('addCard').style.display = 'block';
+  document.getElementById('bulkCard').style.display = 'none';
   document.getElementById('listCard').style.display = 'block';
   document.getElementById('listDomainLabel').textContent = domain;
   resetForm();
@@ -320,6 +379,206 @@ async function deletePolicy(id, num) {
     loadPolicies();
   } catch (err) {
     alert('Error: ' + err.message);
+  }
+}
+
+function showBulkMode() {
+  document.getElementById('addCard').style.display = 'none';
+  document.getElementById('bulkCard').style.display = 'block';
+  document.getElementById('bulkPreviewWrap').style.display = 'none';
+  document.getElementById('bulkSaveStatus').className = 'status';
+}
+
+function showSingleMode() {
+  document.getElementById('bulkCard').style.display = 'none';
+  document.getElementById('addCard').style.display = 'block';
+}
+
+window._selectedPdfFiles = [];
+
+function handlePdfFiles(fileList) {
+  for (const f of fileList) {
+    if (f.type === 'application/pdf') window._selectedPdfFiles.push(f);
+  }
+  renderPdfFileList();
+}
+
+function handlePdfDrop(e) {
+  e.preventDefault();
+  e.currentTarget.style.borderColor = 'var(--light-gray)';
+  handlePdfFiles(e.dataTransfer.files);
+}
+
+function renderPdfFileList() {
+  const list = document.getElementById('pdfFileList');
+  const files = window._selectedPdfFiles;
+  if (files.length === 0) {
+    list.innerHTML = '';
+    document.getElementById('extractBtn').style.display = 'none';
+    return;
+  }
+  list.innerHTML = files.map((f, i) => `
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--cream); border:1px solid var(--light-gray); border-radius:4px; margin-bottom:6px; font-size:0.85rem;">
+      <span>📄 ${escapeHtml(f.name)}</span>
+      <button onclick="removePdfFile(${i})" style="background:none; border:none; color:var(--gray); cursor:pointer; font-size:0.85rem;">✕</button>
+    </div>
+  `).join('');
+  document.getElementById('extractBtn').style.display = 'inline-block';
+}
+
+function removePdfFile(i) {
+  window._selectedPdfFiles.splice(i, 1);
+  renderPdfFileList();
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function extractAndParsePdfs() {
+  const files = window._selectedPdfFiles;
+  const statusEl = document.getElementById('extractStatus');
+  if (files.length === 0) return;
+
+  const btn = document.getElementById('extractBtn');
+  btn.disabled = true;
+  let combinedText = '';
+  const failedFiles = [];
+
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    statusEl.className = 'status ok';
+    statusEl.textContent = `Reading ${f.name} (${i + 1} of ${files.length})...`;
+    try {
+      const dataBase64 = await fileToBase64(f);
+      const res = await fetch('/api/admin/extract-pdf-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminKey, filename: f.name, dataBase64 })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Extraction failed');
+      combinedText += data.text + '\n\n';
+    } catch (err) {
+      failedFiles.push(f.name + ' (' + err.message + ')');
+    }
+  }
+
+  btn.disabled = false;
+
+  if (failedFiles.length > 0) {
+    statusEl.className = 'status err';
+    statusEl.textContent = 'Could not read: ' + failedFiles.join(', ');
+  } else {
+    statusEl.className = '';
+    statusEl.textContent = '';
+  }
+
+  if (combinedText.trim()) {
+    document.getElementById('bulkPasteText').value = combinedText.trim();
+    parseBulkPaste();
+  }
+}
+
+// Recognizes lines like "BP 4118", "AR 4118.1", "BB 9270" etc. at the start of
+// a line as the beginning of a new policy. Everything up to the next such line
+// (or the end of the text) becomes that policy's content. The first non-empty
+// line after the number is used as a starting guess for the title, editable
+// in the preview before saving.
+function parseBulkPaste() {
+  const raw = document.getElementById('bulkPasteText').value;
+  const markerRegex = /^(?:[A-Z][A-Za-z/&]*\s+){0,2}((?:BP|AR|BB|E)\s*\d{3,5}(?:\.\d+)?)\b(.*)$/gm;
+  const matches = [...raw.matchAll(markerRegex)];
+
+  if (matches.length === 0) {
+    alert('No policy numbers found. Each policy needs to start its own line with something like "BP 4118".');
+    return;
+  }
+
+  const policies = [];
+  for (let i = 0; i < matches.length; i++) {
+    const m = matches[i];
+    const num = m[1].replace(/\s+/g, ' ').trim();
+    const restOfLine = m[2].trim();
+    const start = m.index + m[0].length;
+    const end = i + 1 < matches.length ? matches[i + 1].index : raw.length;
+    const body = raw.slice(start, end).trim();
+
+    // Title: rest of the marker line if present, otherwise the first non-empty
+    // line of the body.
+    let title = restOfLine;
+    let text = body;
+    if (!title) {
+      const lines = body.split('\n');
+      title = (lines[0] || '').trim();
+      text = lines.slice(1).join('\n').trim();
+    }
+    policies.push({ policyNumber: num, title, policyText: text || body });
+  }
+
+  window._bulkParsed = policies;
+  renderBulkPreview(policies);
+}
+
+function renderBulkPreview(policies) {
+  document.getElementById('bulkPreviewCount').textContent = policies.length;
+  const list = document.getElementById('bulkPreviewList');
+  list.innerHTML = policies.map((p, i) => `
+    <div class="policy-item">
+      <div class="row-2" style="margin-bottom:8px;">
+        <div>
+          <label style="font-size:0.7rem;">Policy number</label>
+          <input type="text" value="${escapeAttr(p.policyNumber)}" oninput="window._bulkParsed[${i}].policyNumber=this.value" style="padding:7px 10px; font-size:0.85rem;">
+        </div>
+        <div>
+          <label style="font-size:0.7rem;">Title</label>
+          <input type="text" value="${escapeAttr(p.title)}" oninput="window._bulkParsed[${i}].title=this.value" style="padding:7px 10px; font-size:0.85rem;">
+        </div>
+      </div>
+      <div style="font-size:0.8rem; color:var(--muted); max-height:100px; overflow-y:auto; white-space:pre-wrap; border-top:1px solid var(--border); padding-top:8px;">${escapeHtml(p.policyText).slice(0, 500)}${p.policyText.length > 500 ? '…' : ''}</div>
+    </div>
+  `).join('');
+  document.getElementById('bulkPreviewWrap').style.display = 'block';
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+function escapeAttr(str) {
+  return escapeHtml(str).replace(/"/g, '&quot;');
+}
+
+async function saveBulkPolicies() {
+  const statusEl = document.getElementById('bulkSaveStatus');
+  const policies = window._bulkParsed || [];
+  if (!currentDomain) { alert('Load a district first.'); return; }
+  if (policies.length === 0) return;
+
+  try {
+    const res = await fetch('/api/admin/board-policies/bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ adminKey, domain: currentDomain, policies })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Save failed');
+
+    statusEl.className = 'status ok';
+    statusEl.textContent = `✓ Saved ${data.saved} of ${policies.length} policies for ${currentDomain}` +
+      (data.failed && data.failed.length ? ` (skipped: ${data.failed.join(', ')})` : '');
+    document.getElementById('bulkPasteText').value = '';
+    document.getElementById('bulkPreviewWrap').style.display = 'none';
+    loadPolicies();
+  } catch (err) {
+    statusEl.className = 'status err';
+    statusEl.textContent = 'Error: ' + err.message;
   }
 }
 </script>
