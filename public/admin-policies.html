@@ -1,0 +1,327 @@
+<!-- BUILD: 2026-09-16-r1 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Board Policies Admin | Trackument</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root {
+    --navy: #1a0256;
+    --gold: #e05b0e;
+    --teal: #048784;
+    --cream: #fbfaff;
+    --white: #ffffff;
+    --text: #2c2c2c;
+    --gray: #6b7280;
+    --light-gray: #e8e4dc;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+  }
+  header {
+    background: var(--navy);
+    color: #fff;
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  header h1 { font-size: 1.1rem; margin: 0; font-weight: 800; }
+  header .sub { font-size: 0.78rem; color: rgba(255,255,255,0.6); margin-top: 2px; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  .card {
+    background: #fff;
+    border: 1px solid var(--light-gray);
+    border-radius: 10px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+  }
+  .card h2 { font-size: 1.05rem; margin: 0 0 14px; color: var(--navy); }
+
+  label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: var(--navy);
+    margin-bottom: 5px;
+    margin-top: 14px;
+  }
+  label:first-of-type { margin-top: 0; }
+  input[type="text"], input[type="password"], textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--light-gray);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.92rem;
+    color: var(--text);
+  }
+  textarea { min-height: 220px; resize: vertical; line-height: 1.5; }
+  input:focus, textarea:focus { outline: none; border-color: var(--gold); }
+
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    font-weight: 700;
+    padding: 10px 20px;
+    font-size: 0.88rem;
+  }
+  .btn-primary { background: var(--gold); color: #fff; }
+  .btn-primary:hover { background: #b84b0b; }
+  .btn-secondary { background: transparent; color: var(--gray); border: 1px solid var(--light-gray); }
+  .btn-secondary:hover { border-color: var(--navy); color: var(--navy); }
+  .btn-danger { background: transparent; color: #c80204; border: 1px solid #fca5a5; font-size: 0.78rem; padding: 5px 12px; }
+  .btn-danger:hover { background: #fef2f2; }
+
+  #authGate { max-width: 420px; margin: 80px auto; text-align: center; }
+  #authGate .card { text-align: left; }
+
+  .policy-item {
+    border: 1px solid var(--light-gray);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+  }
+  .policy-item-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .policy-item-num { font-weight: 800; color: var(--navy); font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; }
+  .policy-item-title { font-size: 0.92rem; color: var(--text); margin-top: 2px; }
+  .policy-item-meta { font-size: 0.75rem; color: var(--gray); margin-top: 4px; }
+  .policy-item-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .policy-item-text {
+    margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--light-gray);
+    font-size: 0.85rem; color: var(--text); line-height: 1.6; white-space: pre-wrap;
+    display: none; max-height: 240px; overflow-y: auto;
+  }
+
+  .status { font-size: 0.85rem; margin-top: 10px; padding: 8px 12px; border-radius: 6px; display: none; }
+  .status.ok { background: #f0fdf4; color: #166534; display: block; }
+  .status.err { background: #fef2f2; color: #7f1d1d; display: block; }
+
+  .empty-note { font-size: 0.88rem; color: var(--gray); font-style: italic; padding: 8px 0; }
+  .toggle-link { font-size: 0.8rem; color: var(--navy); font-weight: 700; cursor: pointer; text-decoration: underline; background: none; border: none; padding: 0; }
+</style>
+</head>
+<body>
+
+<div id="authGate">
+  <h2 style="color:var(--navy);">Board Policies Admin</h2>
+  <div class="card">
+    <label>Admin key</label>
+    <input type="password" id="adminKeyInput" placeholder="Enter admin key">
+    <button class="btn-primary" style="margin-top:16px; width:100%;" onclick="checkAuth()">Continue</button>
+    <div class="status" id="authStatus"></div>
+  </div>
+</div>
+
+<div id="mainApp" style="display:none;">
+  <header>
+    <div>
+      <h1>Board Policies Admin</h1>
+      <div class="sub">Internal tool — paste real district policy text copied from Simbli/eBoard</div>
+    </div>
+    <button class="btn-secondary" style="background:rgba(255,255,255,0.1); color:#fff; border-color:rgba(255,255,255,0.3);" onclick="logout()">Log out</button>
+  </header>
+
+  <div class="wrap">
+    <div class="card">
+      <h2>District</h2>
+      <label>District email domain</label>
+      <input type="text" id="domainInput" placeholder="e.g. burbankusd.org" onkeydown="if(event.key==='Enter') loadPolicies()">
+      <button class="btn-primary" style="margin-top:14px;" onclick="loadPolicies()">Load policies for this district</button>
+    </div>
+
+    <div class="card" id="addCard" style="display:none;">
+      <h2 id="formTitle">Add a policy</h2>
+      <div class="row-2">
+        <div>
+          <label>Policy number</label>
+          <input type="text" id="policyNumber" placeholder="e.g. BP 4118">
+        </div>
+        <div>
+          <label>Title</label>
+          <input type="text" id="policyTitle" placeholder="e.g. Suspension/Disciplinary Action">
+        </div>
+      </div>
+      <label>Full policy text</label>
+      <textarea id="policyText" placeholder="Paste the complete policy text copied from the district's Simbli/eBoard page here."></textarea>
+      <div style="margin-top:14px; display:flex; gap:10px; align-items:center;">
+        <button class="btn-primary" onclick="savePolicy()">Save policy</button>
+        <button class="btn-secondary" id="cancelEditBtn" style="display:none;" onclick="resetForm()">Cancel edit</button>
+      </div>
+      <div class="status" id="saveStatus"></div>
+    </div>
+
+    <div class="card" id="listCard" style="display:none;">
+      <h2>Saved policies for <span id="listDomainLabel" style="color:var(--gold);"></span></h2>
+      <div id="policyList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let adminKey = '';
+let currentDomain = '';
+let editingId = null;
+
+function checkAuth() {
+  const key = document.getElementById('adminKeyInput').value.trim();
+  if (!key) return;
+  adminKey = key;
+  sessionStorage.setItem('bp_admin_key', key);
+  document.getElementById('authGate').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+}
+
+function logout() {
+  sessionStorage.removeItem('bp_admin_key');
+  location.reload();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = sessionStorage.getItem('bp_admin_key');
+  if (saved) {
+    adminKey = saved;
+    document.getElementById('authGate').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+  }
+});
+
+async function loadPolicies() {
+  const domain = document.getElementById('domainInput').value.trim().toLowerCase();
+  if (!domain) return;
+  currentDomain = domain;
+
+  document.getElementById('addCard').style.display = 'block';
+  document.getElementById('listCard').style.display = 'block';
+  document.getElementById('listDomainLabel').textContent = domain;
+  resetForm();
+
+  const list = document.getElementById('policyList');
+  list.innerHTML = '<div class="empty-note">Loading...</div>';
+
+  try {
+    const res = await fetch(`/api/admin/board-policies?domain=${encodeURIComponent(domain)}&key=${encodeURIComponent(adminKey)}`);
+    if (res.status === 403) { alert('Admin key rejected. Please log in again.'); logout(); return; }
+    const data = await res.json();
+    renderPolicyList(data.policies || []);
+  } catch (err) {
+    list.innerHTML = '<div class="empty-note">Could not load policies: ' + err.message + '</div>';
+  }
+}
+
+function renderPolicyList(policies) {
+  const list = document.getElementById('policyList');
+  if (policies.length === 0) {
+    list.innerHTML = '<div class="empty-note">No real policies saved yet for this district. It will fall back to generic CSBA model numbers until you add some here.</div>';
+    return;
+  }
+  list.innerHTML = policies.map(p => `
+    <div class="policy-item">
+      <div class="policy-item-head">
+        <div>
+          <div class="policy-item-num">${escapeHtml(p.policy_number)}</div>
+          <div class="policy-item-title">${escapeHtml(p.title || '')}</div>
+          <div class="policy-item-meta">Updated ${new Date(p.updated_at).toLocaleDateString()}</div>
+        </div>
+        <div class="policy-item-actions">
+          <button class="toggle-link" onclick="togglePreview(this)">View text</button>
+          <button class="btn-secondary" style="font-size:0.78rem; padding:5px 12px;" onclick='editPolicy(${JSON.stringify(p).replace(/'/g, "&apos;")})'>Edit</button>
+          <button class="btn-danger" onclick="deletePolicy(${p.id}, '${escapeHtml(p.policy_number)}')">Remove</button>
+        </div>
+      </div>
+      <div class="policy-item-text">${escapeHtml(p.policy_text)}</div>
+    </div>
+  `).join('');
+}
+
+function togglePreview(btn) {
+  const textEl = btn.closest('.policy-item').querySelector('.policy-item-text');
+  const isOpen = textEl.style.display === 'block';
+  textEl.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen ? 'View text' : 'Hide text';
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+function editPolicy(p) {
+  editingId = p.id;
+  document.getElementById('policyNumber').value = p.policy_number;
+  document.getElementById('policyTitle').value = p.title || '';
+  document.getElementById('policyText').value = p.policy_text;
+  document.getElementById('formTitle').textContent = 'Edit policy ' + p.policy_number;
+  document.getElementById('cancelEditBtn').style.display = 'inline-block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetForm() {
+  editingId = null;
+  document.getElementById('policyNumber').value = '';
+  document.getElementById('policyTitle').value = '';
+  document.getElementById('policyText').value = '';
+  document.getElementById('formTitle').textContent = 'Add a policy';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+  document.getElementById('saveStatus').className = 'status';
+}
+
+async function savePolicy() {
+  const policyNumber = document.getElementById('policyNumber').value.trim();
+  const title = document.getElementById('policyTitle').value.trim();
+  const policyText = document.getElementById('policyText').value.trim();
+  const statusEl = document.getElementById('saveStatus');
+
+  if (!currentDomain) { alert('Load a district first.'); return; }
+  if (!policyNumber || !policyText) {
+    statusEl.className = 'status err';
+    statusEl.textContent = 'Policy number and full text are required.';
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/admin/board-policies', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ adminKey, domain: currentDomain, policyNumber, title, policyText })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Save failed');
+    }
+    statusEl.className = 'status ok';
+    statusEl.textContent = '✓ Saved ' + policyNumber + ' for ' + currentDomain;
+    resetForm();
+    loadPolicies();
+  } catch (err) {
+    statusEl.className = 'status err';
+    statusEl.textContent = 'Error: ' + err.message;
+  }
+}
+
+async function deletePolicy(id, num) {
+  if (!confirm('Remove policy ' + num + ' for ' + currentDomain + '?')) return;
+  try {
+    const res = await fetch(`/api/admin/board-policies/${id}?key=${encodeURIComponent(adminKey)}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Delete failed');
+    loadPolicies();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-16-r6 -->
+<!-- BUILD: 2026-09-17-r5 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -331,7 +331,7 @@
     content: "\2713";
     background: var(--gold);
     border-color: var(--gold);
-    color: var(--navy);
+    color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -476,7 +476,7 @@
     box-shadow: 0 1px 4px rgba(224,91,14,0.25);
   }
   .btn-next:hover { background: #b84b0b; border-color: #b84b0b; box-shadow: 0 2px 8px rgba(224,91,14,0.35); }
-  .btn-generate:hover { background: var(--navy); color: var(--gold); }
+  .btn-generate:hover { background: var(--navy); color: #fff; }
 
 
   /* Red placeholder text in directives and support resources */
@@ -1077,7 +1077,7 @@
     text-align: center;
   }
 
-  .side-nav-item.active .side-nav-circle { color: var(--gold); }
+  .side-nav-item.active .side-nav-circle { color: #fff; }
   .side-nav-item.completed .side-nav-circle { color: var(--navy); }
 
   .side-nav-text {
@@ -1287,8 +1287,8 @@
             <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:18px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="cbaDropZone" onclick="document.getElementById('cbaFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleCBADrop(event)">
               <div style="font-size:0.85rem;color:var(--gray);margin-bottom:10px;">Drag and drop, or</div>
               <button type="button" onclick="event.stopPropagation(); document.getElementById('cbaFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:9px 20px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
-              <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF only. Word documents must be saved as PDF first.</div>
-              <input type="file" id="cbaFileInput" accept=".pdf,application/pdf" style="display:none;" onchange="handleCBAFile(this.files[0])">
+              <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF or Word document (.pdf, .doc, .docx)</div>
+              <input type="file" id="cbaFileInput" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none;" onchange="handleCBAFile(this.files[0])">
             </div>
             <div id="cbaFilePreview" style="display:none;padding:10px 13px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);display:flex;align-items:center;justify-content:space-between;">
               <span id="cbaFileName"></span>
@@ -1296,7 +1296,7 @@
             </div>
           </div>
           <div id="cbaLinkMode" style="display:none;">
-            <label style="font-size:0.75rem;">Document URL</label>
+            <label>Document URL</label>
             <input type="text" id="setupCBALink" placeholder="https://your-district.org/cba-2024.pdf or Google Drive link">
             <div style="font-size:0.75rem;color:var(--gray);margin-top:6px;">The tool will extract relevant contract language from this document when generating memos.</div>
           </div>
@@ -1345,8 +1345,8 @@
             <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:18px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="handbookDropZone" onclick="document.getElementById('handbookFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleHandbookDrop(event)">
               <div style="font-size:0.85rem;color:var(--gray);margin-bottom:10px;">Drag and drop, or</div>
               <button type="button" onclick="event.stopPropagation(); document.getElementById('handbookFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:9px 20px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
-              <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF only. Word documents must be saved as PDF first.</div>
-              <input type="file" id="handbookFileInput" accept=".pdf,application/pdf" style="display:none;" onchange="handleHandbookFile(this.files[0])">
+              <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF or Word document (.pdf, .doc, .docx)</div>
+              <input type="file" id="handbookFileInput" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none;" onchange="handleHandbookFile(this.files[0])">
             </div>
             <div id="handbookFilePreview" style="display:none;padding:10px 13px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);display:flex;align-items:center;justify-content:space-between;">
               <span id="handbookFileName"></span>
@@ -1354,7 +1354,7 @@
             </div>
           </div>
           <div id="handbookLinkMode" style="display:none;">
-            <label style="font-size:0.75rem;">Document URL</label>
+            <label>Document URL</label>
             <input type="text" id="setupHandbookLink" placeholder="https://your-district.org/handbook-2024.pdf or Google Drive link">
             <div style="font-size:0.75rem;color:var(--gray);margin-top:6px;">The tool will extract relevant handbook language when generating memos.</div>
           </div>
@@ -1383,8 +1383,8 @@
             <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:18px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="meritDropZone" onclick="document.getElementById('meritFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleMeritDrop(event)">
               <div style="font-size:0.85rem;color:var(--gray);margin-bottom:10px;">Drag and drop, or</div>
               <button type="button" onclick="event.stopPropagation(); document.getElementById('meritFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:9px 20px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
-              <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF document</div>
-              <input type="file" id="meritFileInput" accept=".pdf,application/pdf" style="display:none;" onchange="handleMeritFile(this.files[0])">
+              <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF or Word document (.pdf, .doc, .docx)</div>
+              <input type="file" id="meritFileInput" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none;" onchange="handleMeritFile(this.files[0])">
             </div>
             <div id="meritFilePreview" style="display:none;padding:10px 13px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);display:flex;align-items:center;justify-content:space-between;">
               <span id="meritFileName"></span>
@@ -1417,7 +1417,7 @@
     <div class="setup-modal-body" id="tabPanelSchools" style="display:none;">
       <form autocomplete="on" onsubmit="return false;">
       <div class="setup-section-title" style="margin-top:0;padding-top:0;border-top:none;">Site Profiles</div>
-      <div class="setup-section-sub">Save each school or department once. At the start of each memo you'll select which site the document is coming from, and its logo will appear on the letterhead automatically.</div>
+      <div class="setup-section-sub">Save each school or department once. At the start of each memo you'll select which site the document is coming from. If you've uploaded a letterhead for that site, it appears automatically at the top of the downloaded document.</div>
 
       <div id="schoolProfileList">
         <div id="schoolProfileEmpty" style="font-size:0.85rem;color:var(--gray);font-style:italic;padding:8px 0;">No sites saved yet.</div>
@@ -1441,7 +1441,7 @@
         <label>Site Logo</label>
         <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="logoDropZone" onclick="document.getElementById('logoFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleLogoDrop(event)">
           <div style="font-size:0.85rem;color:var(--gray);">Click to upload or drag and drop</div>
-          <div style="font-size:0.75rem;color:var(--gray);margin-top:4px;">PNG, JPG, SVG — max 2MB</div>
+          <div style="font-size:0.75rem;color:var(--gray);margin-top:4px;">PNG, JPG, SVG. Max 2MB.</div>
           <input type="file" id="logoFileInput" accept="image/*" style="display:none;" onchange="handleLogoFile(this.files[0])">
         </div>
         <div id="newSchoolLogoWrap" style="display:none;align-items:center;gap:14px;padding:11px 13px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;">
@@ -1449,6 +1449,21 @@
           <div>
             <div style="font-size:0.82rem;color:var(--success);font-weight:600;">Logo ready</div>
             <button onclick="clearNewSchoolLogo()" style="font-size:0.72rem;color:var(--gray);background:transparent;border:none;cursor:pointer;text-decoration:underline;margin-top:4px;">Remove</button>
+          </div>
+        </div>
+
+        <label style="margin-top:22px;">Site Letterhead</label>
+        <div style="font-size:0.8rem;color:var(--gray);margin-top:-4px;margin-bottom:8px;">A wider header image (district or site letterhead) that appears at the top of downloaded documents from this site, in place of the plain text heading.</div>
+        <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="letterheadDropZone" onclick="document.getElementById('letterheadFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleLetterheadDrop(event)">
+          <div style="font-size:0.85rem;color:var(--gray);">Click to upload or drag and drop</div>
+          <div style="font-size:0.75rem;color:var(--gray);margin-top:4px;">PNG or JPG. Max 2MB. Best as a wide banner shape.</div>
+          <input type="file" id="letterheadFileInput" accept="image/png,image/jpeg" style="display:none;" onchange="handleLetterheadFile(this.files[0])">
+        </div>
+        <div id="newSchoolLetterheadWrap" style="display:none;align-items:center;gap:14px;padding:11px 13px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;">
+          <img id="newSchoolLetterheadPreviewImg" src="" style="max-height:44px;max-width:220px;object-fit:contain;">
+          <div>
+            <div style="font-size:0.82rem;color:var(--success);font-weight:600;">Letterhead ready</div>
+            <button onclick="clearNewSchoolLetterhead()" style="font-size:0.72rem;color:var(--gray);background:transparent;border:none;cursor:pointer;text-decoration:underline;margin-top:4px;">Remove</button>
           </div>
         </div>
 
@@ -1527,14 +1542,14 @@ if (window.location.protocol === 'file:') {
   <path d="M500.70000000000005 378.0811534825087H538.2606681374094V370.28254018279233H509.7718562874252V352.0194610778443H536.032492908919V344.26063662149386H509.7718562874252V326.59439016703436H538.021935077214V318.795776867318H500.70000000000005Z" fill="#FFFFFF"/><path d="M555.8075480617712 378.0811534825087H564.640671289001V346.17050110305706C564.640671289001 341.6345729593445 564.4417270721715 334.03490387645763 564.2825716987079 327.82784431137725C566.5505357705641 335.1489914907028 568.8980775291523 342.5895052001261 570.2508982035929 346.17050110305706L582.5456508036559 378.0811534825087H590.3044752600064L602.4400724866058 346.17050110305706C603.7928931610463 342.4701386700284 606.2598014497321 334.83068074377564 608.3686101481248 327.62890009454776C608.2492436180271 334.2338480932871 608.0502994011977 341.7937283328081 608.0502994011977 346.17050110305706V378.0811534825087H617.0823668452568V318.795776867318H603.6337377875827L590.9013079104948 352.8152379451623C589.7474314528837 356.0779231011661 587.8773558146864 362.68287109990547 586.48474629688 367.97478726757015C585.1319256224393 362.5635045698078 583.2618499842421 355.9983454144343 582.107973526631 352.8152379451623L569.1765994327136 318.795776867318H555.8075480617712Z" fill="#FFFFFF"/><path d="M636.1412228175228 378.0811534825087H645.2130791049481V357.311377245509H657.3088874881815C671.0758272927828 357.311377245509 677.9195083517177 348.995508982036 677.9195083517177 338.0535770564135C677.9195083517177 327.1116451307911 671.1156161361488 318.795776867318 657.3884651749133 318.795776867318H636.1412228175228ZM645.2130791049481 349.63213047589034V326.55460132366846H656.3539552474C665.1472896312638 326.55460132366846 668.7282855341948 331.3690513709423 668.7282855341948 338.0535770564135C668.7282855341948 344.7381027418847 665.1472896312638 349.63213047589034 656.4335329341318 349.63213047589034Z" fill="#FFFFFF"/><path d="M694.3920895052001 378.0811534825087H730.3214150646077V370.28254018279233H703.4639457926254V318.795776867318H694.3920895052001Z" fill="#FFFFFF"/><path d="M771.1447683580208 378.8769303498267C786.5032618972581 378.8769303498267 797.8430822565396 367.4177434604475 797.8430822565396 348.47825401827924C797.8430822565396 329.45918688937917 786.5032618972581 318.0 771.1447683580208 318.0C755.7464859754176 318.0 744.3668767727703 329.45918688937917 744.3668767727703 348.47825401827924C744.3668767727703 367.4177434604475 755.7464859754176 378.8769303498267 771.1447683580208 378.8769303498267ZM771.1447683580208 370.6008509297195C760.9588244563505 370.6008509297195 753.3591553734636 362.80223763000316 753.3591553734636 348.47825401827924C753.3591553734636 334.11448156318943 760.9588244563505 326.2760794201072 771.1447683580208 326.2760794201072C781.2511345729594 326.2760794201072 788.8508036558462 334.07469271982353 788.8508036558462 348.47825401827924C788.8508036558462 362.80223763000316 781.2511345729594 370.6008509297195 771.1447683580208 370.6008509297195Z" fill="#FFFFFF"/><path d="M832.1808540813112 378.0811534825087H841.2527103687363V354.4863693665301L863.0172076898834 318.795776867318H852.47316419792L841.4516545855658 337.6954774661204C839.7009454774662 340.6796407185629 838.2685471162938 343.34549322407815 836.7963599117555 346.9264891270092C835.3241727072173 343.42507091080995 833.8917743460448 340.7990072486606 832.0614875512134 337.6954774661204L820.9206114087615 318.795776867318H810.3367790734321L832.1808540813112 354.4863693665301Z" fill="#FFFFFF"/><path d="M877.5799243618027 378.0811534825087H915.1405924992122V370.28254018279233H886.6517806492279V352.0194610778443H912.9124172707218V344.26063662149386H886.6517806492279V326.59439016703436H914.9018594390168V318.795776867318H877.5799243618027Z" fill="#FFFFFF"/><path d="M932.6874724235739 378.0811534825087H970.2481405609834V370.28254018279233H941.7593287109992V352.0194610778443H968.019965332493V344.26063662149386H941.7593287109992V326.59439016703436H970.009407500788V318.795776867318H932.6874724235739Z" fill="#FFFFFF"/><path d="M1040.9131263788213 378.0811534825087C1058.937472423574 378.0811534825087 1069.4019382288056 366.90048849669085 1069.4019382288056 348.35888748818155C1069.4019382288056 329.93665300976994 1058.937472423574 318.795776867318 1041.470170185944 318.795776867318H1021.6155373463599V378.0811534825087ZM1030.6873936337852 370.12338480932874V326.75354554049795H1040.8733375354554C1053.8047116293728 326.75354554049795 1060.489237314844 334.4327923101166 1060.489237314844 348.35888748818155C1060.489237314844 362.4043491963442 1053.8047116293728 370.12338480932874 1040.3958714150647 370.12338480932874Z" fill="#FFFFFF"/><path d="M1095.46363063347 318.795776867318H1086.391774346045V378.0811534825087H1095.46363063347Z" fill="#FFFFFF"/><path d="M1134.4566971320517 379.0758745666562C1148.3827923101167 379.0758745666562 1156.4201386700283 371.7547273873306 1156.4201386700283 361.68815001575797C1156.4201386700283 350.9849511503309 1146.9106051055783 346.9264891270092 1139.3507248660574 344.9768358020801L1133.581342578002 343.4648597541759C1129.0454144342893 342.27119445319886 1122.9179325559408 340.1623857548062 1122.9179325559408 334.5521588402143C1122.9179325559408 329.53876457611096 1127.4538606996534 325.87819098644815 1134.6556413488813 325.87819098644815C1141.3799558777182 325.87819098644815 1146.1944059249922 328.98172076898834 1146.7912385754807 334.3930034667507H1155.6243618027104C1155.345839899149 324.9630475890325 1147.029971635676 318.0 1134.8545855657107 318.0C1122.9179325559408 318.0 1113.8460762685156 324.8038922155689 1113.8460762685156 335.06941380397103C1113.8460762685156 343.18633785061456 1119.5756697132051 348.15994327135206 1129.2841474944848 350.7462180901355L1136.2074062401514 352.65608257169873C1142.5736211786952 354.3670028364324 1147.467648912701 356.3962338480933 1147.467648912701 361.5687834856603C1147.467648912701 367.29837693034983 1141.9369996848409 371.11810589347624 1134.4169082886858 371.11810589347624C1127.573227229751 371.11810589347624 1121.8436337850615 368.09415379766784 1121.3263788213048 361.6085723290262H1112.2147336905136C1112.7717774976363 372.4311377245509 1121.1274346044752 379.0758745666562 1134.4566971320517 379.0758745666562Z" fill="#FFFFFF"/><path d="M1197.800535770564 378.8769303498267C1210.891065237945 378.8769303498267 1220.440387645761 370.6008509297195 1222.2706744405923 358.86314213677906H1213.1192404664355C1211.6072644185313 366.4230223763 1205.2808383233532 370.6008509297195 1197.880113457296 370.6008509297195C1187.7339583989915 370.6008509297195 1180.0945004727387 362.88181531673496 1180.0945004727387 348.47825401827924C1180.0945004727387 334.1542704065553 1187.6941695556254 326.2760794201072 1197.880113457296 326.2760794201072C1205.2808383233532 326.2760794201072 1211.6072644185313 330.41411913016077 1213.1192404664355 337.9739993696817H1222.2308855972265C1220.2414434289315 325.4007248660574 1210.2942325874565 318.0 1197.800535770564 318.0C1182.4420422313267 318.0 1171.1022218720452 329.45918688937917 1171.1022218720452 348.47825401827924C1171.1022218720452 367.4177434604475 1182.4022533879609 378.8769303498267 1197.800535770564 378.8769303498267Z" fill="#FFFFFF"/><path d="M1247.9742672549637 318.795776867318H1238.9024109675386V378.0811534825087H1247.9742672549637Z" fill="#FFFFFF"/><path d="M1267.0729120705957 378.0811534825087H1276.1447683580209V357.311377245509H1288.2405767412545C1302.0075165458557 357.311377245509 1308.8511976047905 348.995508982036 1308.8511976047905 338.0535770564135C1308.8511976047905 327.1116451307911 1302.0473053892215 318.795776867318 1288.3201544279862 318.795776867318H1267.0729120705957ZM1276.1447683580209 349.63213047589034V326.55460132366846H1287.2856445004727C1296.0789788843367 326.55460132366846 1299.6599747872676 331.3690513709423 1299.6599747872676 338.0535770564135C1299.6599747872676 344.7381027418847 1296.0789788843367 349.63213047589034 1287.3652221872046 349.63213047589034Z" fill="#FFFFFF"/><path d="M1325.3237787582732 378.0811534825087H1361.2531043176807V370.28254018279233H1334.3956350456983V318.795776867318H1325.3237787582732Z" fill="#FFFFFF"/><path d="M1386.439442168295 318.795776867318H1377.36758588087V378.0811534825087H1386.439442168295Z" fill="#FFFFFF"/><path d="M1405.538086983927 378.0811534825087H1414.72930980145V346.44902300661835C1414.72930980145 343.38528206744405 1414.4109990545228 337.2578001890955 1414.0528994642295 329.81728647967225C1418.3500945477467 337.7750551528522 1420.618058619603 341.8733060195399 1423.5226441853138 346.52860069335014L1443.5364323983613 378.0811534825087H1454.040687046959V318.795776867318H1444.849464229436V352.53671604160104C1444.849464229436 355.9585565710684 1445.0086196028997 361.4892057989285 1445.4462968799246 367.21879924361804C1442.8202332177752 361.5289946422944 1440.1543807122598 357.0328553419477 1438.3240939174284 354.0884809328711L1416.0025527891587 318.795776867318H1405.538086983927Z" fill="#FFFFFF"/><path d="M1473.1393318625908 378.0811534825087H1510.7V370.28254018279233H1482.211188150016V352.0194610778443H1508.4718247715098V344.26063662149386H1482.211188150016V326.59439016703436H1510.4612669398048V318.795776867318H1473.1393318625908Z" fill="#FFFFFF"/>
 </svg>
     <div style="width:1px; height:28px; background:rgba(255,255,255,0.25); margin-left:6px; display:none;" id="districtDivider"></div>
-    <div class="district-header-name" id="headerDistrictName" style="display:none; font-size:0.8rem; font-weight:600; color:var(--gold-light); background:rgba(147,112,219,0.1); padding:3px 14px; border-radius:20px; margin-left:26px;"></div>
+    <div class="district-header-name" id="headerDistrictName" style="display:none; font-size:0.8rem; font-weight:600; color:#fff; background:rgba(147,112,219,0.1); padding:3px 14px; border-radius:20px; margin-left:26px;"></div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;">
     <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.8rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:5px 12px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap;">🔒 Privacy protected</div>
     <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">+ New Writeup</button>
     <button onclick="openFeedback()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">💬 Feedback</button>
     <a href="mailto:help@trackument.com" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em; text-decoration:none; display:inline-flex; align-items:center;">❓ Help</a>
-    <button id="settingsBtn" onclick="openSettings()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:var(--gold-light);padding:5px 13px;border-radius:2px;font-size:0.83rem;font-weight:600;cursor:pointer;letter-spacing:0.02em;">⚙ District &amp; Site Settings</button>
+    <button id="settingsBtn" onclick="openSettings()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">⚙ District &amp; Site Settings</button>
     <div style="position:relative;">
       <button onclick="toggleHeaderMenu()" id="headerMenuBtn" style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); font-weight:700; font-size:0.9rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:2px; letter-spacing:0;"><span style="color:var(--gold);">•</span><span style="color:var(--red);">•</span><span style="color:var(--teal);">•</span></button>
       <div id="headerMenuDropdown" style="display:none; position:absolute; right:0; top:40px; background:#fff; border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.2); min-width:170px; overflow:hidden; z-index:50;">
@@ -1674,10 +1689,6 @@ document.addEventListener('click', function(e){
 
       <div class="row-2">
         <div>
-          <label>Employee Name</label>
-          <input type="text" id="employeeName" placeholder="Full legal name">
-        </div>
-        <div>
           <label>Employee Salutation</label>
           <select id="employeeSalutation" style="width:100%;">
             <option value="">— Select —</option>
@@ -1687,6 +1698,10 @@ document.addEventListener('click', function(e){
             <option value="Dr.">Dr.</option>
             <option value="Mx.">Mx.</option>
           </select>
+        </div>
+        <div>
+          <label>Employee Name</label>
+          <input type="text" id="employeeName" placeholder="Full legal name">
         </div>
       </div>
       <div class="row-2">
@@ -1776,7 +1791,7 @@ document.addEventListener('click', function(e){
           <input type="hidden" id="incidentDates">
         </div>
         <div>
-          <label>Time(s) of Incident(s) <span style="font-weight:400; font-size:0.78rem; color:var(--gray);">— optional</span></label>
+          <label>Time(s) of Incident(s) <span style="font-weight:400; font-size:0.78rem; color:var(--gray);">(optional)</span></label>
           <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
             <select id="timeEntryMode" onchange="updateTimeEntryMode()" style="flex:0 0 auto; width:180px; margin:0;">
               <option value="none">No specific time</option>
@@ -1815,7 +1830,7 @@ document.addEventListener('click', function(e){
 
       <!-- Witness statements -->
       <div style="margin-top:16px;">
-        <label style="margin-bottom:4px;">Witness Statements <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:0.78rem; color:var(--gray);">— optional</span></label>
+        <label style="margin-bottom:4px;">Witness Statements <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:0.78rem; color:var(--gray);">(optional)</span></label>
         <div style="font-size:0.82rem; color:var(--gray); margin-bottom:10px;">Upload any written witness statements. Attached documents will be included for AI reference when generating the memo.</div>
         <div id="witnessFileList" style="display:flex; flex-direction:column; gap:6px; margin-bottom:8px;"></div>
         <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; margin-top:0; font-size:0.78rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0; border:1px solid var(--light-gray); border-radius:2px; padding:7px 14px; background:var(--white);">
@@ -1824,7 +1839,7 @@ document.addEventListener('click', function(e){
         </label>
       </div>
 
-      <label>Prior Documentation on File</label>
+      <label style="margin-top:44px;">Prior Documentation on File</label>
       <div style="font-size:0.82rem; color:var(--gray); margin-bottom:10px; margin-top:-10px;">Describe any prior verbal warnings, written counseling, or earlier formal documentation. You may also upload prior writeup documents for reference.</div>
       <textarea id="priorDoc" placeholder="Example: Verbal warning issued 9/12/2025 regarding attendance. Written warning issued 11/3/2025 for same pattern." style="min-height:90px;"></textarea>
 
@@ -1966,10 +1981,10 @@ document.addEventListener('click', function(e){
         <div style="font-family:'Playfair Display',serif; font-size:1rem; color:var(--navy); font-weight:700; margin-bottom:4px;">Impact Draft Generator</div>
         <div style="font-size:0.83rem; color:var(--gray); margin-bottom:18px;">Uses the facts from Step 2 to generate the impact section. Add any additional context below if helpful — both fields are optional.</div>
 
-        <label style="margin-top:0;">How Were Students Actually or Potentially Affected? <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:0.78rem; color:var(--gray);">— optional</span></label>
+        <label style="margin-top:0;">How Were Students Actually or Potentially Affected? <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:0.78rem; color:var(--gray);">(optional)</span></label>
         <textarea id="impactStudentHint" placeholder="Example: 'Students were left unsupervised in the classroom for 22 minutes. Other staff had to be pulled from their duties to monitor the class.'" style="min-height:70px;"></textarea>
 
-        <label>How Were Operations or Staff Affected? <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:0.78rem; color:var(--gray);">— optional</span></label>
+        <label>How Were Operations or Staff Affected? <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:0.78rem; color:var(--gray);">(optional)</span></label>
         <textarea id="impactOpsHint" placeholder="Example: 'The office had to arrange last-minute coverage. A campus aide was redirected from security duties for 30 minutes. Parents called the school office after noticing the class was unattended.'" style="min-height:70px;"></textarea>
 
         <div style="margin-top:18px;">
@@ -2154,12 +2169,12 @@ document.addEventListener('click', function(e){
       </div>
 
       <div style="margin-top:16px; padding:14px 16px; background:var(--cream); border:1px solid var(--light-gray); border-left:3px solid var(--gold); border-radius:3px;">
-        <label style="margin:0 0 6px 0; font-size:0.82rem; font-weight:700; color:var(--navy); text-transform:none; letter-spacing:0;">Additional Closing Notes <span style="font-weight:400; color:var(--gray);">— optional</span></label>
+        <label style="margin:0 0 6px 0; font-size:0.875rem; font-weight:700; color:var(--navy); text-transform:none; letter-spacing:0;">Additional Closing Notes <span style="font-weight:400; color:var(--gray);">(optional)</span></label>
         <textarea id="closingNotes" placeholder="Any additional information such as acknowledgment requirements or follow-up meetings..." style="min-height:70px;"></textarea>
       </div>
 
       <div style="margin-top:16px; padding:14px 16px; background:var(--cream); border:1px solid var(--light-gray); border-left:3px solid var(--gold); border-radius:3px;">
-        <label style="margin:0 0 6px 0; font-size:0.82rem; font-weight:700; color:var(--navy); text-transform:none; letter-spacing:0;">Others Present at the Meeting <span style="font-weight:400; color:var(--gray);">— optional</span></label>
+        <label style="margin:0 0 6px 0; font-size:0.875rem; font-weight:700; color:var(--navy); text-transform:none; letter-spacing:0;">Others Present at the Meeting <span style="font-weight:400; color:var(--gray);">(optional)</span></label>
         <div style="font-size:0.8rem; color:var(--gray); margin-bottom:8px;">For conference summaries: indicate if anyone else was present at the conference meeting (e.g. union representative, HR director, witness).</div>
         <input type="text" id="othersPresent" placeholder="e.g. HR Director Jane Smith; Union Rep Tom Garcia" style="margin:0;">
       </div>
@@ -2232,14 +2247,9 @@ document.addEventListener('click', function(e){
       <div style="font-size:0.78rem; font-weight:700; color:var(--gray); letter-spacing:0.04em; margin-bottom:8px;">DRAFT LANGUAGE GENERATED BY TRACKUMENT</div>
       <div id="memoOutput" contenteditable="true" spellcheck="true" style="outline:none; cursor:text; min-height:400px; background:var(--white); border:1px solid var(--light-gray); border-radius:3px; padding:32px;"></div>
 
-      <div style="margin-top:20px; padding:14px 16px; background:#fff8e8; border:1px solid #f0c766; border-radius:6px; display:flex; align-items:flex-start; gap:10px;">
-        <input type="checkbox" id="accuracyConfirm" onchange="document.getElementById('copyMemoBtn').disabled = document.getElementById('downloadMemoBtn').disabled = !this.checked;" style="margin-top:3px; flex-shrink:0;">
-        <label for="accuracyConfirm" style="font-size:0.85rem; color:var(--navy); cursor:pointer;">I confirm that I have reviewed this document and that, to the best of my knowledge, the factual statements are accurate and appropriately supported.</label>
-      </div>
-
-      <div class="output-actions" style="margin-top:16px;">
-        <button class="btn btn-secondary" onclick="copyMemo()" id="copyMemoBtn" disabled>Copy to Clipboard</button>
-        <button class="btn btn-secondary" onclick="downloadMemo()" id="downloadMemoBtn" disabled>Download Document</button>
+      <div class="output-actions" style="margin-top:20px;">
+        <button class="btn btn-secondary" onclick="copyMemo()" id="copyMemoBtn">Copy to Clipboard</button>
+        <button class="btn btn-secondary" onclick="downloadMemo()" id="downloadMemoBtn">Download Document</button>
         <button class="btn btn-secondary" onclick="startOver()">Start New Document</button>
       </div>
     </div>
@@ -2834,6 +2844,8 @@ function collectData() {
     districtName: window._districtProfile?.name || 'District',
     schoolName: window._selectedSchool?.name || '',
     schoolURL: window._selectedSchool?.url || '',
+    schoolLetterhead: window._selectedSchool?.letterheadURL || '',
+    schoolLogo: window._selectedSchool?.logoURL || '',
     logoURL: window._selectedSchool?.logoURL || '',
     memoDate: document.getElementById('memoDate').value,
     authorSalutation,
@@ -3005,19 +3017,26 @@ WRITING RULES — follow every one:
    Then: The right to respond sentence.
    Then: A blank line, then the consequences of future violations and file notice as a final paragraph.
 
-9. SIGNATURE BLOCK:
+9. SIGNATURE BLOCK (leave the blank lines exactly as shown below for physical signature room):
 ${authorName}
-Date: ${isConference ? '______________________' : today}
+
+
+
+Signature: ______________________  Date: ${isConference ? '______________________' : today}
 
 ${d.employeeDisplayName || d.employeeName}${d.employeeTitle ? '\n' + d.employeeTitle : ''}
-Date: ______________________
+
+
+
+Signature: ______________________  Date: ______________________
 Signature acknowledges receipt of this ${docNoun} and does not constitute agreement with its contents.
 ${d.respondRight ? d.respondRight : 'The employee has the right to respond to this document per applicable Education Code and/or collective bargaining agreement provisions.'}
 
 ABSOLUTE RULES:
 - If the employee is a bus driver, van driver, or any driver role, include California Vehicle Code citations where applicable
 - Never cite Cal-OSHA regulations — use district safety policies and Ed Code instead
-- Never use the word "allegations" — state conduct as fact
+- Never use the word "allegations". State conduct as fact
+- Never use the word "inasmuch"
 - Never say "the contents of our meeting" — just say "our meeting"
 - Every sentence uses "you/your" to address the employee — never third person in the body
 - Never use "supervisor" — use ${authorName} or "I"
@@ -3111,10 +3130,6 @@ function renderMemo(text, data) {
 
   // Advance to step-6 Review & Edit
   populateFactsReference(data);
-  const confirmChk = document.getElementById('accuracyConfirm');
-  if (confirmChk) confirmChk.checked = false;
-  document.getElementById('copyMemoBtn').disabled = true;
-  document.getElementById('downloadMemoBtn').disabled = true;
   document.getElementById('step-7').classList.add('active');
   currentStep = 7;
   updateSideNav();
@@ -3176,16 +3191,27 @@ function downloadMemo() {
   // Create downloadable HTML file that looks like the document
   const escapedText = text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const schoolLine = data.schoolURL ? '<div class="school">' + data.schoolURL + '</div>' : '';
+  const letterheadBlock = data.schoolLetterhead
+    ? '<div class="letterhead"><img src="' + data.schoolLetterhead + '" style="max-width:100%; max-height:140px; object-fit:contain;"></div>'
+    : data.schoolLogo
+      ? '<div class="letterhead" style="display:flex; align-items:center; gap:16px;">'
+        + '<img src="' + data.schoolLogo + '" style="max-height:70px; max-width:140px; object-fit:contain; flex-shrink:0;">'
+        + '<div><div class="district">' + (data.districtName || '') + '</div>'
+        + '<div class="school">' + (data.schoolName || '') + '</div>'
+        + schoolLine + '</div>'
+        + '</div>'
+      : '<div class="letterhead">'
+        + '<div class="district">' + (data.districtName || '') + '</div>'
+        + '<div class="school">' + (data.schoolName || '') + '</div>'
+        + schoolLine
+        + '</div>';
   const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + (data.docType || 'Memo') + '</title>'
     + '<style>body{font-family:Arial,sans-serif;max-width:750px;margin:60px auto;font-size:12pt;line-height:1.8;color:#000}'
     + '.letterhead{border-bottom:2px solid #1a2642;padding-bottom:16px;margin-bottom:28px}'
     + '.district{font-size:16pt;font-weight:bold;color:#1a2642}.school{font-size:12pt;color:#444}'
     + 'pre{white-space:pre-wrap;font-family:Arial,sans-serif;font-size:12pt;line-height:1.8}</style></head><body>'
-    + '<div class="letterhead">'
-    + '<div class="district">' + (data.districtName || '') + '</div>'
-    + '<div class="school">' + (data.schoolName || '') + '</div>'
-    + schoolLine
-    + '</div><pre>' + escapedText + '</pre></body></html>';
+    + letterheadBlock
+    + '<pre>' + escapedText + '</pre></body></html>';
 
   const blob = new Blob([html], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
@@ -3702,6 +3728,23 @@ async function analyzeAndSuggestCitations() {
 
   const bpURL = window._districtProfile?.bpURL || null;
   const county = window._districtProfile?.county || null;
+
+  // Check whether real, staff-verified policy text exists for this district
+  // before falling back to generic CSBA model numbers.
+  window._realBoardPolicies = [];
+  const districtDomain = window._districtProfile?.domain;
+  if (districtDomain) {
+    try {
+      const bpRes = await fetch('/api/board-policies?domain=' + encodeURIComponent(districtDomain));
+      if (bpRes.ok) {
+        const bpData = await bpRes.json();
+        window._realBoardPolicies = bpData.policies || [];
+      }
+    } catch (e) {
+      // Non-fatal -- falls through to the generic CSBA fallback below.
+    }
+  }
+
   // Pseudonymize facts before sending -- district name replaced too
   const citeData = collectData();
   const { pseudoData: citePseudo } = pseudonymizeData(citeData);
@@ -3729,10 +3772,13 @@ async function analyzeAndSuggestCitations() {
         ? 'Employee handbook document(s) attached (' + handbookFiles.map(h => h.name).join(', ') + ') — extract only the single most relevant sentence per applicable section.'
         : 'Employee handbook(s) on file: ' + handbookLibrary.map(h => h.name + (h.sourceType === 'link' ? ' (available at ' + h.sourceData + ' — no document uploaded, so cite section types typically applicable)' : '')).join('; '));
 
-  const bpInstruction = bpURL
-    ? `DISTRICT BOARD POLICY SITE: ${bpURL}
+  const bpInstruction = window._realBoardPolicies && window._realBoardPolicies.length > 0
+    ? `DISTRICT BOARD POLICY — REAL, VERIFIED TEXT (use these exact policies and quote them verbatim, do not invent or substitute any other policy numbers):
+${window._realBoardPolicies.map(p => `${p.policy_number}${p.title ? ' — ' + p.title : ''}:\n${p.policy_text}`).join('\n\n')}`
+    : bpURL
+      ? `DISTRICT BOARD POLICY SITE: ${bpURL}
 Suggest the standard California (CSBA) board policy numbers most applicable to this conduct. The administrator will verify against their district's adopted policy site using the link provided.`
-    : `No district board policy URL saved. Suggest standard California (CSBA) board policy numbers most applicable to this conduct.`;
+      : `No district board policy URL saved. Suggest standard California (CSBA) board policy numbers most applicable to this conduct.`;
 
   const prompt = `You are a California school district HR attorney. Analyze the following facts and return citations for a ${docType || 'disciplinary document'} for a ${classLabels[classification] || 'California school district employee'} at a California K-12 school district.
 
@@ -3933,9 +3979,15 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
     const bpFlagEl = document.getElementById('bpModelFlag');
     if (bpFlagEl) {
       bpFlagEl.style.display = 'block';
-      bpFlagEl.innerHTML = bpURL
-        ? `<strong>Important:</strong> These are standard CSBA model policy numbers. Your district's board policy site is saved, but we encountered a security restriction from Simbli/eBoard that prevented automated retrieval. <a href="${bpURL}" target="_blank" style="color:var(--navy); font-weight:700;">Open your policy site →</a> to verify adopted numbers (takes 1–3 minutes).`
-        : `<strong>Note:</strong> These are standard CSBA model policy numbers. Add your district's board policy URL in District Settings to get a direct verification link.`;
+      if (window._realBoardPolicies && window._realBoardPolicies.length > 0) {
+        bpFlagEl.style.borderLeftColor = 'var(--teal)';
+        bpFlagEl.innerHTML = `<strong>✓ Verified:</strong> These citations are quoted directly from your district's actual adopted board policies, not generic model numbers.`;
+      } else {
+        bpFlagEl.style.borderLeftColor = 'var(--navy)';
+        bpFlagEl.innerHTML = bpURL
+          ? `<strong>Important:</strong> These are standard CSBA model policy numbers. Your district's board policy site is saved, but we encountered a security restriction from Simbli/eBoard that prevented automated retrieval. <a href="${bpURL}" target="_blank" style="color:var(--navy); font-weight:700;">Open your policy site →</a> to verify adopted numbers (takes 1–3 minutes).`
+          : `<strong>Note:</strong> These are standard CSBA model policy numbers. Add your district's board policy URL in District Settings to get a direct verification link.`;
+      }
     }
 
     // Render CBA citations directly into cbaRefList (replaces the "will be extracted" message)
@@ -4945,6 +4997,15 @@ async function pushDistrictSettings() {
       } catch (e) {}
     }
     const handbookLibrary = await getHandbookLibrary();
+    const schoolResult = await store.list('school:');
+    const schoolKeys = schoolResult?.keys || [];
+    const schoolSites = [];
+    for (const key of schoolKeys) {
+      try {
+        const r = await store.get(key);
+        if (r?.value) schoolSites.push(JSON.parse(r.value));
+      } catch (e) {}
+    }
     await fetch('/api/district-settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -4955,7 +5016,8 @@ async function pushDistrictSettings() {
         county: document.getElementById('setupCounty')?.value.trim() || '',
         docTypes: getCheckedDocTypes(),
         cbaLibrary,
-        handbookLibrary
+        handbookLibrary,
+        schoolSites
       })
     });
   } catch (err) {
@@ -4996,6 +5058,13 @@ async function pullDistrictSettings(domain) {
     }
     // Same for shared handbook entries.
     for (const entry of (data.handbookLibrary || [])) {
+      if (entry && entry.key) {
+        await store.set(entry.key, JSON.stringify(entry));
+      }
+    }
+    // Same for shared school site entries -- this is what makes a site added
+    // on one computer actually show up when logging in from another.
+    for (const entry of (data.schoolSites || [])) {
       if (entry && entry.key) {
         await store.set(entry.key, JSON.stringify(entry));
       }
@@ -5252,6 +5321,7 @@ function toggleSchoolForm() {
     if (nameEl) nameEl.value = '';
     if (urlEl) urlEl.value = '';
     clearNewSchoolLogo();
+    clearNewSchoolLetterhead();
     const container = document.getElementById('adminInputs');
     if (container) {
       container.innerHTML = '';
@@ -5294,6 +5364,36 @@ function clearNewSchoolLogo() {
   document.getElementById('logoDropZone').style.borderColor = 'var(--light-gray)';
 }
 
+function handleLetterheadFile(file) {
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { alert('Letterhead file must be under 2MB.'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    window._newSchoolLetterheadBase64 = e.target.result;
+    const wrap = document.getElementById('newSchoolLetterheadWrap');
+    const img = document.getElementById('newSchoolLetterheadPreviewImg');
+    wrap.style.display = 'flex';
+    img.src = e.target.result;
+    document.getElementById('letterheadDropZone').style.borderColor = 'var(--success)';
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleLetterheadDrop(e) {
+  e.preventDefault();
+  document.getElementById('letterheadDropZone').style.borderColor = 'var(--light-gray)';
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) handleLetterheadFile(file);
+}
+
+function clearNewSchoolLetterhead() {
+  window._newSchoolLetterheadBase64 = null;
+  document.getElementById('newSchoolLetterheadWrap').style.display = 'none';
+  document.getElementById('newSchoolLetterheadPreviewImg').src = '';
+  document.getElementById('letterheadFileInput').value = '';
+  document.getElementById('letterheadDropZone').style.borderColor = 'var(--light-gray)';
+}
+
 async function saveSchoolProfile() {
   const nameEl = document.getElementById('newSchoolName');
   const name = nameEl.value.trim();
@@ -5311,8 +5411,8 @@ async function saveSchoolProfile() {
   const url = document.getElementById('newSchoolURL').value.trim();
   // If editing an existing profile, reuse its key; otherwise create a new one
   const editKey = nameEl.dataset.editKey;
-  const key = editKey || ('school:' + Date.now());
-  const entry = { key, name, url, authors, logoURL: window._newSchoolLogoBase64 || '', savedAt: new Date().toLocaleDateString() };
+  const key = editKey || ('school:' + Date.now() + Math.random().toString(36).slice(2));
+  const entry = { key, name, url, authors, logoURL: window._newSchoolLogoBase64 || '', letterheadURL: window._newSchoolLetterheadBase64 || '', savedAt: new Date().toLocaleDateString() };
 
   try {
     showStatus('Saving site profile...', name);
@@ -5326,6 +5426,7 @@ async function saveSchoolProfile() {
     const adminContainer = document.getElementById('adminInputs');
     if (adminContainer) adminContainer.innerHTML = '';
     clearNewSchoolLogo();
+    clearNewSchoolLetterhead();
     toggleSchoolForm();
     await loadSchoolProfileList();
     await loadSchoolProfiles();
@@ -5336,11 +5437,12 @@ async function saveSchoolProfile() {
       window._selectedSchool = entry;
       populateAuthorDropdown(entry);
     }
+    pushDistrictSettings();
     switchTab('schools');
     showToast('✓ Site profile saved');
     const msg = document.getElementById('sitesSavedMsg');
     if (msg) { msg.style.display = 'block'; setTimeout(() => msg.style.display = 'none', 4000); }
-  } catch(err) { hideStatus(); alert('Error saving school. The logo file may be too large — try a smaller image.'); }
+  } catch(err) { hideStatus(); alert('Error saving school. The logo or letterhead file may be too large. Try a smaller image.'); }
 }
 
 async function loadSchoolProfileList() {
@@ -5414,8 +5516,19 @@ async function editSchoolProfile(key) {
     // Pre-fill logo if present
     if (s.logoURL && s.logoURL.startsWith('data:')) {
       window._newSchoolLogoBase64 = s.logoURL;
-      const preview = document.getElementById('newSchoolLogoPreview');
-      if (preview) { preview.src = s.logoURL; preview.style.display = 'block'; }
+      const wrap = document.getElementById('newSchoolLogoWrap');
+      const preview = document.getElementById('newSchoolLogoPreviewImg');
+      if (preview) preview.src = s.logoURL;
+      if (wrap) wrap.style.display = 'flex';
+    }
+
+    // Pre-fill letterhead if present
+    if (s.letterheadURL && s.letterheadURL.startsWith('data:')) {
+      window._newSchoolLetterheadBase64 = s.letterheadURL;
+      const wrap = document.getElementById('newSchoolLetterheadWrap');
+      const preview = document.getElementById('newSchoolLetterheadPreviewImg');
+      if (preview) preview.src = s.letterheadURL;
+      if (wrap) wrap.style.display = 'flex';
     }
 
     // Store key for update so save replaces instead of creating new
@@ -5434,6 +5547,7 @@ async function deleteSchoolProfile(key) {
     if (window._selectedSchool?.key === key) window._selectedSchool = null;
     await loadSchoolProfileList();
     await loadSchoolProfiles();
+    pushDistrictSettings();
     showToast('Site removed');
   } catch(err) { showToast('Error removing site'); }
 }
@@ -5571,8 +5685,9 @@ function setCBAInputMode(mode) {
 
 function handleCBAFile(file) {
   if (!file) return;
-  if (!file.name.toLowerCase().endsWith('.pdf')) {
-    alert('Please upload a PDF file. The CBA must be in PDF format for the AI to read it.\n\nIf your CBA is a Word document, open it in Word and choose File → Save As → PDF.');
+  const lower = file.name.toLowerCase();
+  if (!lower.endsWith('.pdf') && !lower.endsWith('.doc') && !lower.endsWith('.docx')) {
+    alert('Please upload a PDF or Word document.');
     return;
   }
   showStatus('Reading contract document...', file.name);
@@ -5580,6 +5695,7 @@ function handleCBAFile(file) {
   reader.onload = e => {
     window._cbaFileBase64 = e.target.result;
     window._cbaFileName = file.name;
+    window._cbaFileType = file.type;
     const preview = document.getElementById('cbaFilePreview');
     document.getElementById('cbaFileName').textContent = file.name;
     preview.style.display = 'flex';
@@ -5600,9 +5716,28 @@ function handleCBADrop(e) {
 function clearCBAFile() {
   window._cbaFileBase64 = null;
   window._cbaFileName = null;
+  window._cbaFileType = null;
   document.getElementById('cbaFilePreview').style.display = 'none';
   document.getElementById('cbaFileInput').value = '';
   document.getElementById('cbaDropZone').style.borderColor = 'var(--light-gray)';
+}
+
+// Uploads a file to server-side storage and returns { id, filename }. Used so
+// CBA/handbook/merit-rule documents are referenced by a small id everywhere
+// (local storage, district_settings sync) instead of storing the full file as
+// base64 text, which silently hit browser storage size limits on real
+// multi-page contracts with no error shown to the user.
+async function uploadDocumentToServer(base64DataUrl, filename, contentType) {
+  const res = await fetch('/api/documents', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename, contentType, dataBase64: base64DataUrl })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Upload failed');
+  }
+  return res.json();
 }
 
 async function saveSetupCBA() {
@@ -5610,12 +5745,11 @@ async function saveSetupCBA() {
   const unit = document.getElementById('setupCBAUnit').value.trim();
   if (!name) { alert('Please provide an agreement name.'); return; }
 
-  let sourceType, sourceData, sourceLabel;
+  let sourceType, sourceData, sourceLabel, documentId;
 
   if (window._cbaInputMode === 'upload') {
     if (!window._cbaFileBase64) { alert('Please upload a contract document.'); return; }
     sourceType = 'file';
-    sourceData = window._cbaFileBase64;
     sourceLabel = window._cbaFileName;
   } else {
     const link = document.getElementById('setupCBALink').value.trim();
@@ -5626,10 +5760,15 @@ async function saveSetupCBA() {
   }
 
   const key = 'cba:' + Date.now() + Math.random().toString(36).slice(2);
-  const entry = { key, name, unit, sourceType, sourceData, sourceLabel, savedAt: new Date().toLocaleDateString() };
 
   try {
-    showStatus('Saving bargaining agreement...', 'This may take 1–3 minutes for large files');
+    if (sourceType === 'file') {
+      showStatus('Uploading contract document...', window._cbaFileName);
+      const uploaded = await uploadDocumentToServer(window._cbaFileBase64, window._cbaFileName, window._cbaFileType);
+      documentId = uploaded.id;
+    }
+    const entry = { key, name, unit, sourceType, sourceData, sourceLabel, documentId, savedAt: new Date().toLocaleDateString() };
+    showStatus('Saving bargaining agreement...', '');
     await store.set(key, JSON.stringify(entry));
     hideStatus();
     // Reset form
@@ -5644,7 +5783,7 @@ async function saveSetupCBA() {
     showToast('✓ Bargaining agreement saved');
   } catch (err) {
     hideStatus();
-    alert('Error saving agreement. If uploading a file, try a smaller document or use a link instead.');
+    alert('Error saving agreement: ' + err.message);
   }
 }
 
@@ -5737,8 +5876,9 @@ function setHandbookInputMode(mode) {
 
 function handleHandbookFile(file) {
   if (!file) return;
-  if (!file.name.toLowerCase().endsWith('.pdf')) {
-    alert('Please upload a PDF file. The handbook must be in PDF format for the AI to read it.\n\nIf your handbook is a Word document, open it in Word and choose File → Save As → PDF.');
+  const lower = file.name.toLowerCase();
+  if (!lower.endsWith('.pdf') && !lower.endsWith('.doc') && !lower.endsWith('.docx')) {
+    alert('Please upload a PDF or Word document.');
     return;
   }
   showStatus('Reading handbook document...', file.name);
@@ -5746,6 +5886,7 @@ function handleHandbookFile(file) {
   reader.onload = e => {
     window._handbookFileBase64 = e.target.result;
     window._handbookFileName = file.name;
+    window._handbookFileType = file.type;
     const preview = document.getElementById('handbookFilePreview');
     document.getElementById('handbookFileName').textContent = file.name;
     preview.style.display = 'flex';
@@ -5766,6 +5907,7 @@ function handleHandbookDrop(e) {
 function clearHandbookFile() {
   window._handbookFileBase64 = null;
   window._handbookFileName = null;
+  window._handbookFileType = null;
   document.getElementById('handbookFilePreview').style.display = 'none';
   document.getElementById('handbookFileInput').value = '';
   document.getElementById('handbookDropZone').style.borderColor = 'var(--light-gray)';
@@ -5776,12 +5918,11 @@ async function saveSetupHandbook() {
   const unit = document.getElementById('setupHandbookUnit').value.trim();
   if (!name) { alert('Please provide a handbook name.'); return; }
 
-  let sourceType, sourceData, sourceLabel;
+  let sourceType, sourceData, sourceLabel, documentId;
 
   if (window._handbookInputMode === 'upload') {
     if (!window._handbookFileBase64) { alert('Please upload a handbook document.'); return; }
     sourceType = 'file';
-    sourceData = window._handbookFileBase64;
     sourceLabel = window._handbookFileName;
   } else {
     const link = document.getElementById('setupHandbookLink').value.trim();
@@ -5792,10 +5933,15 @@ async function saveSetupHandbook() {
   }
 
   const key = 'handbook:' + Date.now() + Math.random().toString(36).slice(2);
-  const entry = { key, name, unit, sourceType, sourceData, sourceLabel, savedAt: new Date().toLocaleDateString() };
 
   try {
-    showStatus('Saving handbook...', 'This may take 1–3 minutes for large files');
+    if (sourceType === 'file') {
+      showStatus('Uploading handbook...', window._handbookFileName);
+      const uploaded = await uploadDocumentToServer(window._handbookFileBase64, window._handbookFileName, window._handbookFileType);
+      documentId = uploaded.id;
+    }
+    const entry = { key, name, unit, sourceType, sourceData, sourceLabel, documentId, savedAt: new Date().toLocaleDateString() };
+    showStatus('Saving handbook...', '');
     await store.set(key, JSON.stringify(entry));
     hideStatus();
     // Reset form
@@ -5809,7 +5955,7 @@ async function saveSetupHandbook() {
     showToast('✓ Handbook saved');
   } catch (err) {
     hideStatus();
-    alert('Error saving handbook. If uploading a file, try a smaller document or use a link instead.');
+    alert('Error saving handbook: ' + err.message);
   }
 }
 
@@ -6164,6 +6310,7 @@ function handleMeritFile(file) {
   reader.onload = e => {
     window._meritFileBase64 = e.target.result;
     window._meritFileName = file.name;
+    window._meritFileType = file.type;
     document.getElementById('meritFileName').textContent = file.name;
     document.getElementById('meritFilePreview').style.display = 'flex';
     document.getElementById('meritDropZone').style.borderColor = 'var(--success)';
@@ -6181,6 +6328,7 @@ function handleMeritDrop(e) {
 function clearMeritFile() {
   window._meritFileBase64 = null;
   window._meritFileName = null;
+  window._meritFileType = null;
   document.getElementById('meritFilePreview').style.display = 'none';
   document.getElementById('meritFileInput').value = '';
   document.getElementById('meritDropZone').style.borderColor = 'var(--light-gray)';
@@ -6190,10 +6338,10 @@ async function saveMeritRules() {
   const name = document.getElementById('meritRulesName').value.trim();
   if (!name) { alert('Please provide a document name.'); return; }
 
-  let sourceType, sourceData, sourceLabel;
+  let sourceType, sourceData, sourceLabel, documentId;
   if (window._meritInputMode === 'upload') {
     if (!window._meritFileBase64) { alert('Please upload a document.'); return; }
-    sourceType = 'file'; sourceData = window._meritFileBase64; sourceLabel = window._meritFileName;
+    sourceType = 'file'; sourceLabel = window._meritFileName;
   } else {
     const link = document.getElementById('meritRulesLink').value.trim();
     if (!link) { alert('Please enter a URL.'); return; }
@@ -6201,9 +6349,15 @@ async function saveMeritRules() {
   }
 
   const key = 'merit:' + Date.now() + Math.random().toString(36).slice(2);
-  const entry = { key, name, sourceType, sourceData, sourceLabel, savedAt: new Date().toLocaleDateString() };
 
   try {
+    if (sourceType === 'file') {
+      showStatus('Uploading document...', window._meritFileName);
+      const uploaded = await uploadDocumentToServer(window._meritFileBase64, window._meritFileName, window._meritFileType);
+      documentId = uploaded.id;
+      hideStatus();
+    }
+    const entry = { key, name, sourceType, sourceData, sourceLabel, documentId, savedAt: new Date().toLocaleDateString() };
     await store.set(key, JSON.stringify(entry));
     document.getElementById('meritRulesName').value = '';
     document.getElementById('meritRulesLink').value = '';
@@ -6211,8 +6365,9 @@ async function saveMeritRules() {
     toggleMeritForm();
     await loadMeritRulesList();
     showToast('✓ Personnel Commission Rules saved');
-  } catch (err) { alert('Error saving document. If uploading a file, try a link instead.'); }
+  } catch (err) { hideStatus(); alert('Error saving document: ' + err.message); }
 }
+
 
 async function loadMeritRulesList() {
   const list = document.getElementById('meritRulesList');
