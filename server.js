@@ -1,4 +1,4 @@
-// BUILD: 2026-09-16-r1
+// BUILD: 2026-09-17-r1
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -426,9 +426,26 @@ async function initDb() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `);
+  // Real board policy text for a district, pasted in by Trackument staff after
+  // copying it from the district's own policy site (Simbli/eBoard pages are
+  // individual HTML pages per policy, not downloadable files, and are usually
+  // bot-blocked -- see the /api/board-policies endpoints below). Districts
+  // with no rows here fall back to generic CSBA model policy numbers.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS board_policies (
+      id SERIAL PRIMARY KEY,
+      domain TEXT NOT NULL,
+      policy_number TEXT NOT NULL,
+      title TEXT,
+      policy_text TEXT NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE(domain, policy_number)
+    );
+  `);
   // Safe to run repeatedly -- adds the column if this table already existed from an earlier version.
   await pool.query(`ALTER TABLE district_settings ADD COLUMN IF NOT EXISTS county TEXT;`);
   await pool.query(`ALTER TABLE district_settings ADD COLUMN IF NOT EXISTS handbook_library JSONB;`);
+  await pool.query(`ALTER TABLE district_settings ADD COLUMN IF NOT EXISTS school_sites JSONB;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS tier_label TEXT;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS agreed_to_contract_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS wants_training BOOLEAN DEFAULT false;`);
@@ -842,6 +859,7 @@ app.get('/api/district-settings', async (req, res) => {
       docTypes: row.doc_types || [],
       cbaLibrary: row.cba_library || [],
       handbookLibrary: row.handbook_library || [],
+      schoolSites: row.school_sites || [],
       updatedAt: row.updated_at,
     });
   } catch (err) {
@@ -852,11 +870,11 @@ app.get('/api/district-settings', async (req, res) => {
 app.post('/api/district-settings', async (req, res) => {
   const domain = (req.body.domain || '').trim().toLowerCase();
   if (!domain) return res.status(400).json({ error: 'Missing domain.' });
-  const { districtName, bpURL, county, docTypes, cbaLibrary, handbookLibrary } = req.body;
+  const { districtName, bpURL, county, docTypes, cbaLibrary, handbookLibrary, schoolSites } = req.body;
   try {
     await pool.query(`
-      INSERT INTO district_settings (domain, district_name, bp_url, county, doc_types, cba_library, handbook_library, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, now())
+      INSERT INTO district_settings (domain, district_name, bp_url, county, doc_types, cba_library, handbook_library, school_sites, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
       ON CONFLICT (domain) DO UPDATE SET
         district_name = EXCLUDED.district_name,
         bp_url = EXCLUDED.bp_url,
@@ -864,8 +882,9 @@ app.post('/api/district-settings', async (req, res) => {
         doc_types = EXCLUDED.doc_types,
         cba_library = EXCLUDED.cba_library,
         handbook_library = EXCLUDED.handbook_library,
+        school_sites = EXCLUDED.school_sites,
         updated_at = now()
-    `, [domain, districtName || '', bpURL || '', county || '', JSON.stringify(docTypes || []), JSON.stringify(cbaLibrary || []), JSON.stringify(handbookLibrary || [])]);
+    `, [domain, districtName || '', bpURL || '', county || '', JSON.stringify(docTypes || []), JSON.stringify(cbaLibrary || []), JSON.stringify(handbookLibrary || []), JSON.stringify(schoolSites || [])]);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Server error: ' + err.message });
@@ -916,6 +935,74 @@ app.get('/api/documents/:id', async (req, res) => {
   }
 });
 
+// ─── Real board policy text (admin-managed) ──────────────────────────────────
+// These policies are entered by Trackument staff after copying the real text
+// from a district's own policy site, not by the district themselves. All
+// admin routes require ADMIN_KEY, matching the existing /api/admin/* pattern.
+
+app.get('/api/admin/board-policies', async (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'Unauthorized' });
+  const domain = (req.query.domain || '').trim().toLowerCase();
+  if (!domain) return res.status(400).json({ error: 'Missing domain.' });
+  try {
+    const { rows } = await pool.query(
+      'SELECT id, policy_number, title, policy_text, updated_at FROM board_policies WHERE domain = $1 ORDER BY policy_number',
+      [domain]
+    );
+    res.json({ policies: rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/board-policies', async (req, res) => {
+  const { adminKey, domain, policyNumber, title, policyText } = req.body;
+  if (adminKey !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'Unauthorized' });
+  const d = (domain || '').trim().toLowerCase();
+  const num = (policyNumber || '').trim();
+  if (!d || !num || !policyText) return res.status(400).json({ error: 'Domain, policy number, and policy text are required.' });
+  try {
+    await pool.query(`
+      INSERT INTO board_policies (domain, policy_number, title, policy_text, updated_at)
+      VALUES ($1, $2, $3, $4, now())
+      ON CONFLICT (domain, policy_number) DO UPDATE SET
+        title = EXCLUDED.title,
+        policy_text = EXCLUDED.policy_text,
+        updated_at = now()
+    `, [d, num, (title || '').trim(), policyText]);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/admin/board-policies/:id', async (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'Unauthorized' });
+  try {
+    await pool.query('DELETE FROM board_policies WHERE id = $1', [req.params.id]);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Public (no admin key) -- read-only, used by the app itself during citation
+// generation to check whether real policy text exists for the logged-in
+// district's domain before falling back to generic CSBA model numbers.
+app.get('/api/board-policies', async (req, res) => {
+  const domain = (req.query.domain || '').trim().toLowerCase();
+  if (!domain) return res.status(400).json({ error: 'Missing domain.' });
+  try {
+    const { rows } = await pool.query(
+      'SELECT policy_number, title, policy_text FROM board_policies WHERE domain = $1 ORDER BY policy_number',
+      [domain]
+    );
+    res.json({ policies: rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Admin: manually activate a district ─────────────────────────────────────
 app.post('/api/admin/activate', async (req, res) => {
   const { adminKey, districtName, domain, contactEmail, sites } = req.body;
@@ -933,6 +1020,7 @@ app.get('/api/admin/districts', async (req, res) => {
 
 // ─── Static routes ────────────────────────────────────────────────────────────
 app.get('/privacy',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'privacy.html')));
+app.get('/admin/policies', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-policies.html')));
 app.get('/terms',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'terms.html')));
 app.get('/checkout', (req, res) => res.sendFile(path.join(__dirname, 'public', 'checkout.html')));
 app.get('/contact', (req, res) => res.sendFile(path.join(__dirname, 'public', 'contact.html')));
