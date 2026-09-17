@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-17-r5 -->
+<!-- BUILD: 2026-09-17-r11 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -37,13 +37,14 @@
 
   header {
     background: var(--navy);
-    padding: 24px 40px;
+    padding:24px 40px;
     border-bottom: 3px solid var(--gold);
   }
 
   .header-inner {
     max-width: 1290px;
     margin: 0 auto;
+    padding: 0 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -60,7 +61,7 @@
     color: var(--gold-light);
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    margin-top: 2px;
+    margin-top:4px;
   }
 
   .version-badge {
@@ -76,7 +77,7 @@
   .container {
     max-width: 880px;
     margin: 0 auto;
-    padding: 36px 24px 60px;
+    padding:32px 24px 48px;
   }
 
   .intro {
@@ -88,7 +89,7 @@
     font-family: 'Playfair Display', serif;
     font-size: 1.9rem;
     color: var(--navy);
-    margin-bottom: 10px;
+    margin-bottom:8px;
   }
 
   .intro p {
@@ -103,7 +104,7 @@
   .progress-wrap {
     display: flex;
     align-items: flex-start;
-    margin-bottom: 36px;
+    margin-bottom:32px;
   }
 
   .step-item {
@@ -154,7 +155,7 @@
     letter-spacing: 0.07em;
     text-transform: uppercase;
     color: var(--gray);
-    margin-top: 5px;
+    margin-top:4px;
     text-align: center;
     font-weight: 500;
   }
@@ -166,17 +167,17 @@
     background: var(--white);
     border: 1px solid var(--light-gray);
     border-top: 4px solid var(--gold);
-    padding: 36px 48px;
-    margin-bottom: 20px;
+    padding:32px 48px;
+    margin-bottom:24px;
     box-shadow: 0 2px 12px rgba(26,39,68,0.06);
   }
 
   .card-header {
     display: flex;
     align-items: flex-start;
-    gap: 18px;
-    margin-bottom: 24px;
-    padding-bottom: 20px;
+    gap:16px;
+    margin-bottom:24px;
+    padding-bottom:16px;
     border-bottom: 1px solid var(--light-gray);
   }
 
@@ -194,7 +195,7 @@
     font-weight: 700;
     font-size: 1.3rem;
     color: var(--navy);
-    margin-bottom: 4px;
+    margin-bottom:8px;
   }
 
   .card-desc {
@@ -206,8 +207,8 @@
   .coach-tip {
     background: #f0f5f0;
     border-left: 3px solid var(--success);
-    padding: 11px 15px;
-    margin-bottom: 22px;
+    padding:16px;
+    margin-bottom:24px;
     border-radius: 0 3px 3px 0;
   }
 
@@ -221,8 +222,8 @@
     background: var(--warn-bg);
     border: 1px solid #fcd34d;
     border-left: 3px solid #d97706;
-    padding: 11px 15px;
-    margin-bottom: 16px;
+    padding:8px 16px;
+    margin-bottom:16px;
     border-radius: 0 3px 3px 0;
   }
 
@@ -241,15 +242,15 @@
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--navy);
-    margin-bottom: 7px;
-    margin-top: 18px;
+    margin-bottom:8px;
+    margin-top:24px;
   }
 
   label:first-of-type { margin-top: 0; }
 
   input[type="text"], input[type="date"], input[type="time"], textarea, select {
     width: 100%;
-    padding: 11px 14px;
+    padding:8px 16px;
     border: 1px solid var(--light-gray);
     background: #eceaf6;
     font-family: 'Source Sans 3', sans-serif;
@@ -281,25 +282,25 @@
     line-height: 1.65;
   }
 
-  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 18px; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap:24px; margin-top:24px; }
 
   .field-ready { border-color: var(--gold) !important; background: var(--white) !important; box-shadow: 0 0 0 3px rgba(224,91,14,0.15); transition: box-shadow 0.3s ease, border-color 0.3s ease; }
   #memoDate{ background:#eceaf6 !important; }
-  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap:16px; }
 
   /* Situation checkboxes */
   .situation-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 10px;
-    margin-top: 4px;
+    gap:8px;
+    margin-top:4px;
   }
 
   .sit-checkbox {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 12px 10px 36px;
+    gap:8px;
+    padding:8px 8px 8px 32px;
     border: 1px solid var(--light-gray);
     border-radius: 3px;
     cursor: pointer;
@@ -343,14 +344,14 @@
 
   /* Pre-pop section */
   .prepop-section {
-    margin-top: 20px;
+    margin-top:16px;
     display: none;
   }
 
   .prepop-section.visible { display: block; }
 
   .prepop-group {
-    margin-bottom: 16px;
+    margin-bottom:16px;
   }
 
   .prepop-label {
@@ -359,33 +360,33 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--navy);
-    margin-bottom: 8px;
+    margin-bottom:8px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap:8px;
   }
 
   .auto-tag {
     background: var(--gold);
-    color: var(--navy);
-    font-size: 0.6rem;
-    padding: 2px 7px;
+    color: #fff;
+    font-size: 0.72rem;
+    padding:4px 8px;
     border-radius: 10px;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.03em;
     font-weight: 700;
   }
 
   .citation-list {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap:4px;
   }
 
   .citation-item {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
-    padding: 10px 12px;
+    gap:8px;
+    padding:8px 8px;
     background: var(--cream);
     border: 1px solid var(--light-gray);
     border-radius: 3px;
@@ -397,7 +398,7 @@
     width: 16px;
     height: 16px;
     min-width: 16px;
-    margin-top: 1px;
+    margin-top:4px;
     accent-color: var(--navy);
     cursor: pointer;
   }
@@ -407,19 +408,19 @@
   .citation-desc { color: var(--gray); font-size: 0.8rem; }
 
   .add-custom {
-    margin-top: 8px;
+    margin-top:8px;
     display: flex;
-    gap: 8px;
+    gap:8px;
   }
 
   .add-custom input {
     flex: 1;
-    padding: 8px 12px;
+    padding:8px 8px;
     font-size: 0.85rem;
   }
 
   .btn-add {
-    padding: 8px 16px;
+    padding:8px 16px;
     background: var(--navy);
     color: var(--white);
     border: none;
@@ -437,13 +438,13 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 28px;
-    padding-top: 20px;
+    margin-top:24px;
+    padding-top:16px;
     border-top: 1px solid var(--light-gray);
   }
 
   .btn {
-    padding: 12px 28px;
+    padding:8px 24px;
     font-family: 'Source Sans 3', sans-serif;
     font-size: 0.82rem;
     font-weight: 700;
@@ -472,7 +473,7 @@
     border: 2px solid var(--gold);
     font-weight: 700;
     font-size: 0.8rem;
-    padding: 11px 27px;
+    padding:8px 24px;
     box-shadow: 0 1px 4px rgba(224,91,14,0.25);
   }
   .btn-next:hover { background: #b84b0b; border-color: #b84b0b; box-shadow: 0 2px 8px rgba(224,91,14,0.35); }
@@ -489,13 +490,13 @@
       width: 100%;
       border-right: none;
       border-bottom: 1px solid var(--light-gray);
-      padding: 6px 8px;
+      padding:4px 8px;
       overflow-x: auto;
       overflow-y: hidden;
       display: flex;
       flex-direction: row;
       flex-wrap: nowrap;
-      gap: 2px;
+      gap:4px;
       min-height: unset;
       position: sticky;
       top: 0;
@@ -510,13 +511,13 @@
 
     .side-nav-item {
       flex-direction: column;
-      padding: 5px 6px;
+      padding:4px 4px;
       min-width: 44px;
       max-width: 52px;
       flex-shrink: 0;
       border-radius: 6px;
       align-items: center;
-      gap: 2px;
+      gap:4px;
       border: 1px solid transparent;
     }
 
@@ -524,53 +525,53 @@
     .side-nav-text { font-size: 0.58rem; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 44px; }
     .side-nav-sub { display: none; }
 
-    .main-content { padding: 16px 12px; width: 100%; }
-    .card { padding: 16px; }
-    .card-header { flex-direction: column; gap: 8px; }
+    .main-content { padding:16px 8px; width: 100%; }
+    .card { padding:16px; }
+    .card-header { flex-direction: column; gap:8px; }
 
-    header { padding: 10px 14px; }
-    .header-inner { flex-wrap: wrap; gap: 8px; }
+    header { padding:8px 16px; }
+    .header-inner { flex-wrap: wrap; gap:8px; }
     .logo-title { font-size: 1.1rem; }
     .logo-sub { display: none; }
-    header > div:last-child { flex-wrap: wrap; gap: 6px; }
-    #settingsBtn { font-size: 0.65rem; padding: 4px 10px; }
-    .version-badge { font-size: 0.6rem; padding: 2px 6px; }
+    header > div:last-child { flex-wrap: wrap; gap:4px; }
+    #settingsBtn { font-size: 0.65rem; padding:4px 8px; }
+    .version-badge { font-size: 0.6rem; padding:4px 4px; }
 
-    .btn { padding: 12px 18px; font-size: 0.85rem; }
-    .btn-next { padding: 13px 24px; font-size: 0.85rem; }
-    .btn-generate { padding: 14px 28px; font-size: 0.9rem; }
+    .btn { padding:8px 16px; font-size: 0.85rem; }
+    .btn-next { padding:16px 24px; font-size: 0.85rem; }
+    .btn-generate { padding:16px 24px; font-size: 0.9rem; }
 
-    .sit-chips { gap: 6px; }
-    .sit-checkbox { font-size: 0.78rem; padding: 7px 10px; }
+    .sit-chips { gap:4px; }
+    .sit-checkbox { font-size: 0.78rem; padding:8px 8px; }
     .two-col { grid-template-columns: 1fr; }
 
     .setup-overlay { padding: 0; }
     .setup-modal { width: 100%; height: 100%; max-width: 100%; max-height: 100%; border-radius: 0; overflow-y: auto; }
-    .setup-modal-body { padding: 20px 16px; }
+    .setup-modal-body { padding:16px 16px; }
 
     .citation-item { flex-wrap: wrap; }
-    #memoOutput { padding: 16px; font-size: 0.88rem; }
-    .output-actions { flex-direction: column; gap: 8px; }
+    #memoOutput { padding:16px; font-size: 0.88rem; }
+    .output-actions { flex-direction: column; gap:8px; }
     .output-actions .btn { width: 100%; text-align: center; }
     .gen-summary-grid { grid-template-columns: 1fr !important; }
   }
 
   @media (max-width: 480px) {
-    .main-content { padding: 12px 10px; }
-    .card { padding: 12px; }
+    .main-content { padding:8px 8px; }
+    .card { padding:8px; }
   }
 
   .output-card {
     background: var(--white);
     border: 1px solid var(--light-gray);
-    padding: 48px;
+    padding:48px;
     box-shadow: 0 4px 20px rgba(26,39,68,0.08);
   }
 
   .output-header {
     border-bottom: 2px solid var(--navy);
-    padding-bottom: 18px;
-    margin-bottom: 28px;
+    padding-bottom:16px;
+    margin-bottom:24px;
   }
 
   .output-title {
@@ -580,7 +581,7 @@
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    margin-bottom: 3px;
+    margin-bottom:4px;
   }
 
   .output-meta { font-size: 0.83rem; color: var(--gray); }
@@ -593,21 +594,21 @@
   .memo-body div[style*="padding-left"] {
     padding-left: 2em;
     text-indent: -1.5em;
-    margin: 2px 0;
+    margin:4px 0;
   }
 
   .output-actions {
     display: flex;
-    gap: 12px;
-    margin-top: 28px;
-    padding-top: 20px;
+    gap:8px;
+    margin-top:24px;
+    padding-top:16px;
     border-top: 1px solid var(--light-gray);
   }
 
   .loading {
     display: none;
     text-align: center;
-    padding: 48px;
+    padding:48px;
   }
 
   .loading-spinner {
@@ -629,10 +630,10 @@
     z-index: 9999;
     background: var(--navy);
     color: var(--white);
-    padding: 14px 24px;
+    padding:16px 24px;
     display: none;
     align-items: center;
-    gap: 14px;
+    gap:16px;
     font-size: 0.88rem;
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -653,7 +654,7 @@
     flex-shrink: 0;
   }
   .status-banner-text { flex: 1; }
-  .status-banner-sub { font-size: 0.76rem; font-weight: 400; opacity: 0.75; margin-top: 2px; }
+  .status-banner-sub { font-size: 0.76rem; font-weight: 400; opacity: 0.75; margin-top:4px; }
   .loading p { color: var(--gray); font-size: 0.88rem; letter-spacing: 0.04em; }
 
   .step-section { display: none; }
@@ -665,8 +666,8 @@
     border: 1px solid #fca5a5;
     border-left: 4px solid #dc2626;
     border-radius: 3px;
-    padding: 14px 18px;
-    margin-bottom: 24px;
+    padding:16px 16px;
+    margin-bottom:24px;
     font-size: 0.83rem;
     color: #7f1d1d;
     line-height: 1.55;
@@ -676,7 +677,7 @@
   /* CBA Library */
   .cba-library-wrap {
     display: none;
-    margin-bottom: 28px;
+    margin-bottom:24px;
   }
   .cba-library-wrap.visible { display: block; }
 
@@ -684,12 +685,12 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 14px;
-    padding: 13px 16px;
+    gap:16px;
+    padding:16px 16px;
     background: var(--cream);
     border: 1px solid var(--light-gray);
     border-radius: 3px;
-    margin-bottom: 8px;
+    margin-bottom:8px;
   }
 
   .cba-card-info { flex: 1; }
@@ -697,7 +698,7 @@
     font-weight: 700;
     font-size: 0.88rem;
     color: var(--navy);
-    margin-bottom: 2px;
+    margin-bottom:4px;
   }
   .cba-card-preview {
     font-size: 0.78rem;
@@ -709,11 +710,11 @@
   }
   .cba-card-actions {
     display: flex;
-    gap: 8px;
+    gap:8px;
     flex-shrink: 0;
   }
   .btn-cba-use {
-    padding: 5px 14px;
+    padding:4px 16px;
     background: var(--navy);
     color: var(--white);
     border: none;
@@ -726,7 +727,7 @@
   }
   .btn-cba-use:hover { background: var(--gold); color: #fff; }
   .btn-cba-delete {
-    padding: 5px 10px;
+    padding:4px 8px;
     background: transparent;
     color: var(--gray);
     border: 1px solid var(--light-gray);
@@ -741,8 +742,8 @@
   }
 
   .disclaimer-footer {
-    margin-top: 28px;
-    padding: 14px 18px;
+    margin-top:24px;
+    padding:16px 16px;
     background: var(--warn-bg);
     border: 1px solid #fcd34d;
     border-radius: 3px;
@@ -755,7 +756,7 @@
   .intensity-btn {
     flex: 1;
     min-width: 140px;
-    padding: 12px 14px;
+    padding:8px 16px;
     border: 2px solid var(--light-gray);
     background: var(--white);
     border-radius: 3px;
@@ -764,7 +765,7 @@
     transition: all 0.2s;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap:4px;
   }
 
   .intensity-btn:hover { border-color: var(--gold); }
@@ -791,8 +792,8 @@
   .draft-card {
     border: 2px solid var(--light-gray);
     border-radius: 3px;
-    padding: 18px 20px;
-    margin-bottom: 12px;
+    padding:16px 16px;
+    margin-bottom:8px;
     cursor: pointer;
     transition: all 0.2s;
     background: var(--white);
@@ -804,8 +805,8 @@
   .draft-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
+    gap:8px;
+    margin-bottom:8px;
   }
 
   .draft-badge {
@@ -813,7 +814,7 @@
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    padding: 3px 10px;
+    padding:4px 8px;
     border-radius: 10px;
   }
 
@@ -832,30 +833,30 @@
 
   .impact-sub-row {
     border-top: 1px solid var(--light-gray);
-    padding: 12px 0 8px;
-    margin-top: 4px;
+    padding:8px 0 8px;
+    margin-top:4px;
   }
   .impact-sub-row:first-child { border-top: none; padding-top: 0; }
   .impact-sub-check {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap:8px;
     font-size: 0.8rem;
     font-weight: 700;
     color: var(--navy);
     letter-spacing: 0.04em;
     text-transform: uppercase;
     cursor: pointer;
-    margin-bottom: 8px;
+    margin-bottom:8px;
   }
   .impact-sub-check input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--navy); }
   .impact-sub-text {
     font-size: 0.85rem;
     color: var(--gray);
     line-height: 1.6;
-    padding-left: 23px;
+    padding-left:24px;
   }
-    margin-top: 12px;
+    margin-top:8px;
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.07em;
@@ -874,7 +875,7 @@
     background: rgba(26,39,68,0.72);
     z-index: 100;
     overflow-y: auto;
-    padding: 40px 20px;
+    padding:40px 16px;
   }
   .overlay.visible { display: block; }
 
@@ -888,7 +889,7 @@
 
   .setup-modal-header {
     background: var(--navy);
-    padding: 24px 32px;
+    padding:24px 32px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -904,7 +905,7 @@
   .setup-modal-sub {
     font-size: 0.78rem;
     color: var(--gold-light);
-    margin-top: 3px;
+    margin-top:4px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
@@ -925,16 +926,16 @@
   }
   .btn-close-modal:hover { background: rgba(255,255,255,0.1); }
 
-  .setup-modal-body { padding: 28px 32px 32px; }
+  .setup-modal-body { padding:24px 32px 32px; }
 
   .setup-section-title {
     font-family: 'Playfair Display', serif;
     font-size: 1rem;
     color: var(--navy);
     font-weight: 700;
-    margin-bottom: 4px;
-    margin-top: 24px;
-    padding-top: 20px;
+    margin-bottom:8px;
+    margin-top:32px;
+    padding-top:24px;
     border-top: 1px solid var(--light-gray);
   }
   .setup-section-title:first-child { margin-top: 0; padding-top: 0; border-top: none; }
@@ -942,7 +943,7 @@
   .setup-section-sub {
     font-size: 0.82rem;
     color: var(--gray);
-    margin-bottom: 14px;
+    margin-bottom:16px;
     line-height: 1.5;
   }
 
@@ -950,12 +951,12 @@
   .logo-preview-wrap {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 14px;
+    gap:16px;
+    padding:16px;
     background: var(--cream);
     border: 1px solid var(--light-gray);
     border-radius: 3px;
-    margin-top: 10px;
+    margin-top:8px;
     min-height: 60px;
   }
   .logo-preview-wrap img {
@@ -972,7 +973,7 @@
     transform: translateX(-50%) translateY(20px);
     background: var(--navy);
     color: var(--white);
-    padding: 12px 24px;
+    padding:8px 24px;
     border-radius: 3px;
     font-size: 0.88rem;
     font-weight: 600;
@@ -1000,11 +1001,11 @@
   /* Side nav */
   .page-layout {
     display: flex;
-    gap: 8px;
+    gap:8px;
     align-items: flex-start;
     max-width: 1290px;
     margin: 0 auto;
-    padding: 36px 24px 60px;
+    padding:32px 24px 48px;
   }
 
   .side-nav {
@@ -1020,19 +1021,19 @@
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--gray);
-    margin-bottom: 10px;
-    padding-left: 4px;
+    margin-bottom:8px;
+    padding-left:4px;
   }
 
   .side-nav-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 9px 12px;
+    gap:8px;
+    padding:8px 8px;
     border-radius: 3px;
     cursor: pointer;
     transition: all 0.15s;
-    margin-bottom: 3px;
+    margin-bottom:4px;
     border: 1px solid transparent;
     background: transparent;
     width: 100%;
@@ -1102,7 +1103,7 @@
   .container { max-width: none; margin: 0; padding: 0; }
     font-size: 0.78rem;
     color: var(--gold-light);
-    margin-top: 2px;
+    margin-top:4px;
     letter-spacing: 0.05em;
   }
 
@@ -1110,9 +1111,9 @@
   .memo-letterhead {
     display: flex;
     align-items: center;
-    gap: 20px;
-    padding-bottom: 18px;
-    margin-bottom: 22px;
+    gap:16px;
+    padding-bottom:16px;
+    margin-bottom:24px;
     border-bottom: 2px solid var(--navy);
   }
   .memo-letterhead img {
@@ -1130,11 +1131,11 @@
   .memo-letterhead-address {
     font-size: 0.78rem;
     color: var(--gray);
-    margin-top: 1px;
+    margin-top:4px;
   }
     font-size: 0.8rem;
     color: var(--gray);
-    margin-top: 2px;
+    margin-top:4px;
   }
     header, .progress-wrap, .btn-row, .output-actions, .intro, .disclaimer-footer { display: none !important; }
     .output-card { box-shadow: none; border: none; padding: 0; }
@@ -1143,8 +1144,8 @@
 
   @media (max-width: 600px) {
     .row-2, .row-3, .situation-grid { grid-template-columns: 1fr 1fr; }
-    .card { padding: 24px 20px; }
-    .output-card { padding: 28px 20px; }
+    .card { padding:24px 16px; }
+    .output-card { padding:24px 16px; }
   }
 </style>
 </head>
@@ -1172,10 +1173,10 @@
     </div>
     <div class="setup-modal-body">
       <p style="font-size:0.9rem; color:var(--gray); line-height:1.6; margin-bottom:16px;">Trackument is new, and it is still being shaped by what actually works for administrators doing this job. If something felt confusing, took too long, or just was not quite right, tell us. If something worked well, tell us that too.</p>
-      <textarea id="feedbackText" placeholder="What's on your mind?" style="width:100%; min-height:120px; padding:12px 14px; border:1.5px solid var(--light-gray); border-radius:6px; font-family:inherit; font-size:0.92rem; color:var(--navy); resize:vertical;"></textarea>
-      <div class="error-msg" id="feedbackError" style="display:none; color:#dc2626; font-size:0.85rem; margin-top:10px;"></div>
-      <div class="success-msg" id="feedbackSuccess" style="display:none; background:#f0fdf4; border:1px solid #86efac; border-radius:6px; padding:12px 14px; font-size:0.88rem; color:#15803d; margin-top:10px;"></div>
-      <button id="feedbackSubmitBtn" onclick="submitFeedback()" style="margin-top:16px; background:var(--gold); color:#fff; border:none; padding:12px 24px; border-radius:6px; font-weight:700; font-size:0.92rem; cursor:pointer;">Send feedback</button>
+      <textarea id="feedbackText" placeholder="What's on your mind?" style="width:100%; min-height:120px; padding:8px 16px; border:1.5px solid var(--light-gray); border-radius:6px; font-family:inherit; font-size:0.92rem; color:var(--navy); resize:vertical;"></textarea>
+      <div class="error-msg" id="feedbackError" style="display:none; color:#dc2626; font-size:0.85rem; margin-top:8px;"></div>
+      <div class="success-msg" id="feedbackSuccess" style="display:none; background:#f0fdf4; border:1px solid #86efac; border-radius:6px; padding:8px 16px; font-size:0.88rem; color:#15803d; margin-top:8px;"></div>
+      <button id="feedbackSubmitBtn" onclick="submitFeedback()" style="margin-top:16px; background:var(--gold); color:#fff; border:none; padding:8px 24px; border-radius:6px; font-weight:700; font-size:0.92rem; cursor:pointer;">Send feedback</button>
     </div>
   </div>
 </div>
@@ -1192,9 +1193,9 @@
     </div>
     <!-- Tabs -->
     <div style="display:flex; border-bottom:2px solid var(--light-gray); background:var(--cream);">
-      <button id="tabNewMemo" onclick="closeSettings()" style="padding:13px 24px; font-size:0.8rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; border:none; cursor:pointer; background:transparent; color:var(--gold); border-bottom:2px solid var(--gold); margin-bottom:-2px;">New Writeup →</button>
-      <button id="tabDistrict" onclick="switchTab('district')" style="padding:13px 24px; font-size:0.8rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; border:none; cursor:pointer; background:transparent; color:var(--gray); border-bottom:2px solid transparent; margin-bottom:-2px; display:none;">District</button>
-      <button id="tabSchools" onclick="switchTab('schools')" style="padding:13px 24px; font-size:0.8rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; border:none; cursor:pointer; background:transparent; color:var(--gray); border-bottom:2px solid transparent; margin-bottom:-2px; display:none;">Sites</button>
+      <button id="tabNewMemo" onclick="closeSettings()" style="padding:16px 24px; font-size:0.8rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; border:none; cursor:pointer; background:transparent; color:var(--gold); border-bottom:2px solid var(--gold); margin-bottom:-4px;">New Writeup →</button>
+      <button id="tabDistrict" onclick="switchTab('district')" style="padding:16px 24px; font-size:0.8rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; border:none; cursor:pointer; background:transparent; color:var(--gray); border-bottom:2px solid transparent; margin-bottom:-4px; display:none;">District</button>
+      <button id="tabSchools" onclick="switchTab('schools')" style="padding:16px 24px; font-size:0.8rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; border:none; cursor:pointer; background:transparent; color:var(--gray); border-bottom:2px solid transparent; margin-bottom:-4px; display:none;">Sites</button>
     </div>
 
     <!-- District Tab -->
@@ -1209,40 +1210,40 @@
       <label>District Email Domain</label>
       <div style="display:flex; gap:8px; align-items:center;">
         <input type="text" id="setupDistrictDomain" name="districtDomain" autocomplete="off" placeholder="e.g. burbankusd.org" style="flex:1; margin:0;" onblur="checkDistrictDomain(true)">
-        <button type="button" class="btn btn-secondary" onclick="checkDistrictDomain(false)" id="checkDomainBtn" style="font-size:0.78rem; white-space:nowrap; flex-shrink:0; padding:10px 14px;">Check Again</button>
+        <button type="button" class="btn btn-secondary" onclick="checkDistrictDomain(false)" id="checkDomainBtn" style="font-size:0.78rem; white-space:nowrap; flex-shrink:0; padding:8px 16px;">Check Again</button>
       </div>
-      <div id="checkDomainResult" style="font-size:0.82rem; margin-top:6px; display:none; padding:8px 12px; border-radius:2px;"></div>
-      <div class="setup-section-sub" style="margin-top:6px;">We'll automatically check whether another administrator at your district has already set this up. If so, we'll fill in the board policy link, county, document types, and bargaining agreements for you. If you're the first, just fill in the fields below. Every other administrator at your district will be able to use what you save here.</div>
+      <div id="checkDomainResult" style="font-size:0.82rem; margin-top:4px; display:none; padding:8px 8px; border-radius:2px;"></div>
+      <div class="setup-section-sub" style="margin-top:4px;">We'll automatically check whether another administrator at your district has already set this up. If so, we'll fill in the board policy link, county, document types, and bargaining agreements for you. If you're the first, just fill in the fields below. Every other administrator at your district will be able to use what you save here.</div>
 
 
       <label>Board Policy Website URL</label>
       <div style="display:flex; gap:8px; align-items:center;">
         <input type="text" id="setupBPURL" name="bpURL" autocomplete="url" placeholder="Board policy website URL (optional)" style="flex:1; margin:0;">
-        <button class="btn btn-secondary" onclick="testBPConnection()" id="bpTestBtn" style="font-size:0.78rem; white-space:nowrap; flex-shrink:0; padding:10px 14px;">Test Connection</button>
+        <button class="btn btn-secondary" onclick="testBPConnection()" id="bpTestBtn" style="font-size:0.78rem; white-space:nowrap; flex-shrink:0; padding:8px 16px;">Test Connection</button>
       </div>
-      <div id="bpTestResult" style="font-size:0.82rem; margin-top:6px; display:none; padding:8px 12px; border-radius:2px;"></div>
+      <div id="bpTestResult" style="font-size:0.82rem; margin-top:4px; display:none; padding:8px 8px; border-radius:2px;"></div>
 
       <label>County</label>
       <input type="text" id="setupCounty" name="county" autocomplete="off" placeholder="e.g. Ventura">
-      <div class="setup-section-sub" style="margin-top:6px;">Used for food-service/nutrition writeups only. Trackument cites the California Retail Food Code directly, and adds a note pointing administrators to your county's Environmental Health Department for anything beyond state code.</div>
+      <div class="setup-section-sub" style="margin-top:4px;">Used for food-service/nutrition writeups only. Trackument cites the California Retail Food Code directly, and adds a note pointing administrators to your county's Environmental Health Department for anything beyond state code.</div>
 
       <!-- Configurable document types -->
-      <div style="margin-top:20px; padding-top:18px; border-top:1px solid var(--light-gray);">
+      <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--light-gray);">
         <div class="setup-section-title" style="margin-top:0; padding-top:0; border-top:none;">Document Types</div>
-        <div class="setup-section-sub">Choose which documentation types appear in the dropdown. Drag to reorder by severity — they'll appear in this order.</div>
-        <div id="docTypeCheckList" style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px;" ondragover="event.preventDefault()">
-          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:6px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem; cursor:grab;">⠿</span><input type="checkbox" class="doctype-chk" value="Conference Summary" style="accent-color:var(--navy);"> Conference Summary</label>
-          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:6px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Written Warning" style="accent-color:var(--navy);"> Written Warning</label>
-          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:6px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Letter of Reprimand" style="accent-color:var(--navy);"> Letter of Reprimand</label>
-          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:6px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Notice of Unsatisfactory Performance" style="accent-color:var(--navy);"> Notice of Unsatisfactory Performance</label>
-          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:6px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Final Written Warning" style="accent-color:var(--navy);"> Final Written Warning</label>
-          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:6px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Notice of Unprofessional Conduct" style="accent-color:var(--navy);"> Notice of Unprofessional Conduct</label>
+        <div class="setup-section-sub">Choose which documentation types appear in the dropdown. Drag to reorder by severity. They'll appear in this order.</div>
+        <div id="docTypeCheckList" style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;" ondragover="event.preventDefault()">
+          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
+            <span style="color:var(--gray); font-size:1rem; cursor:grab;">⠿</span><input type="checkbox" class="doctype-chk" value="Conference Summary" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Conference Summary" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Written Warning" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Written Warning" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Letter of Reprimand" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Letter of Reprimand" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Notice of Unsatisfactory Performance" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Notice of Unsatisfactory Performance" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Final Written Warning" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Final Written Warning" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Notice of Unprofessional Conduct" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Notice of Unprofessional Conduct" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
           <input type="text" id="customDocTypeInput" placeholder="Add a custom document type..." style="flex:1; margin:0;">
@@ -1251,17 +1252,17 @@
       </div>
 
       <!-- Collective Bargaining Agreements -->
-      <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--light-gray);">
+      <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray);">
         <div class="setup-section-title" style="margin-top:0; padding-top:0; border-top:none;">Collective Bargaining Agreements</div>
         <div class="setup-section-sub">Store contract documents here. When you select an employee classification on a memo, the matching agreement will be applied automatically. Set the bargaining unit on each agreement so the system knows which classification it covers.</div>
 
-        <div id="setupCBAList" style="margin-bottom:10px;">
+        <div id="setupCBAList" style="margin-bottom:8px;">
           <div id="setupCBAEmpty" style="font-size:0.85rem;color:var(--gray);font-style:italic;padding:8px 0;">No agreements saved yet.</div>
         </div>
 
         <button class="btn btn-secondary" onclick="toggleSetupCBAForm()" id="setupCBAToggleBtn" style="font-size:0.78rem;">+ Add Agreement</button>
 
-        <div id="setupCBAForm" style="display:none;margin-top:14px;padding:16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:3px;">
+        <div id="setupCBAForm" style="display:none;margin-top:16px;padding:16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:3px;">
           <div class="row-2">
             <div>
               <label style="margin-top:0;">Agreement Name</label>
@@ -1279,18 +1280,18 @@
             </div>
           </div>
           <label>Contract Document</label>
-          <div style="display:flex;gap:10px;margin-bottom:12px;">
-            <button id="cbaTabUpload" onclick="setCBAInputMode('upload')" style="flex:1;padding:9px;border:2px solid var(--navy);border-radius:3px;background:var(--navy);color:var(--white);font-size:0.8rem;font-weight:700;cursor:pointer;">Upload PDF / Word Doc</button>
-            <button id="cbaTabLink" onclick="setCBAInputMode('link')" style="flex:1;padding:9px;border:2px solid var(--light-gray);border-radius:3px;background:var(--white);color:var(--gray);font-size:0.8rem;font-weight:700;cursor:pointer;">Link to URL</button>
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <button id="cbaTabUpload" onclick="setCBAInputMode('upload')" style="flex:1;padding:8px;border:2px solid var(--navy);border-radius:3px;background:var(--navy);color:var(--white);font-size:0.8rem;font-weight:700;cursor:pointer;">Upload PDF / Word Doc</button>
+            <button id="cbaTabLink" onclick="setCBAInputMode('link')" style="flex:1;padding:8px;border:2px solid var(--light-gray);border-radius:3px;background:var(--white);color:var(--gray);font-size:0.8rem;font-weight:700;cursor:pointer;">Link to URL</button>
           </div>
           <div id="cbaUploadMode">
-            <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:18px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="cbaDropZone" onclick="document.getElementById('cbaFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleCBADrop(event)">
-              <div style="font-size:0.85rem;color:var(--gray);margin-bottom:10px;">Drag and drop, or</div>
-              <button type="button" onclick="event.stopPropagation(); document.getElementById('cbaFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:9px 20px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
+            <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="cbaDropZone" onclick="document.getElementById('cbaFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleCBADrop(event)">
+              <div style="font-size:0.85rem;color:var(--gray);margin-bottom:8px;">Drag and drop, or</div>
+              <button type="button" onclick="event.stopPropagation(); document.getElementById('cbaFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:8px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
               <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF or Word document (.pdf, .doc, .docx)</div>
               <input type="file" id="cbaFileInput" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none;" onchange="handleCBAFile(this.files[0])">
             </div>
-            <div id="cbaFilePreview" style="display:none;padding:10px 13px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);display:flex;align-items:center;justify-content:space-between;">
+            <div id="cbaFilePreview" style="display:none;padding:8px 16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);display:flex;align-items:center;justify-content:space-between;">
               <span id="cbaFileName"></span>
               <button onclick="clearCBAFile()" style="font-size:0.72rem;color:var(--gray);background:transparent;border:none;cursor:pointer;text-decoration:underline;">Remove</button>
             </div>
@@ -1298,27 +1299,27 @@
           <div id="cbaLinkMode" style="display:none;">
             <label>Document URL</label>
             <input type="text" id="setupCBALink" placeholder="https://your-district.org/cba-2024.pdf or Google Drive link">
-            <div style="font-size:0.75rem;color:var(--gray);margin-top:6px;">The tool will extract relevant contract language from this document when generating memos.</div>
+            <div style="font-size:0.75rem;color:var(--gray);margin-top:4px;">The tool will extract relevant contract language from this document when generating memos.</div>
           </div>
-          <div style="display:flex;gap:10px;margin-top:12px;">
-            <button class="btn btn-primary" onclick="saveSetupCBA()" style="font-size:0.8rem;padding:10px 20px;">Save Bargaining Agreement</button>
-            <button class="btn btn-secondary" onclick="toggleSetupCBAForm()" style="font-size:0.8rem;padding:10px 16px;">Cancel</button>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn btn-primary" onclick="saveSetupCBA()" style="font-size:0.8rem;padding:8px 16px;">Save Bargaining Agreement</button>
+            <button class="btn btn-secondary" onclick="toggleSetupCBAForm()" style="font-size:0.8rem;padding:8px 16px;">Cancel</button>
           </div>
         </div>
       </div>
 
       <!-- Employee Handbooks -->
-      <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--light-gray);">
+      <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray);">
         <div class="setup-section-title" style="margin-top:0; padding-top:0; border-top:none;">Employee Handbooks</div>
         <div class="setup-section-sub">Store employee handbooks here. Saved handbooks are read alongside your Board Policy and CBA when Trackument identifies applicable citations, and are shared across every site in your district.</div>
 
-        <div id="setupHandbookList" style="margin-bottom:10px;">
+        <div id="setupHandbookList" style="margin-bottom:8px;">
           <div id="setupHandbookEmpty" style="font-size:0.85rem;color:var(--gray);font-style:italic;padding:8px 0;">No handbooks saved yet.</div>
         </div>
 
         <button class="btn btn-secondary" onclick="toggleSetupHandbookForm()" id="setupHandbookToggleBtn" style="font-size:0.78rem;">+ Add Handbook</button>
 
-        <div id="setupHandbookForm" style="display:none;margin-top:14px;padding:16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:3px;">
+        <div id="setupHandbookForm" style="display:none;margin-top:16px;padding:16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:3px;">
           <div class="row-2">
             <div>
               <label style="margin-top:0;">Handbook Name</label>
@@ -1337,18 +1338,18 @@
             </div>
           </div>
           <label>Handbook Document</label>
-          <div style="display:flex;gap:10px;margin-bottom:12px;">
-            <button id="handbookTabUpload" onclick="setHandbookInputMode('upload')" style="flex:1;padding:9px;border:2px solid var(--navy);border-radius:3px;background:var(--navy);color:var(--white);font-size:0.8rem;font-weight:700;cursor:pointer;">Upload PDF / Word Doc</button>
-            <button id="handbookTabLink" onclick="setHandbookInputMode('link')" style="flex:1;padding:9px;border:2px solid var(--light-gray);border-radius:3px;background:var(--white);color:var(--gray);font-size:0.8rem;font-weight:700;cursor:pointer;">Link to URL</button>
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <button id="handbookTabUpload" onclick="setHandbookInputMode('upload')" style="flex:1;padding:8px;border:2px solid var(--navy);border-radius:3px;background:var(--navy);color:var(--white);font-size:0.8rem;font-weight:700;cursor:pointer;">Upload PDF / Word Doc</button>
+            <button id="handbookTabLink" onclick="setHandbookInputMode('link')" style="flex:1;padding:8px;border:2px solid var(--light-gray);border-radius:3px;background:var(--white);color:var(--gray);font-size:0.8rem;font-weight:700;cursor:pointer;">Link to URL</button>
           </div>
           <div id="handbookUploadMode">
-            <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:18px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="handbookDropZone" onclick="document.getElementById('handbookFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleHandbookDrop(event)">
-              <div style="font-size:0.85rem;color:var(--gray);margin-bottom:10px;">Drag and drop, or</div>
-              <button type="button" onclick="event.stopPropagation(); document.getElementById('handbookFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:9px 20px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
+            <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="handbookDropZone" onclick="document.getElementById('handbookFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleHandbookDrop(event)">
+              <div style="font-size:0.85rem;color:var(--gray);margin-bottom:8px;">Drag and drop, or</div>
+              <button type="button" onclick="event.stopPropagation(); document.getElementById('handbookFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:8px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
               <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF or Word document (.pdf, .doc, .docx)</div>
               <input type="file" id="handbookFileInput" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none;" onchange="handleHandbookFile(this.files[0])">
             </div>
-            <div id="handbookFilePreview" style="display:none;padding:10px 13px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);display:flex;align-items:center;justify-content:space-between;">
+            <div id="handbookFilePreview" style="display:none;padding:8px 16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);display:flex;align-items:center;justify-content:space-between;">
               <span id="handbookFileName"></span>
               <button onclick="clearHandbookFile()" style="font-size:0.72rem;color:var(--gray);background:transparent;border:none;cursor:pointer;text-decoration:underline;">Remove</button>
             </div>
@@ -1356,37 +1357,37 @@
           <div id="handbookLinkMode" style="display:none;">
             <label>Document URL</label>
             <input type="text" id="setupHandbookLink" placeholder="https://your-district.org/handbook-2024.pdf or Google Drive link">
-            <div style="font-size:0.75rem;color:var(--gray);margin-top:6px;">The tool will extract relevant handbook language when generating memos.</div>
+            <div style="font-size:0.75rem;color:var(--gray);margin-top:4px;">The tool will extract relevant handbook language when generating memos.</div>
           </div>
-          <div style="display:flex;gap:10px;margin-top:12px;">
-            <button class="btn btn-primary" onclick="saveSetupHandbook()" style="font-size:0.8rem;padding:10px 20px;">Save Handbook</button>
-            <button class="btn btn-secondary" onclick="toggleSetupHandbookForm()" style="font-size:0.8rem;padding:10px 16px;">Cancel</button>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn btn-primary" onclick="saveSetupHandbook()" style="font-size:0.8rem;padding:8px 16px;">Save Handbook</button>
+            <button class="btn btn-secondary" onclick="toggleSetupHandbookForm()" style="font-size:0.8rem;padding:8px 16px;">Cancel</button>
           </div>
         </div>
       </div>
 
       <!-- Merit District / Personnel Commission -->
-      <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--light-gray);">
+      <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray);">
         <div class="setup-section-title" style="margin-top:0; padding-top:0; border-top:none;">Personnel Commission Rules</div>
         <div class="setup-section-sub">Merit system districts operating under a Personnel Commission (Ed Code §45240 et seq.) may upload their Personnel Commission Rules here. These will be available for reference when documenting classified employee matters.</div>
-        <div id="meritRulesList" style="margin-bottom:10px;"></div>
+        <div id="meritRulesList" style="margin-bottom:8px;"></div>
         <button class="btn btn-secondary" onclick="toggleMeritForm()" id="meritFormToggleBtn" style="font-size:0.78rem;">+ Add Personnel Commission Rules</button>
-        <div id="meritRulesForm" style="display:none; margin-top:14px; padding:16px; background:var(--cream); border:1px solid var(--light-gray); border-radius:3px;">
+        <div id="meritRulesForm" style="display:none; margin-top:16px; padding:16px; background:var(--cream); border:1px solid var(--light-gray); border-radius:3px;">
           <label style="margin-top:0;">Document Name</label>
           <input type="text" id="meritRulesName" placeholder="e.g. Personnel Commission Rules and Regulations 2024">
           <label>Contract Document</label>
-          <div style="display:flex;gap:10px;margin-bottom:12px;">
-            <button id="meritTabUpload" onclick="setMeritInputMode('upload')" style="flex:1;padding:9px;border:2px solid var(--navy);border-radius:3px;background:var(--navy);color:var(--white);font-size:0.8rem;font-weight:700;cursor:pointer;">Upload PDF</button>
-            <button id="meritTabLink" onclick="setMeritInputMode('link')" style="flex:1;padding:9px;border:2px solid var(--light-gray);border-radius:3px;background:var(--white);color:var(--gray);font-size:0.8rem;font-weight:700;cursor:pointer;">Link to URL</button>
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <button id="meritTabUpload" onclick="setMeritInputMode('upload')" style="flex:1;padding:8px;border:2px solid var(--navy);border-radius:3px;background:var(--navy);color:var(--white);font-size:0.8rem;font-weight:700;cursor:pointer;">Upload PDF</button>
+            <button id="meritTabLink" onclick="setMeritInputMode('link')" style="flex:1;padding:8px;border:2px solid var(--light-gray);border-radius:3px;background:var(--white);color:var(--gray);font-size:0.8rem;font-weight:700;cursor:pointer;">Link to URL</button>
           </div>
           <div id="meritUploadMode">
-            <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:18px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="meritDropZone" onclick="document.getElementById('meritFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleMeritDrop(event)">
-              <div style="font-size:0.85rem;color:var(--gray);margin-bottom:10px;">Drag and drop, or</div>
-              <button type="button" onclick="event.stopPropagation(); document.getElementById('meritFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:9px 20px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
+            <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="meritDropZone" onclick="document.getElementById('meritFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleMeritDrop(event)">
+              <div style="font-size:0.85rem;color:var(--gray);margin-bottom:8px;">Drag and drop, or</div>
+              <button type="button" onclick="event.stopPropagation(); document.getElementById('meritFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:8px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
               <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF or Word document (.pdf, .doc, .docx)</div>
               <input type="file" id="meritFileInput" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none;" onchange="handleMeritFile(this.files[0])">
             </div>
-            <div id="meritFilePreview" style="display:none;padding:10px 13px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);display:flex;align-items:center;justify-content:space-between;">
+            <div id="meritFilePreview" style="display:none;padding:8px 16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);display:flex;align-items:center;justify-content:space-between;">
               <span id="meritFileName"></span>
               <button onclick="clearMeritFile()" style="font-size:0.72rem;color:var(--gray);background:transparent;border:none;cursor:pointer;text-decoration:underline;">Remove</button>
             </div>
@@ -1394,17 +1395,17 @@
           <div id="meritLinkMode" style="display:none;">
             <input type="text" id="meritRulesLink" placeholder="https://your-district.org/personnel-commission-rules.pdf">
           </div>
-          <div style="display:flex;gap:10px;margin-top:12px;">
-            <button class="btn btn-primary" onclick="saveMeritRules()" style="font-size:0.8rem;padding:10px 20px;">Save</button>
-            <button class="btn btn-secondary" onclick="toggleMeritForm()" style="font-size:0.8rem;padding:10px 16px;">Cancel</button>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn btn-primary" onclick="saveMeritRules()" style="font-size:0.8rem;padding:8px 16px;">Save</button>
+            <button class="btn btn-secondary" onclick="toggleMeritForm()" style="font-size:0.8rem;padding:8px 16px;">Cancel</button>
           </div>
         </div>
       </div>
 
-      <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--light-gray);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--light-gray);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
         <div id="districtSavedMsg" style="display:none; color:#16a34a; font-size:0.85rem; font-weight:600;">✓ District profile saved</div>
         <button class="btn btn-secondary" onclick="closeSettings()" style="font-size:0.82rem;">Close</button>
-        <button class="btn btn-primary" onclick="saveDistrictAndConfirm()" style="padding:12px 24px;">Save District Profile</button>
+        <button class="btn btn-primary" onclick="saveDistrictAndConfirm()" style="padding:8px 24px;">Save District Profile</button>
       </div>
 
       <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray);">
@@ -1423,43 +1424,29 @@
         <div id="schoolProfileEmpty" style="font-size:0.85rem;color:var(--gray);font-style:italic;padding:8px 0;">No sites saved yet.</div>
       </div>
 
-      <div style="margin-top:14px;">
+      <div style="margin-top:16px;">
         <button class="btn btn-secondary" onclick="toggleSchoolForm()" id="schoolFormToggleBtn" style="font-size:0.78rem;">+ Add School</button>
       </div>
 
-      <div id="schoolAddForm" style="display:none;margin-top:14px;padding:18px;background:var(--cream);border:1px solid var(--light-gray);border-radius:3px;">
+      <div id="schoolAddForm" style="display:none;margin-top:16px;padding:16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:3px;">
         <label style="margin-top:0;">Site Name</label>
         <input type="text" id="newSchoolName" name="schoolName" autocomplete="organization" placeholder="School or site name">
 
-        <div style="display:flex;gap:8px;margin-top:14px;align-items:flex-end;">
+        <div style="display:flex;gap:8px;margin-top:16px;align-items:flex-end;">
           <div style="flex:1;">
             <label style="margin-top:0;">School Physical Address</label>
             <input type="text" id="newSchoolURL" name="schoolAddress" autocomplete="street-address" placeholder="e.g. 1234 Main Street, Sacramento, CA 95814">
           </div>
         </div>
 
-        <label>Site Logo</label>
-        <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="logoDropZone" onclick="document.getElementById('logoFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleLogoDrop(event)">
-          <div style="font-size:0.85rem;color:var(--gray);">Click to upload or drag and drop</div>
-          <div style="font-size:0.75rem;color:var(--gray);margin-top:4px;">PNG, JPG, SVG. Max 2MB.</div>
-          <input type="file" id="logoFileInput" accept="image/*" style="display:none;" onchange="handleLogoFile(this.files[0])">
-        </div>
-        <div id="newSchoolLogoWrap" style="display:none;align-items:center;gap:14px;padding:11px 13px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;">
-          <img id="newSchoolLogoPreviewImg" src="" style="max-height:44px;max-width:140px;object-fit:contain;">
-          <div>
-            <div style="font-size:0.82rem;color:var(--success);font-weight:600;">Logo ready</div>
-            <button onclick="clearNewSchoolLogo()" style="font-size:0.72rem;color:var(--gray);background:transparent;border:none;cursor:pointer;text-decoration:underline;margin-top:4px;">Remove</button>
-          </div>
-        </div>
-
-        <label style="margin-top:22px;">Site Letterhead</label>
-        <div style="font-size:0.8rem;color:var(--gray);margin-top:-4px;margin-bottom:8px;">A wider header image (district or site letterhead) that appears at the top of downloaded documents from this site, in place of the plain text heading.</div>
+        <label>Site Letterhead</label>
         <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="letterheadDropZone" onclick="document.getElementById('letterheadFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleLetterheadDrop(event)">
-          <div style="font-size:0.85rem;color:var(--gray);">Click to upload or drag and drop</div>
-          <div style="font-size:0.75rem;color:var(--gray);margin-top:4px;">PNG or JPG. Max 2MB. Best as a wide banner shape.</div>
+          <div style="font-size:0.85rem;color:var(--gray);margin-bottom:8px;">Drag and drop, or</div>
+          <button type="button" onclick="event.stopPropagation(); document.getElementById('letterheadFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:8px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
+          <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PNG or JPG. Max 2MB. Best as a wide banner shape.</div>
           <input type="file" id="letterheadFileInput" accept="image/png,image/jpeg" style="display:none;" onchange="handleLetterheadFile(this.files[0])">
         </div>
-        <div id="newSchoolLetterheadWrap" style="display:none;align-items:center;gap:14px;padding:11px 13px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;">
+        <div id="newSchoolLetterheadWrap" style="display:none;align-items:center;gap:16px;padding:8px 16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;">
           <img id="newSchoolLetterheadPreviewImg" src="" style="max-height:44px;max-width:220px;object-fit:contain;">
           <div>
             <div style="font-size:0.82rem;color:var(--success);font-weight:600;">Letterhead ready</div>
@@ -1467,19 +1454,40 @@
           </div>
         </div>
 
-        <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--light-gray);">
+        <div style="display:flex; align-items:center; gap:8px; margin:16px 0;">
+          <div style="flex:1; height:1px; background:var(--light-gray);"></div>
+          <div style="font-size:0.75rem; font-weight:700; color:var(--gray);">OR</div>
+          <div style="flex:1; height:1px; background:var(--light-gray);"></div>
+        </div>
+
+        <label style="margin-top:0;">Site Logo</label>
+        <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="logoDropZone" onclick="document.getElementById('logoFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleLogoDrop(event)">
+          <div style="font-size:0.85rem;color:var(--gray);margin-bottom:8px;">Drag and drop, or</div>
+          <button type="button" onclick="event.stopPropagation(); document.getElementById('logoFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:8px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
+          <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PNG, JPG, SVG. Max 2MB.</div>
+          <input type="file" id="logoFileInput" accept="image/*" style="display:none;" onchange="handleLogoFile(this.files[0])">
+        </div>
+        <div id="newSchoolLogoWrap" style="display:none;align-items:center;gap:16px;padding:8px 16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;">
+          <img id="newSchoolLogoPreviewImg" src="" style="max-height:44px;max-width:140px;object-fit:contain;">
+          <div>
+            <div style="font-size:0.82rem;color:var(--success);font-weight:600;">Logo ready</div>
+            <button onclick="clearNewSchoolLogo()" style="font-size:0.72rem;color:var(--gray);background:transparent;border:none;cursor:pointer;text-decoration:underline;margin-top:4px;">Remove</button>
+          </div>
+        </div>
+
+        <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--light-gray);">
           <div style="font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--navy);margin-bottom:4px;">Site Administrators</div>
-          <div style="font-size:0.8rem;color:var(--gray);margin-bottom:12px;">Add the administrators who may write memos from this site. You'll select one at the start of each writeup.</div>
+          <div style="font-size:0.8rem;color:var(--gray);margin-bottom:8px;">Add the administrators who may write memos from this site. You'll select one at the start of each writeup.</div>
           <div id="adminInputs"></div>
           <button type="button" onclick="addAdminRow()" style="margin-top:8px;font-size:0.78rem;color:var(--gold);font-weight:700;background:transparent;border:none;cursor:pointer;text-decoration:underline;">+ Add Administrator</button>
         </div>
 
-        <div style="display:flex;gap:10px;margin-top:16px;">
-          <button class="btn btn-primary" onclick="saveSchoolProfile()" style="font-size:0.8rem;padding:10px 20px;">Save Site Profile</button>
-          <button class="btn btn-secondary" onclick="toggleSchoolForm()" style="font-size:0.8rem;padding:10px 16px;">Cancel</button>
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <button class="btn btn-primary" onclick="saveSchoolProfile()" style="font-size:0.8rem;padding:8px 16px;">Save Site Profile</button>
+          <button class="btn btn-secondary" onclick="toggleSchoolForm()" style="font-size:0.8rem;padding:8px 16px;">Cancel</button>
         </div>
       </div>
-      <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--light-gray);display:flex;justify-content:space-between;align-items:center;">
+      <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--light-gray);display:flex;justify-content:space-between;align-items:center;">
         <div id="sitesSavedMsg" style="display:none; color:#16a34a; font-size:0.85rem; font-weight:600;">✓ Site profile saved</div>
         <div style="flex:1;"></div>
         <button class="btn btn-secondary" onclick="closeSettings()" style="font-size:0.82rem; margin-right:8px;">Close</button>
@@ -1491,10 +1499,10 @@
 </div>
 
 
-<div id="fileProtocolWarning" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:#7f1d1d; color:white; padding:14px 20px; font-size:0.88rem; line-height:1.6; text-align:center;">
+<div id="fileProtocolWarning" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:#7f1d1d; color:white; padding:16px 16px; font-size:0.88rem; line-height:1.6; text-align:center;">
   <strong>⚠ Running as a local file — AI features will not work.</strong>
   To use Trackument, open it through a local server. On Mac: open Terminal, paste this command, then open <strong>http://localhost:8000/trackument-v21.html</strong> in your browser:<br>
-  <code style="background:rgba(0,0,0,0.3); padding:4px 10px; border-radius:3px; margin-top:6px; display:inline-block; font-size:0.85rem; user-select:all;">cd ~/Downloads && python3 -m http.server 8000</code>
+  <code style="background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:3px; margin-top:4px; display:inline-block; font-size:0.85rem; user-select:all;">cd ~/Downloads && python3 -m http.server 8000</code>
 </div>
 <script>
 if (window.location.protocol === 'file:') {
@@ -1541,21 +1549,21 @@ if (window.location.protocol === 'file:') {
   <!-- Clean EMPLOYEE DISCIPLINE descriptor -->
   <path d="M500.70000000000005 378.0811534825087H538.2606681374094V370.28254018279233H509.7718562874252V352.0194610778443H536.032492908919V344.26063662149386H509.7718562874252V326.59439016703436H538.021935077214V318.795776867318H500.70000000000005Z" fill="#FFFFFF"/><path d="M555.8075480617712 378.0811534825087H564.640671289001V346.17050110305706C564.640671289001 341.6345729593445 564.4417270721715 334.03490387645763 564.2825716987079 327.82784431137725C566.5505357705641 335.1489914907028 568.8980775291523 342.5895052001261 570.2508982035929 346.17050110305706L582.5456508036559 378.0811534825087H590.3044752600064L602.4400724866058 346.17050110305706C603.7928931610463 342.4701386700284 606.2598014497321 334.83068074377564 608.3686101481248 327.62890009454776C608.2492436180271 334.2338480932871 608.0502994011977 341.7937283328081 608.0502994011977 346.17050110305706V378.0811534825087H617.0823668452568V318.795776867318H603.6337377875827L590.9013079104948 352.8152379451623C589.7474314528837 356.0779231011661 587.8773558146864 362.68287109990547 586.48474629688 367.97478726757015C585.1319256224393 362.5635045698078 583.2618499842421 355.9983454144343 582.107973526631 352.8152379451623L569.1765994327136 318.795776867318H555.8075480617712Z" fill="#FFFFFF"/><path d="M636.1412228175228 378.0811534825087H645.2130791049481V357.311377245509H657.3088874881815C671.0758272927828 357.311377245509 677.9195083517177 348.995508982036 677.9195083517177 338.0535770564135C677.9195083517177 327.1116451307911 671.1156161361488 318.795776867318 657.3884651749133 318.795776867318H636.1412228175228ZM645.2130791049481 349.63213047589034V326.55460132366846H656.3539552474C665.1472896312638 326.55460132366846 668.7282855341948 331.3690513709423 668.7282855341948 338.0535770564135C668.7282855341948 344.7381027418847 665.1472896312638 349.63213047589034 656.4335329341318 349.63213047589034Z" fill="#FFFFFF"/><path d="M694.3920895052001 378.0811534825087H730.3214150646077V370.28254018279233H703.4639457926254V318.795776867318H694.3920895052001Z" fill="#FFFFFF"/><path d="M771.1447683580208 378.8769303498267C786.5032618972581 378.8769303498267 797.8430822565396 367.4177434604475 797.8430822565396 348.47825401827924C797.8430822565396 329.45918688937917 786.5032618972581 318.0 771.1447683580208 318.0C755.7464859754176 318.0 744.3668767727703 329.45918688937917 744.3668767727703 348.47825401827924C744.3668767727703 367.4177434604475 755.7464859754176 378.8769303498267 771.1447683580208 378.8769303498267ZM771.1447683580208 370.6008509297195C760.9588244563505 370.6008509297195 753.3591553734636 362.80223763000316 753.3591553734636 348.47825401827924C753.3591553734636 334.11448156318943 760.9588244563505 326.2760794201072 771.1447683580208 326.2760794201072C781.2511345729594 326.2760794201072 788.8508036558462 334.07469271982353 788.8508036558462 348.47825401827924C788.8508036558462 362.80223763000316 781.2511345729594 370.6008509297195 771.1447683580208 370.6008509297195Z" fill="#FFFFFF"/><path d="M832.1808540813112 378.0811534825087H841.2527103687363V354.4863693665301L863.0172076898834 318.795776867318H852.47316419792L841.4516545855658 337.6954774661204C839.7009454774662 340.6796407185629 838.2685471162938 343.34549322407815 836.7963599117555 346.9264891270092C835.3241727072173 343.42507091080995 833.8917743460448 340.7990072486606 832.0614875512134 337.6954774661204L820.9206114087615 318.795776867318H810.3367790734321L832.1808540813112 354.4863693665301Z" fill="#FFFFFF"/><path d="M877.5799243618027 378.0811534825087H915.1405924992122V370.28254018279233H886.6517806492279V352.0194610778443H912.9124172707218V344.26063662149386H886.6517806492279V326.59439016703436H914.9018594390168V318.795776867318H877.5799243618027Z" fill="#FFFFFF"/><path d="M932.6874724235739 378.0811534825087H970.2481405609834V370.28254018279233H941.7593287109992V352.0194610778443H968.019965332493V344.26063662149386H941.7593287109992V326.59439016703436H970.009407500788V318.795776867318H932.6874724235739Z" fill="#FFFFFF"/><path d="M1040.9131263788213 378.0811534825087C1058.937472423574 378.0811534825087 1069.4019382288056 366.90048849669085 1069.4019382288056 348.35888748818155C1069.4019382288056 329.93665300976994 1058.937472423574 318.795776867318 1041.470170185944 318.795776867318H1021.6155373463599V378.0811534825087ZM1030.6873936337852 370.12338480932874V326.75354554049795H1040.8733375354554C1053.8047116293728 326.75354554049795 1060.489237314844 334.4327923101166 1060.489237314844 348.35888748818155C1060.489237314844 362.4043491963442 1053.8047116293728 370.12338480932874 1040.3958714150647 370.12338480932874Z" fill="#FFFFFF"/><path d="M1095.46363063347 318.795776867318H1086.391774346045V378.0811534825087H1095.46363063347Z" fill="#FFFFFF"/><path d="M1134.4566971320517 379.0758745666562C1148.3827923101167 379.0758745666562 1156.4201386700283 371.7547273873306 1156.4201386700283 361.68815001575797C1156.4201386700283 350.9849511503309 1146.9106051055783 346.9264891270092 1139.3507248660574 344.9768358020801L1133.581342578002 343.4648597541759C1129.0454144342893 342.27119445319886 1122.9179325559408 340.1623857548062 1122.9179325559408 334.5521588402143C1122.9179325559408 329.53876457611096 1127.4538606996534 325.87819098644815 1134.6556413488813 325.87819098644815C1141.3799558777182 325.87819098644815 1146.1944059249922 328.98172076898834 1146.7912385754807 334.3930034667507H1155.6243618027104C1155.345839899149 324.9630475890325 1147.029971635676 318.0 1134.8545855657107 318.0C1122.9179325559408 318.0 1113.8460762685156 324.8038922155689 1113.8460762685156 335.06941380397103C1113.8460762685156 343.18633785061456 1119.5756697132051 348.15994327135206 1129.2841474944848 350.7462180901355L1136.2074062401514 352.65608257169873C1142.5736211786952 354.3670028364324 1147.467648912701 356.3962338480933 1147.467648912701 361.5687834856603C1147.467648912701 367.29837693034983 1141.9369996848409 371.11810589347624 1134.4169082886858 371.11810589347624C1127.573227229751 371.11810589347624 1121.8436337850615 368.09415379766784 1121.3263788213048 361.6085723290262H1112.2147336905136C1112.7717774976363 372.4311377245509 1121.1274346044752 379.0758745666562 1134.4566971320517 379.0758745666562Z" fill="#FFFFFF"/><path d="M1197.800535770564 378.8769303498267C1210.891065237945 378.8769303498267 1220.440387645761 370.6008509297195 1222.2706744405923 358.86314213677906H1213.1192404664355C1211.6072644185313 366.4230223763 1205.2808383233532 370.6008509297195 1197.880113457296 370.6008509297195C1187.7339583989915 370.6008509297195 1180.0945004727387 362.88181531673496 1180.0945004727387 348.47825401827924C1180.0945004727387 334.1542704065553 1187.6941695556254 326.2760794201072 1197.880113457296 326.2760794201072C1205.2808383233532 326.2760794201072 1211.6072644185313 330.41411913016077 1213.1192404664355 337.9739993696817H1222.2308855972265C1220.2414434289315 325.4007248660574 1210.2942325874565 318.0 1197.800535770564 318.0C1182.4420422313267 318.0 1171.1022218720452 329.45918688937917 1171.1022218720452 348.47825401827924C1171.1022218720452 367.4177434604475 1182.4022533879609 378.8769303498267 1197.800535770564 378.8769303498267Z" fill="#FFFFFF"/><path d="M1247.9742672549637 318.795776867318H1238.9024109675386V378.0811534825087H1247.9742672549637Z" fill="#FFFFFF"/><path d="M1267.0729120705957 378.0811534825087H1276.1447683580209V357.311377245509H1288.2405767412545C1302.0075165458557 357.311377245509 1308.8511976047905 348.995508982036 1308.8511976047905 338.0535770564135C1308.8511976047905 327.1116451307911 1302.0473053892215 318.795776867318 1288.3201544279862 318.795776867318H1267.0729120705957ZM1276.1447683580209 349.63213047589034V326.55460132366846H1287.2856445004727C1296.0789788843367 326.55460132366846 1299.6599747872676 331.3690513709423 1299.6599747872676 338.0535770564135C1299.6599747872676 344.7381027418847 1296.0789788843367 349.63213047589034 1287.3652221872046 349.63213047589034Z" fill="#FFFFFF"/><path d="M1325.3237787582732 378.0811534825087H1361.2531043176807V370.28254018279233H1334.3956350456983V318.795776867318H1325.3237787582732Z" fill="#FFFFFF"/><path d="M1386.439442168295 318.795776867318H1377.36758588087V378.0811534825087H1386.439442168295Z" fill="#FFFFFF"/><path d="M1405.538086983927 378.0811534825087H1414.72930980145V346.44902300661835C1414.72930980145 343.38528206744405 1414.4109990545228 337.2578001890955 1414.0528994642295 329.81728647967225C1418.3500945477467 337.7750551528522 1420.618058619603 341.8733060195399 1423.5226441853138 346.52860069335014L1443.5364323983613 378.0811534825087H1454.040687046959V318.795776867318H1444.849464229436V352.53671604160104C1444.849464229436 355.9585565710684 1445.0086196028997 361.4892057989285 1445.4462968799246 367.21879924361804C1442.8202332177752 361.5289946422944 1440.1543807122598 357.0328553419477 1438.3240939174284 354.0884809328711L1416.0025527891587 318.795776867318H1405.538086983927Z" fill="#FFFFFF"/><path d="M1473.1393318625908 378.0811534825087H1510.7V370.28254018279233H1482.211188150016V352.0194610778443H1508.4718247715098V344.26063662149386H1482.211188150016V326.59439016703436H1510.4612669398048V318.795776867318H1473.1393318625908Z" fill="#FFFFFF"/>
 </svg>
-    <div style="width:1px; height:28px; background:rgba(255,255,255,0.25); margin-left:6px; display:none;" id="districtDivider"></div>
-    <div class="district-header-name" id="headerDistrictName" style="display:none; font-size:0.8rem; font-weight:600; color:#fff; background:rgba(147,112,219,0.1); padding:3px 14px; border-radius:20px; margin-left:26px;"></div>
+    <div style="width:1px; height:28px; background:rgba(255,255,255,0.25); margin-left:4px; display:none;" id="districtDivider"></div>
+    <div class="district-header-name" id="headerDistrictName" style="display:none; font-size:0.8rem; font-weight:600; color:#fff; background:rgba(147,112,219,0.1); padding:4px 16px; border-radius:20px; margin-left:24px;"></div>
   </div>
-  <div style="display:flex;align-items:center;gap:10px;">
-    <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.8rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:5px 12px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap;">🔒 Privacy protected</div>
-    <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">+ New Writeup</button>
-    <button onclick="openFeedback()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">💬 Feedback</button>
-    <a href="mailto:help@trackument.com" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em; text-decoration:none; display:inline-flex; align-items:center;">❓ Help</a>
-    <button id="settingsBtn" onclick="openSettings()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:5px 13px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">⚙ District &amp; Site Settings</button>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.8rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:4px 8px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap;">🔒 Privacy Protected</div>
+    <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:4px 16px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">+ New Writeup</button>
+    <button onclick="openFeedback()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:4px 16px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">💬 Feedback</button>
+    <a href="mailto:help@trackument.com" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:4px 16px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em; text-decoration:none; display:inline-flex; align-items:center;">❓ Help</a>
+    <button id="settingsBtn" onclick="openSettings()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:4px 16px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">⚙ District &amp; Site Settings</button>
     <div style="position:relative;">
-      <button onclick="toggleHeaderMenu()" id="headerMenuBtn" style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); font-weight:700; font-size:0.9rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:2px; letter-spacing:0;"><span style="color:var(--gold);">•</span><span style="color:var(--red);">•</span><span style="color:var(--teal);">•</span></button>
+      <button onclick="toggleHeaderMenu()" id="headerMenuBtn" style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); font-weight:700; font-size:0.9rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; letter-spacing:0;"><span style="color:var(--gold);">•</span><span style="color:var(--red);">•</span><span style="color:var(--teal);">•</span></button>
       <div id="headerMenuDropdown" style="display:none; position:absolute; right:0; top:40px; background:#fff; border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.2); min-width:170px; overflow:hidden; z-index:50;">
-        <a href="/api/auth/logout" style="display:block; padding:11px 16px; font-size:0.82rem; color:var(--navy); font-weight:700; text-decoration:none; border-bottom:1px solid var(--light-gray);">Log out</a>
-        <a href="/privacy" target="_blank" style="display:block; padding:11px 16px; font-size:0.82rem; color:var(--navy); text-decoration:none; border-bottom:1px solid var(--light-gray);">Privacy Policy</a>
-        <div style="padding:9px 16px; font-size:0.75rem; color:var(--gray);">Version v50</div>
+        <a href="/api/auth/logout" style="display:block; padding:8px 16px; font-size:0.82rem; color:var(--navy); font-weight:700; text-decoration:none; border-bottom:1px solid var(--light-gray);">Log out</a>
+        <a href="/privacy" target="_blank" style="display:block; padding:8px 16px; font-size:0.82rem; color:var(--navy); text-decoration:none; border-bottom:1px solid var(--light-gray);">Privacy Policy</a>
+        <div style="padding:8px 16px; font-size:0.75rem; color:var(--gray);">Version v50</div>
       </div>
     </div>
   </div>
@@ -1635,28 +1643,28 @@ document.addEventListener('click', function(e){
       </div>
 
       <!-- School selector — compact strip with Edit when selected, selector list when not -->
-      <div style="margin-bottom:18px;">
-        <label style="margin-bottom:7px; display:block;">Site <span style="color:var(--red, #c0392b); font-weight:700;">*</span></label>
+      <div style="margin-bottom:16px;">
+        <label style="margin-bottom:8px; display:block;">Site <span style="color:var(--red, #c0392b); font-weight:700;">*</span></label>
 
         <!-- Strip shown after school is selected (matches district strip style) -->
-        <div id="schoolSelectedStrip" style="display:none; background:var(--cream); border:1px solid var(--light-gray); border-radius:3px; padding:11px 14px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-          <div style="display:flex; align-items:center; gap:12px;">
+        <div id="schoolSelectedStrip" style="display:none; background:var(--cream); border:1px solid var(--light-gray); border-radius:3px; padding:8px 16px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
             <img id="selectedSchoolLogoStrip" src="" alt="" style="max-height:28px; max-width:90px; object-fit:contain; display:none;">
             <strong id="selectedSchoolNameStrip" style="font-size:0.83rem; color:var(--navy);"></strong>
           </div>
-          <button onclick="clearSchoolSelection()" style="font-size:0.72rem; color:var(--gray); background:transparent; border:1px solid var(--light-gray); border-radius:2px; padding:3px 10px; cursor:pointer;">Edit</button>
+          <button onclick="clearSchoolSelection()" style="font-size:0.72rem; color:var(--gray); background:transparent; border:1px solid var(--light-gray); border-radius:2px; padding:4px 8px; cursor:pointer;">Edit</button>
         </div>
 
         <!-- Selector shown when no school is chosen -->
         <div id="schoolSelectorWrap">
-          <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
             <span style="font-size:0.8rem; color:var(--navy); font-weight:600;">Select your site:</span>
             <button onclick="openSettings(); switchTab('schools')" style="font-size:0.82rem; color:var(--navy); font-weight:700; background:var(--white); border:1.5px solid var(--navy); border-radius:4px; padding:8px 16px; cursor:pointer; white-space:nowrap;">+ Add a Site</button>
           </div>
           <select id="schoolSelectorDropdown" onchange="if(this.value) selectSchool(this.value);" style="width:100%;">
             <option value="">— Select a site —</option>
           </select>
-          <div id="schoolSelectorEmpty" style="display:none; font-size:0.85rem; color:var(--gray); font-style:italic; width:100%; margin-top:6px;">No sites saved yet. Add your sites in Settings → Sites tab.</div>
+          <div id="schoolSelectorEmpty" style="display:none; font-size:0.85rem; color:var(--gray); font-style:italic; width:100%; margin-top:4px;">No sites saved yet. Add your sites in Settings → Sites tab.</div>
         </div>
       </div>
 
@@ -1679,12 +1687,12 @@ document.addEventListener('click', function(e){
       </div>
 
       <!-- Administrator dropdown — populated from selected school -->
-      <div style="margin-top:18px;">
+      <div style="margin-top:16px;">
         <label style="margin-top:0;">Document Administrator</label>
         <select id="authorSelect" style="margin-bottom:0;">
           <option value="">— Select a school first —</option>
         </select>
-        <div id="noAuthorsNote" style="display:none; font-size:0.8rem; color:var(--warn); margin-top:6px;">No administrators saved for this school. <button onclick="openSettings(); switchTab('schools')" style="background:none;border:none;color:var(--gold);font-weight:700;cursor:pointer;font-size:0.8rem;text-decoration:underline;">Add administrators in Site Settings →</button></div>
+        <div id="noAuthorsNote" style="display:none; font-size:0.8rem; color:var(--warn); margin-top:4px;">No administrators saved for this school. <button onclick="openSettings(); switchTab('schools')" style="background:none;border:none;color:var(--gold);font-weight:700;cursor:pointer;font-size:0.8rem;text-decoration:underline;">Add administrators in Site Settings →</button></div>
       </div>
 
       <div class="row-2">
@@ -1727,7 +1735,7 @@ document.addEventListener('click', function(e){
         <div></div>
       </div>
 
-      <label style="margin-top:20px;">Type of Concern * <span style="font-size:0.75rem; font-weight:400; color:var(--gray); text-transform:none; letter-spacing:0;">(select all that apply)</span></label>
+      <label style="margin-top:16px;">Type of Concern * <span style="font-size:0.75rem; font-weight:400; color:var(--gray); text-transform:none; letter-spacing:0;">(select all that apply)</span></label>
       <div class="situation-grid" id="situationGrid">
         <div class="sit-checkbox" onclick="toggleSit(this, 'attendance')">Attendance / Tardiness</div>
         <div class="sit-checkbox" onclick="toggleSit(this, 'performance')">Performance / Incompetency</div>
@@ -1740,7 +1748,7 @@ document.addEventListener('click', function(e){
       </div>
       <input type="text" id="situationOther" placeholder="Describe the nature of the situation..." style="display:none; margin-top:8px;">
 
-      <div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--light-gray); display:flex; justify-content:flex-end;">
+      <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray); display:flex; justify-content:flex-end;">
         <button class="btn btn-next" onclick="nextStep(0)">Next: Facts &rarr;</button>
       </div>
     </div>
@@ -1763,8 +1771,8 @@ document.addEventListener('click', function(e){
       <div class="row-2">
         <div>
           <label>Date(s) of Incident(s)</label>
-          <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
-            <select id="dateEntryMode" onchange="updateDateEntryMode()" style="flex:0 0 auto; width:180px; margin:0;">
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:4px;">
+            <select id="dateEntryMode" onchange="updateDateEntryMode()" style="width:100%; margin:0;">
               <option value="single">Single date</option>
               <option value="multiple">Multiple dates</option>
               <option value="range">Date range</option>
@@ -1774,10 +1782,10 @@ document.addEventListener('click', function(e){
             <input type="date" id="incidentDateSingle" oninput="syncIncidentDates()" style="width:100%; font-family:'Source Sans 3', sans-serif; font-size:0.92rem;">
           </div>
           <div id="dateEntryMultiple" style="display:none;">
-            <div id="multiDateList" style="display:flex; flex-direction:column; gap:6px; margin-bottom:6px;"></div>
-            <button type="button" onclick="addDateEntry()" class="btn btn-secondary" style="font-size:0.78rem; padding:6px 12px;">+ Add Date</button>
+            <div id="multiDateList" style="display:flex; flex-direction:column; gap:4px; margin-bottom:4px;"></div>
+            <button type="button" onclick="addDateEntry()" class="btn btn-secondary" style="font-size:0.78rem; padding:4px 8px;">+ Add Date</button>
           </div>
-          <div id="dateEntryRange" style="display:none; display:flex; gap:10px; align-items:center;">
+          <div id="dateEntryRange" style="display:none; display:flex; gap:8px; align-items:center;">
             <div style="flex:1;">
               <div style="font-size:0.78rem; color:var(--gray); margin-bottom:4px;">From</div>
               <input type="date" id="dateRangeFrom" oninput="syncIncidentDates()" style="width:100%; font-family:'Source Sans 3', sans-serif; font-size:0.92rem;">
@@ -1804,8 +1812,8 @@ document.addEventListener('click', function(e){
             <input type="time" id="incidentTimeSingle" oninput="syncIncidentTimes()" style="width:200px; font-family:'Source Sans 3', sans-serif; font-size:0.92rem;">
           </div>
           <div id="timeEntryMultiple" style="display:none;">
-            <div id="multiTimeList" style="display:flex; flex-direction:column; gap:6px; margin-bottom:6px;"></div>
-            <button type="button" onclick="addTimeEntry()" class="btn btn-secondary" style="font-size:0.78rem; padding:6px 12px;">+ Add Time</button>
+            <div id="multiTimeList" style="display:flex; flex-direction:column; gap:4px; margin-bottom:4px;"></div>
+            <button type="button" onclick="addTimeEntry()" class="btn btn-secondary" style="font-size:0.78rem; padding:4px 8px;">+ Add Time</button>
           </div>
           <div id="timeEntryApproximate" style="display:none;">
             <input type="text" id="incidentTimeApprox" placeholder="e.g. approximately 8:15 AM, during 2nd period" oninput="syncIncidentTimes()" style="width:100%; font-family:'Source Sans 3', sans-serif; font-size:0.92rem;">
@@ -1816,8 +1824,8 @@ document.addEventListener('click', function(e){
       <div style="height:14px;"></div>
 
       <!-- Guidance block stays visible while typing -->
-      <div style="background:var(--cream); border:1px solid var(--light-gray); border-left:3px solid var(--gold); border-radius:3px; padding:12px 16px; margin-bottom:10px; font-size:0.83rem; line-height:1.65; color:var(--text);">
-        <div style="font-weight:700; color:var(--navy); margin-bottom:6px;">What to include:</div>
+      <div style="background:var(--cream); border:1px solid var(--light-gray); border-left:3px solid var(--gold); border-radius:3px; padding:8px 16px; margin-bottom:8px; font-size:0.83rem; line-height:1.65; color:var(--text);">
+        <div style="font-weight:700; color:var(--navy); margin-bottom:4px;">What to include:</div>
         <div style="margin-bottom:4px;">• <strong>Who</strong> was involved — names, titles, and their role in the incident</div>
         <div style="margin-bottom:4px;">• <strong>What</strong> happened — observable behaviors and direct quotes, not conclusions</div>
         <div style="margin-bottom:4px;">• <strong>When and where</strong> — specific dates, times, and locations</div>
@@ -1830,30 +1838,30 @@ document.addEventListener('click', function(e){
 
       <!-- Witness statements -->
       <div style="margin-top:16px;">
-        <label style="margin-bottom:4px;">Witness Statements <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:0.78rem; color:var(--gray);">(optional)</span></label>
-        <div style="font-size:0.82rem; color:var(--gray); margin-bottom:10px;">Upload any written witness statements. Attached documents will be included for AI reference when generating the memo.</div>
-        <div id="witnessFileList" style="display:flex; flex-direction:column; gap:6px; margin-bottom:8px;"></div>
-        <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; margin-top:0; font-size:0.78rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0; border:1px solid var(--light-gray); border-radius:2px; padding:7px 14px; background:var(--white);">
+        <label style="margin-top:40px; margin-bottom:8px;">Witness Statements <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:0.78rem; color:var(--gray);">(optional)</span></label>
+        <div style="font-size:0.82rem; color:var(--gray); margin-bottom:8px;">Upload any written witness statements. Attached documents will be included as reference when generating the memo.</div>
+        <div id="witnessFileList" style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;"></div>
+        <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; margin-top:0; font-size:0.78rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0; border:1px solid var(--light-gray); border-radius:2px; padding:8px 16px; background:var(--white);">
           <span>📎 Attach Witness Statement</span>
           <input type="file" id="witnessFileInput" accept=".pdf,.doc,.docx,application/pdf" multiple style="display:none;" onchange="handleWitnessFiles(this.files)">
         </label>
       </div>
 
-      <label style="margin-top:44px;">Prior Documentation on File</label>
-      <div style="font-size:0.82rem; color:var(--gray); margin-bottom:10px; margin-top:-10px;">Describe any prior verbal warnings, written counseling, or earlier formal documentation. You may also upload prior writeup documents for reference.</div>
+      <label style="margin-top:40px;">Prior Documentation on File</label>
+      <div style="font-size:0.82rem; color:var(--gray); margin-bottom:8px; margin-top:-8px;">Describe any prior verbal warnings, written counseling, or earlier formal documentation. You may also upload prior writeup documents for reference.</div>
       <textarea id="priorDoc" placeholder="Example: Verbal warning issued 9/12/2025 regarding attendance. Written warning issued 11/3/2025 for same pattern." style="min-height:90px;"></textarea>
 
       <!-- Prior doc file uploads -->
-      <div style="margin-top:10px;">
-        <div id="priorDocFileList" style="display:flex; flex-direction:column; gap:6px; margin-bottom:8px;"></div>
-        <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; margin-top:0; font-size:0.78rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0; border:1px solid var(--light-gray); border-radius:2px; padding:7px 14px; background:var(--white);">
+      <div style="margin-top:8px;">
+        <div id="priorDocFileList" style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;"></div>
+        <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; margin-top:0; font-size:0.78rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0; border:1px solid var(--light-gray); border-radius:2px; padding:8px 16px; background:var(--white);">
           <span>📎 Attach Prior Writeup (optional)</span>
           <input type="file" id="priorDocFileInput" accept=".pdf,.doc,.docx,application/pdf" multiple style="display:none;" onchange="handlePriorDocFiles(this.files)">
         </label>
-        <div style="font-size:0.72rem; color:var(--gray); margin-top:5px;">PDF or Word. Attached documents will be included for AI reference when generating the memo.</div>
+        <div style="font-size:0.72rem; color:var(--gray); margin-top:4px;">PDF or Word. Attached documents will be included as reference when generating the memo.</div>
       </div>
 
-      <div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--light-gray); display:flex; justify-content:space-between; align-items:center;">
+      <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray); display:flex; justify-content:space-between; align-items:center;">
         <button class="btn btn-secondary" onclick="prevStep(1)">&larr; Back</button>
         <button class="btn btn-next" onclick="nextStep(1)">Next: Citations &rarr;</button>
       </div>
@@ -1866,24 +1874,24 @@ document.addEventListener('click', function(e){
       <div class="card-header">
         <div>
           <div class="card-title">Citations</div>
-          <div class="card-desc">The citations below are suggested based on your facts and classification. Review, add, or remove as needed.</div>
+          <div class="card-desc">The citations below are suggested based on your facts and classification. Review, add, edit, or remove as needed.</div>
         </div>
       </div>
 
       <!-- AI analysis trigger -->
-      <div id="ruleAnalysisWrap" style="background:var(--cream); border:1px solid var(--light-gray); border-radius:3px; padding:18px; margin-bottom:20px;">
-        <div style="font-size:0.85rem; color:var(--text); line-height:1.6; margin-bottom:12px;">Trackument will analyze your facts and automatically suggest the most relevant Ed Code sections, board policies, and contract references for this specific situation.</div>
-        <button class="btn btn-action" onclick="analyzeAndSuggestCitations()" id="analyzeBtn" style="font-size:0.85rem; padding:10px 22px;">Analyze Facts &amp; Suggest Citations</button>
-        <div id="analyzeLoading" style="display:none; margin-top:10px; font-size:0.85rem; color:var(--gray);">Analyzing facts...</div>
+      <div id="ruleAnalysisWrap" style="background:var(--cream); border:1px solid var(--light-gray); border-radius:3px; padding:16px; margin-bottom:16px;">
+        <div style="font-size:0.85rem; color:var(--text); line-height:1.6; margin-bottom:8px;">Trackument will analyze your facts and automatically suggest the most relevant Ed Code sections, board policies, and contract references for this specific situation.</div>
+        <button class="btn btn-action" onclick="analyzeAndSuggestCitations()" id="analyzeBtn" style="font-size:0.85rem; padding:8px 24px;">Analyze Facts &amp; Suggest Citations</button>
+        <div id="analyzeLoading" style="display:none; margin-top:8px; font-size:0.85rem; color:var(--gray);">Analyzing facts...</div>
       </div>
 
       <div id="ruleCitationSection" style="display:none;">
 
-        <div style="background:#faf7f0; border:1px solid #d4c896; border-left:3px solid var(--gold); border-radius:3px; padding:11px 15px; margin-bottom:16px; font-size:0.83rem; color:var(--text); font-weight:500;">
+        <div style="background:#faf7f0; border:1px solid #d4c896; border-left:3px solid var(--gold); border-radius:3px; padding:8px 16px; margin-bottom:16px; font-size:0.83rem; color:var(--text); font-weight:500;">
           Check all citations that apply to this situation. Uncheck any that are not relevant. Use the "Add" fields to include additional references.
         </div>
 
-        <div class="prepop-group" id="edcodeGroup" style="margin-bottom:20px;">
+        <div class="prepop-group" id="edcodeGroup" style="margin-bottom:16px;">
           <div class="prepop-label" style="text-transform:none; font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px;">
             Ed Code References
           </div>
@@ -1894,7 +1902,7 @@ document.addEventListener('click', function(e){
           </div>
         </div>
 
-        <div class="prepop-group" id="cvcGroup" style="margin-bottom:20px; display:none;">
+        <div class="prepop-group" id="cvcGroup" style="margin-bottom:16px; display:none;">
           <div class="prepop-label" style="text-transform:none; font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px;">
             California Vehicle Code References
           </div>
@@ -1905,10 +1913,10 @@ document.addEventListener('click', function(e){
           </div>
         </div>
 
-        <div class="prepop-group" id="otherCiteGroup" style="margin-bottom:20px; display:none;">
+        <div class="prepop-group" id="otherCiteGroup" style="margin-bottom:16px; display:none;">
           <div class="prepop-label" style="text-transform:none; font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px;">
             Other Applicable Citations
-            <span style="font-size:0.75rem; font-weight:400; color:var(--gray); margin-left:6px;">Health code, DMV regulations, transportation code, etc.</span>
+            <span style="font-size:0.75rem; font-weight:400; color:var(--gray); margin-left:4px;">Health code, DMV regulations, transportation code, etc.</span>
           </div>
           <div class="citation-list" id="otherCiteList"></div>
           <div class="add-custom">
@@ -1917,12 +1925,12 @@ document.addEventListener('click', function(e){
           </div>
         </div>
 
-        <div class="prepop-group" id="bpGroup" style="margin-bottom:20px;">
+        <div class="prepop-group" id="bpGroup" style="margin-bottom:16px;">
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
             <div style="font-size:0.88rem; font-weight:700; color:var(--navy);">Board Policy &amp; Administrative Regulations</div>
             <span id="bpSiteLink" style="display:none;"><a id="bpSiteLinkAnchor" href="#" target="_blank" style="font-size:0.78rem; color:var(--gold); font-weight:700;">Open your board policy site →</a></span>
           </div>
-          <div id="bpModelFlag" style="display:none; background:var(--cream); border:1px solid var(--light-gray); border-left:3px solid var(--navy); border-radius:2px; padding:9px 12px; font-size:0.82rem; color:var(--gray); margin-bottom:10px;"></div>
+          <div id="bpModelFlag" style="display:none; background:var(--cream); border:1px solid var(--light-gray); border-left:3px solid var(--navy); border-radius:2px; padding:8px 8px; font-size:0.82rem; color:var(--gray); margin-bottom:8px;"></div>
           <div class="citation-list" id="bpList"></div>
           <div class="add-custom">
             <input type="text" id="customBP" placeholder="Add another BP or AR...">
@@ -1930,9 +1938,9 @@ document.addEventListener('click', function(e){
           </div>
         </div>
 
-        <div class="prepop-group" id="cbaGroup" style="margin-bottom:20px;">
+        <div class="prepop-group" id="cbaGroup" style="margin-bottom:16px;">
           <div style="font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px;">Collective Bargaining Agreement</div>
-          <div id="cbaRefNotice" style="font-size:0.83rem; color:var(--gray); font-style:italic; padding:6px 0; display:none;"></div>
+          <div id="cbaRefNotice" style="font-size:0.83rem; color:var(--gray); font-style:italic; padding:4px 0; display:none;"></div>
           <div class="citation-list" id="cbaRefList"></div>
           <div class="add-custom">
             <input type="text" id="customCBARef" placeholder="Add a specific article reference manually...">
@@ -1940,9 +1948,9 @@ document.addEventListener('click', function(e){
           </div>
         </div>
 
-        <div class="prepop-group" id="handbookGroup" style="margin-bottom:20px;">
+        <div class="prepop-group" id="handbookGroup" style="margin-bottom:16px;">
           <div style="font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px;">Employee Handbook</div>
-          <div id="handbookRefNotice" style="font-size:0.83rem; color:var(--gray); font-style:italic; padding:6px 0; display:none;"></div>
+          <div id="handbookRefNotice" style="font-size:0.83rem; color:var(--gray); font-style:italic; padding:4px 0; display:none;"></div>
           <div class="citation-list" id="handbookRefList"></div>
           <div class="add-custom">
             <input type="text" id="customHandbookRef" placeholder="Add a specific handbook section manually...">
@@ -1955,7 +1963,7 @@ document.addEventListener('click', function(e){
 
       </div>
 
-      <div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--light-gray); display:flex; justify-content:space-between; align-items:center;">
+      <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray); display:flex; justify-content:space-between; align-items:center;">
         <button class="btn btn-secondary" onclick="prevStep(2)">&larr; Back</button>
         <button class="btn btn-next" onclick="nextStep(2)">Next: Impact &rarr;</button>
       </div>
@@ -1979,7 +1987,7 @@ document.addEventListener('click', function(e){
       <!-- Impact Draft Generator -->
       <div style="background:var(--cream); border:1px solid var(--light-gray); border-radius:3px; padding:24px; margin-bottom:24px;">
         <div style="font-family:'Playfair Display',serif; font-size:1rem; color:var(--navy); font-weight:700; margin-bottom:4px;">Impact Draft Generator</div>
-        <div style="font-size:0.83rem; color:var(--gray); margin-bottom:18px;">Uses the facts from Step 2 to generate the impact section. Add any additional context below if helpful — both fields are optional.</div>
+        <div style="font-size:0.83rem; color:var(--gray); margin-bottom:16px;">Uses the facts from Step 2 to generate the impact section. Add any additional context below if helpful — both fields are optional.</div>
 
         <label style="margin-top:0;">How Were Students Actually or Potentially Affected? <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:0.78rem; color:var(--gray);">(optional)</span></label>
         <textarea id="impactStudentHint" placeholder="Example: 'Students were left unsupervised in the classroom for 22 minutes. Other staff had to be pulled from their duties to monitor the class.'" style="min-height:70px;"></textarea>
@@ -1987,9 +1995,9 @@ document.addEventListener('click', function(e){
         <label>How Were Operations or Staff Affected? <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:0.78rem; color:var(--gray);">(optional)</span></label>
         <textarea id="impactOpsHint" placeholder="Example: 'The office had to arrange last-minute coverage. A campus aide was redirected from security duties for 30 minutes. Parents called the school office after noticing the class was unattended.'" style="min-height:70px;"></textarea>
 
-        <div style="margin-top:18px;">
-          <div style="font-size:0.8rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--navy); margin-bottom:10px;">Intensity Level</div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <div style="margin-top:16px;">
+          <div style="font-size:0.8rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--navy); margin-bottom:8px;">Intensity Level</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button class="intensity-btn" id="btn-mild" onclick="selectIntensity('mild')">
               <span class="intensity-label">Mild</span>
               <span class="intensity-desc">First or minor incident. Measured, forward-looking language.</span>
@@ -2010,43 +2018,43 @@ document.addEventListener('click', function(e){
         </div>
 
         <!-- Impact loading -->
-        <div id="impactLoading" style="display:none; text-align:center; padding:28px 0;">
+        <div id="impactLoading" style="display:none; text-align:center; padding:24px 0;">
           <div class="loading-spinner" style="margin:0 auto 10px;"></div>
           <p style="color:var(--gray); font-size:0.85rem;">Drafting impact language — 1–3 minutes...</p>
         </div>
 
         <!-- Draft result with per-area checkboxes -->
-        <div id="impactDraftResult" style="display:none; margin-top:20px;">
+        <div id="impactDraftResult" style="display:none; margin-top:16px;">
           <div style="font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:4px;">Generated Draft — check sections to include, click text to edit</div>
-          <div style="font-size:0.82rem; color:var(--gray); margin-bottom:14px;">Uncheck any area to leave it out of the document. Click directly on the text to edit.</div>
+          <div style="font-size:0.82rem; color:var(--gray); margin-bottom:16px;">Uncheck any area to leave it out of the document. Click directly on the text to edit.</div>
 
           <div id="impactAreaStudents" style="border:1px solid var(--light-gray); border-radius:3px; margin-bottom:8px; overflow:hidden;">
-            <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--cream); cursor:pointer; margin:0; font-size:0.85rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0;">
+            <label style="display:flex; align-items:center; gap:8px; padding:8px 16px; background:var(--cream); cursor:pointer; margin:0; font-size:0.85rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0;">
               <input type="checkbox" id="chk-students" checked style="accent-color:var(--navy); width:15px; height:15px;">
               Impact on Students
             </label>
-            <div id="draft-students-text" contenteditable="true" spellcheck="true" style="padding:12px 14px; font-size:0.87rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:40px;" placeholder="Click Generate above to populate."></div>
+            <div id="draft-students-text" contenteditable="true" spellcheck="true" style="padding:8px 16px; font-size:0.87rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:40px;" placeholder="Click Generate above to populate."></div>
           </div>
 
           <div id="impactAreaOps" style="border:1px solid var(--light-gray); border-radius:3px; margin-bottom:8px; overflow:hidden;">
-            <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--cream); cursor:pointer; margin:0; font-size:0.85rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0;">
+            <label style="display:flex; align-items:center; gap:8px; padding:8px 16px; background:var(--cream); cursor:pointer; margin:0; font-size:0.85rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0;">
               <input type="checkbox" id="chk-ops" checked style="accent-color:var(--navy); width:15px; height:15px;">
               Impact on Operations
             </label>
-            <div id="draft-ops-text" contenteditable="true" spellcheck="true" style="padding:12px 14px; font-size:0.87rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:40px;"></div>
+            <div id="draft-ops-text" contenteditable="true" spellcheck="true" style="padding:8px 16px; font-size:0.87rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:40px;"></div>
           </div>
 
           <div id="impactAreaEmp" style="border:1px solid var(--light-gray); border-radius:3px; margin-bottom:8px; overflow:hidden;">
-            <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--cream); cursor:pointer; margin:0; font-size:0.85rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0;">
+            <label style="display:flex; align-items:center; gap:8px; padding:8px 16px; background:var(--cream); cursor:pointer; margin:0; font-size:0.85rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0;">
               <input type="checkbox" id="chk-emp" checked style="accent-color:var(--navy); width:15px; height:15px;">
               Impact on Employment Relationship
             </label>
-            <div id="draft-emp-text" contenteditable="true" spellcheck="true" style="padding:12px 14px; font-size:0.87rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:40px;"></div>
+            <div id="draft-emp-text" contenteditable="true" spellcheck="true" style="padding:8px 16px; font-size:0.87rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:40px;"></div>
           </div>
         </div>
       </div>
 
-      <div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--light-gray); display:flex; justify-content:space-between; align-items:center;">
+      <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray); display:flex; justify-content:space-between; align-items:center;">
         <button class="btn btn-secondary" onclick="prevStep(3)">&larr; Back</button>
         <button class="btn btn-next" onclick="nextStep(3)">Next: Directives &rarr;</button>
       </div>
@@ -2068,47 +2076,47 @@ document.addEventListener('click', function(e){
       </div>
 
       <!-- Suggested directives by situation -->
-      <div id="suggestedDirectivesWrap" style="display:none; margin-bottom:20px;">
-        <div style="font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:10px;">Suggested Directives <span class="auto-tag">Based on situation</span></div>
-        <div style="font-size:0.83rem; color:var(--navy); margin-bottom:10px; font-weight:600; padding:8px 12px; background:#faf7f0; border-left:3px solid var(--gold); border-radius:2px;">All applicable directives are pre-checked. Uncheck any that don't apply, and click the text to edit.</div>
+      <div id="suggestedDirectivesWrap" style="display:none; margin-bottom:16px;">
+        <div style="font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px;">Suggested Directives <span class="auto-tag">Based on situation</span></div>
+        <div style="font-size:0.83rem; color:var(--navy); margin-bottom:8px; font-weight:600; padding:8px 8px; background:#faf7f0; border-left:3px solid var(--gold); border-radius:2px;">All applicable directives are pre-checked. Uncheck any that don't apply, and click the text to edit.</div>
         <div id="suggestedDirectivesList" style="display:flex; flex-direction:column; gap:8px;"></div>
       </div>
 
       <label>Additional Directives</label>
-      <div style="font-size:0.82rem; color:var(--gray); margin-bottom:8px; margin-top:-6px;">Add your own directives — click the text to edit each one. Save to your database to reuse in future writeups.</div>
-      <div id="customDirectivesList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;"></div>
+      <div style="font-size:0.82rem; color:var(--gray); margin-bottom:8px; margin-top:-4px;">Add your own directives — click the text to edit each one. Save to your database to reuse in future writeups.</div>
+      <div id="customDirectivesList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:8px;"></div>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button onclick="addCustomDirectiveRow()" class="btn btn-secondary" style="font-size:0.78rem; padding:7px 14px;">+ Add Directive</button>
-        <button onclick="saveDirectivesToDatabase()" class="btn btn-secondary" style="font-size:0.78rem; padding:7px 14px;">💾 Save to My Directives</button>
+        <button onclick="addCustomDirectiveRow()" class="btn btn-secondary" style="font-size:0.78rem; padding:8px 16px;">+ Add Directive</button>
+        <button onclick="saveDirectivesToDatabase()" class="btn btn-secondary" style="font-size:0.78rem; padding:8px 16px;">💾 Save to My Directives</button>
       </div>
-      <div id="savedDirectivesWrap" style="margin-top:16px; padding-top:14px; border-top:1px solid var(--light-gray); display:none;">
+      <div id="savedDirectivesWrap" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--light-gray); display:none;">
         <div style="font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px; text-transform:none; letter-spacing:0;">My Saved Directives <span class="auto-tag">From previous writeups</span></div>
-        <div id="savedDirectivesList" style="display:flex; flex-direction:column; gap:6px;"></div>
+        <div id="savedDirectivesList" style="display:flex; flex-direction:column; gap:4px;"></div>
       </div>
 
       <!-- Hidden textarea for backward compat with collectData -->
       <textarea id="directives" style="display:none;"></textarea>
 
       <!-- Support resources -->
-      <div style="margin-top:20px; padding-top:18px; border-top:1px solid var(--light-gray);">
-        <div style="font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:10px;">Support Resources <span class="auto-tag">Suggested</span></div>
-        <div style="font-size:0.83rem; color:var(--navy); margin-bottom:10px; font-weight:600; padding:8px 12px; background:#faf7f0; border-left:3px solid var(--gold); border-radius:2px;">All applicable resources are pre-checked. Uncheck any that don't apply, and click the text to edit.</div>
-        <div id="suggestedSupportList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;"></div>
-        <label style="margin-top:10px;">Additional Support Resources</label>
-        <div style="font-size:0.82rem; color:var(--gray); margin-bottom:8px; margin-top:-6px;">Add your own support resources.</div>
-        <div id="customSupportList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;"></div>
+      <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--light-gray);">
+        <div style="font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px;">Support Resources <span class="auto-tag">Suggested</span></div>
+        <div style="font-size:0.83rem; color:var(--navy); margin-bottom:8px; font-weight:600; padding:8px 8px; background:#faf7f0; border-left:3px solid var(--gold); border-radius:2px;">All applicable resources are pre-checked. Uncheck any that don't apply, and click the text to edit.</div>
+        <div id="suggestedSupportList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:8px;"></div>
+        <label style="margin-top:8px;">Additional Support Resources</label>
+        <div style="font-size:0.82rem; color:var(--gray); margin-bottom:8px; margin-top:-4px;">Add your own support resources.</div>
+        <div id="customSupportList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:8px;"></div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button onclick="addCustomSupportRow()" class="btn btn-secondary" style="font-size:0.78rem; padding:7px 14px;">+ Add Support Resource</button>
-          <button onclick="saveSupportToDatabase()" class="btn btn-secondary" style="font-size:0.78rem; padding:7px 14px;">💾 Save additional support resource for future use</button>
+          <button onclick="addCustomSupportRow()" class="btn btn-secondary" style="font-size:0.78rem; padding:8px 16px;">+ Add Support Resource</button>
+          <button onclick="saveSupportToDatabase()" class="btn btn-secondary" style="font-size:0.78rem; padding:8px 16px;">💾 Save additional support resource for future use</button>
         </div>
-        <div id="savedSupportWrap" style="margin-top:16px; padding-top:14px; border-top:1px solid var(--light-gray); display:none;">
+        <div id="savedSupportWrap" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--light-gray); display:none;">
           <div style="font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px; text-transform:none; letter-spacing:0;">My Saved Support Resources <span class="auto-tag">From previous writeups</span></div>
-          <div id="savedSupportList" style="display:flex; flex-direction:column; gap:6px;"></div>
+          <div id="savedSupportList" style="display:flex; flex-direction:column; gap:4px;"></div>
         </div>
         <textarea id="supportOffered" style="display:none;"></textarea>
       </div>
 
-      <div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--light-gray); display:flex; justify-content:space-between; align-items:center;">
+      <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray); display:flex; justify-content:space-between; align-items:center;">
         <button class="btn btn-secondary" onclick="prevStep(4)">&larr; Back</button>
         <button class="btn btn-next" onclick="nextStep(4)">Next: Closing &rarr;</button>
       </div>
@@ -2127,12 +2135,12 @@ document.addEventListener('click', function(e){
 
       <!-- Consequences -->
       <div style="border:1px solid var(--light-gray); border-radius:3px; overflow:hidden; margin-bottom:16px;">
-        <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--cream); cursor:pointer; margin:0; font-size:0.85rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0;">
+        <label style="display:flex; align-items:center; gap:8px; padding:8px 16px; background:var(--cream); cursor:pointer; margin:0; font-size:0.85rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0;">
           <input type="checkbox" id="chk-consequences" checked style="accent-color:var(--navy); width:15px; height:15px;">
           Consequences of Future Violations
           <span class="auto-tag" style="margin-left:4px;">Auto-populated</span>
         </label>
-        <div id="consequencesDisplay" contenteditable="true" spellcheck="true" style="padding:14px; font-size:0.88rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:60px; white-space:pre-wrap; word-wrap:break-word;">
+        <div id="consequencesDisplay" contenteditable="true" spellcheck="true" style="padding:16px; font-size:0.88rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:60px; white-space:pre-wrap; word-wrap:break-word;">
           <em style="color:var(--gray);">Complete Setup with a classification to populate.</em>
         </div>
         <textarea id="consequences" style="display:none;"></textarea>
@@ -2140,12 +2148,12 @@ document.addEventListener('click', function(e){
 
       <!-- Personnel File Notice -->
       <div style="border:1px solid var(--light-gray); border-radius:3px; overflow:hidden; margin-bottom:16px;">
-        <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--cream); cursor:pointer; margin:0; font-size:0.85rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0;">
+        <label style="display:flex; align-items:center; gap:8px; padding:8px 16px; background:var(--cream); cursor:pointer; margin:0; font-size:0.85rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0;">
           <input type="checkbox" id="chk-filenotice" checked style="accent-color:var(--navy); width:15px; height:15px;">
           Personnel File Notice
           <span class="auto-tag" style="margin-left:4px;">Based on document type</span>
         </label>
-        <div id="fileNoticeDisplay" contenteditable="true" spellcheck="true" style="padding:14px; font-size:0.88rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:80px; white-space:pre-wrap; word-wrap:break-word;"></div>
+        <div id="fileNoticeDisplay" contenteditable="true" spellcheck="true" style="padding:16px; font-size:0.88rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:80px; white-space:pre-wrap; word-wrap:break-word;"></div>
         <select id="fileNotice" style="display:none;" onchange="document.getElementById('fileNoticeDisplay').innerText = this.options[this.selectedIndex].text;">
           <option value="conference-summary">A copy of this conference summary memo will not be placed in your official personnel file. It will be retained in the administrator's working file only. Should the concerns continue, this memo may be referenced in any subsequent formal disciplinary action.</option>
           <option value="supervisor-file">This document will be maintained in the administrator's working file and may be placed in your official personnel file if the conduct described herein recurs or escalates.</option>
@@ -2156,11 +2164,11 @@ document.addEventListener('click', function(e){
 
       <!-- Right to Respond -->
       <div style="border:1px solid var(--light-gray); border-radius:3px; overflow:hidden; margin-bottom:16px;">
-        <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--cream); cursor:pointer; margin:0; font-size:0.85rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0;">
+        <label style="display:flex; align-items:center; gap:8px; padding:8px 16px; background:var(--cream); cursor:pointer; margin:0; font-size:0.85rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0;">
           <input type="checkbox" id="chk-respond" checked style="accent-color:var(--navy); width:15px; height:15px;">
           Right to Respond to This Document
         </label>
-        <div id="respondRightDisplay" contenteditable="true" spellcheck="true" style="padding:14px; font-size:0.88rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:60px; white-space:pre-wrap; word-wrap:break-word;"></div>
+        <div id="respondRightDisplay" contenteditable="true" spellcheck="true" style="padding:16px; font-size:0.88rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:60px; white-space:pre-wrap; word-wrap:break-word;"></div>
         <select id="respondRight" onchange="updateRespondDisplay()" style="display:none;">
           <option value="10-calendar">10 calendar days (EC § 45113)</option>
           <option value="other">Other — specify below</option>
@@ -2168,18 +2176,18 @@ document.addEventListener('click', function(e){
         <textarea id="respondRightOther" placeholder="Describe the applicable timeline per your CBA or district practice..." style="display:none; margin:0 14px 14px; min-height:50px;" oninput="updateRespondDisplay()"></textarea>
       </div>
 
-      <div style="margin-top:16px; padding:14px 16px; background:var(--cream); border:1px solid var(--light-gray); border-left:3px solid var(--gold); border-radius:3px;">
+      <div style="margin-top:16px; padding:16px 16px; background:var(--cream); border:1px solid var(--light-gray); border-left:3px solid var(--gold); border-radius:3px;">
         <label style="margin:0 0 6px 0; font-size:0.875rem; font-weight:700; color:var(--navy); text-transform:none; letter-spacing:0;">Additional Closing Notes <span style="font-weight:400; color:var(--gray);">(optional)</span></label>
         <textarea id="closingNotes" placeholder="Any additional information such as acknowledgment requirements or follow-up meetings..." style="min-height:70px;"></textarea>
       </div>
 
-      <div style="margin-top:16px; padding:14px 16px; background:var(--cream); border:1px solid var(--light-gray); border-left:3px solid var(--gold); border-radius:3px;">
+      <div style="margin-top:16px; padding:16px 16px; background:var(--cream); border:1px solid var(--light-gray); border-left:3px solid var(--gold); border-radius:3px;">
         <label style="margin:0 0 6px 0; font-size:0.875rem; font-weight:700; color:var(--navy); text-transform:none; letter-spacing:0;">Others Present at the Meeting <span style="font-weight:400; color:var(--gray);">(optional)</span></label>
         <div style="font-size:0.8rem; color:var(--gray); margin-bottom:8px;">For conference summaries: indicate if anyone else was present at the conference meeting (e.g. union representative, HR director, witness).</div>
         <input type="text" id="othersPresent" placeholder="e.g. HR Director Jane Smith; Union Rep Tom Garcia" style="margin:0;">
       </div>
 
-      <div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--light-gray); display:flex; justify-content:space-between; align-items:center;">
+      <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray); display:flex; justify-content:space-between; align-items:center;">
         <button class="btn btn-secondary" onclick="prevStep(5)">&larr; Back</button>
         <button class="btn btn-next" onclick="nextStep(5)">Next: Generate &rarr;</button>
       </div>
@@ -2197,9 +2205,9 @@ document.addEventListener('click', function(e){
       </div>
 
       <!-- Summary of what will be generated -->
-      <div style="background:var(--cream); border:1px solid var(--light-gray); border-radius:3px; padding:18px; margin-bottom:24px;">
-        <div style="font-size:0.85rem; font-weight:700; color:var(--navy); margin-bottom:12px; text-transform:none; letter-spacing:0;">Ready to generate</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:0.85rem;" class="gen-summary-grid">
+      <div style="background:var(--cream); border:1px solid var(--light-gray); border-radius:3px; padding:16px; margin-bottom:24px;">
+        <div style="font-size:0.85rem; font-weight:700; color:var(--navy); margin-bottom:8px; text-transform:none; letter-spacing:0;">Ready to generate</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.85rem;" class="gen-summary-grid">
           <div><span style="color:var(--gray);">Employee:</span> <strong id="genSummaryEmployee"></strong></div>
           <div><span style="color:var(--gray);">Document type:</span> <strong id="genSummaryDocType"></strong></div>
           <div><span style="color:var(--gray);">Incident date:</span> <strong id="genSummaryDate"></strong></div>
@@ -2207,7 +2215,7 @@ document.addEventListener('click', function(e){
         </div>
       </div>
 
-      <div style="background:#fff8e8; border:1px solid #f0c766; border-radius:6px; padding:16px 18px; margin-bottom:20px; display:flex; gap:12px; align-items:flex-start;">
+      <div style="background:#fff8e8; border:1px solid #f0c766; border-radius:6px; padding:16px 16px; margin-bottom:16px; display:flex; gap:8px; align-items:flex-start;">
         <div style="font-size:1.2rem; line-height:1;">⚠️</div>
         <div>
           <div style="font-weight:700; color:var(--navy); font-size:0.9rem; margin-bottom:4px;">Human review required</div>
@@ -2215,12 +2223,12 @@ document.addEventListener('click', function(e){
         </div>
       </div>
 
-      <div style="text-align:center; padding:12px 0 8px;">
-        <button class="btn btn-action btn-generate" onclick="generateMemo()" style="padding:18px 60px; font-size:1rem; letter-spacing:0.03em;">&#10003; Generate Document</button>
-        <div style="font-size:0.8rem; color:var(--gray); margin-top:10px;">This usually takes 1–3 minutes.</div>
+      <div style="text-align:center; padding:8px 0 8px;">
+        <button class="btn btn-action btn-generate" onclick="generateMemo()" style="padding:16px 48px; font-size:1rem; letter-spacing:0.03em;">&#10003; Generate Document</button>
+        <div style="font-size:0.8rem; color:var(--gray); margin-top:8px;">This usually takes 1–3 minutes.</div>
       </div>
 
-      <div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--light-gray);">
+      <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray);">
         <button class="btn btn-secondary" onclick="prevStep(6)">&larr; Back</button>
       </div>
     </div>
@@ -2229,25 +2237,25 @@ document.addEventListener('click', function(e){
   <!-- Step 7: Review & Edit (shown after generation) -->
   <div class="step-section" id="step-7">
     <div class="card" style="border-top-color:var(--navy);">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:16px;">
         <div>
           <div style="font-family:'Playfair Display',serif; font-size:1.05rem; color:var(--navy); font-weight:700;">Review &amp; Edit</div>
-          <div style="font-size:0.83rem; color:var(--gray); margin-top:3px;">Click anywhere in the document to edit. Review carefully before issuing.</div>
+          <div style="font-size:0.83rem; color:var(--gray); margin-top:4px;">Click anywhere in the document to edit. Review carefully before issuing.</div>
         </div>
         <button class="btn btn-secondary" onclick="startOver()">Start New Document</button>
       </div>
 
-      <div style="margin-bottom:20px;">
-        <button type="button" onclick="toggleFactsReference()" id="factsToggleBtn" style="background:none; border:none; padding:0; color:var(--navy); font-weight:700; font-size:0.85rem; cursor:pointer; display:flex; align-items:center; gap:6px;">
+      <div style="margin-bottom:16px;">
+        <button type="button" onclick="toggleFactsReference()" id="factsToggleBtn" style="background:none; border:none; padding:0; color:var(--navy); font-weight:700; font-size:0.85rem; cursor:pointer; display:flex; align-items:center; gap:4px;">
           <span id="factsToggleIcon">▸</span> FACTS PROVIDED BY ADMINISTRATOR <span style="font-weight:400; color:var(--gray);">(what you entered, for comparison against the draft below)</span>
         </button>
-        <div id="factsReferencePanel" style="display:none; margin-top:12px; background:var(--cream); border:1px solid var(--light-gray); border-radius:3px; padding:18px; font-size:0.85rem; line-height:1.6; color:var(--navy);"></div>
+        <div id="factsReferencePanel" style="display:none; margin-top:8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:3px; padding:16px; font-size:0.85rem; line-height:1.6; color:var(--navy);"></div>
       </div>
 
       <div style="font-size:0.78rem; font-weight:700; color:var(--gray); letter-spacing:0.04em; margin-bottom:8px;">DRAFT LANGUAGE GENERATED BY TRACKUMENT</div>
       <div id="memoOutput" contenteditable="true" spellcheck="true" style="outline:none; cursor:text; min-height:400px; background:var(--white); border:1px solid var(--light-gray); border-radius:3px; padding:32px;"></div>
 
-      <div class="output-actions" style="margin-top:20px;">
+      <div class="output-actions" style="margin-top:16px;">
         <button class="btn btn-secondary" onclick="copyMemo()" id="copyMemoBtn">Copy to Clipboard</button>
         <button class="btn btn-secondary" onclick="downloadMemo()" id="downloadMemoBtn">Download Document</button>
         <button class="btn btn-secondary" onclick="startOver()">Start New Document</button>
@@ -2269,33 +2277,22 @@ document.addEventListener('click', function(e){
       </div>
 
       <!-- Administrator guidance -->
-      <div style="background:var(--cream); border:1px solid var(--light-gray); border-left:4px solid var(--navy); border-radius:3px; padding:18px; margin-bottom:16px;">
-        <div style="font-size:0.78rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--navy); margin-bottom:10px;">Administrator Guidance</div>
+      <div style="background:var(--cream); border:1px solid var(--light-gray); border-left:4px solid var(--navy); border-radius:3px; padding:16px; margin-bottom:16px;">
+        <div style="font-size:0.78rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--navy); margin-bottom:8px;">Administrator Guidance</div>
         <div id="adminGuidanceNotes" style="font-size:0.88rem; line-height:1.7; color:var(--text);">
           <em style="color:var(--gray);">Based on classification selected in Setup.</em>
         </div>
       </div>
 
       <!-- Draft meeting notice email -->
-      <div style="background:var(--cream); border:1px solid var(--light-gray); border-left:4px solid var(--navy); border-radius:3px; padding:18px; margin-bottom:16px;">
+      <div style="background:var(--cream); border:1px solid var(--light-gray); border-left:4px solid var(--navy); border-radius:3px; padding:16px; margin-bottom:16px;">
         <div style="font-size:0.78rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--navy); margin-bottom:8px;">Draft Meeting Notice to Employee</div>
-        <div style="font-size:0.82rem; color:var(--gray); margin-bottom:12px;">Use this as a starting point for notifying the employee of the meeting. Edit as needed, then copy and send.</div>
+        <div style="font-size:0.82rem; color:var(--gray); margin-bottom:8px;">Use this as a starting point for notifying the employee of the meeting. Edit as needed, then copy and send.</div>
         <div id="draftMeetingEmail" contenteditable="true" spellcheck="true" style="background:var(--white); border:1px solid var(--light-gray); border-radius:2px; padding:16px; font-size:0.88rem; line-height:1.8; color:var(--text); outline:none; min-height:120px; white-space:pre-wrap;"></div>
-        <button onclick="copyMeetingEmail()" class="btn btn-secondary" style="margin-top:10px; font-size:0.78rem; padding:7px 14px;">Copy Email</button>
+        <button onclick="copyMeetingEmail()" class="btn btn-secondary" style="margin-top:8px; font-size:0.78rem; padding:8px 16px;">Copy Email</button>
       </div>
 
-      <!-- Verify before issuing -->
-      <div style="background:#fffbf0; border:1px solid #f3e8c0; border-left:4px solid #d97706; border-radius:3px; padding:18px; margin-bottom:16px;">
-        <div style="font-size:0.78rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:#92400e; margin-bottom:10px;">Verify Before Issuing</div>
-        <div style="font-size:0.85rem; line-height:1.8; color:#78350f;">
-          <strong>Ed Code citations:</strong> Verify current language and confirm the sections cited are applicable to this employee's classification and the specific conduct at issue.<br><br>
-          <strong>Board Policies and ARs:</strong> Policy numbers are based on the standard California (CSBA) model. These match most districts' adopted numbers. A quick check at your district's policy site before issuing takes 1–3 minutes.<br><br>
-          <strong>CBA language:</strong> Confirm article numbers and language are current for your active contract year.<br><br>
-          <strong>Personnel file procedures:</strong> Confirm the file placement language matches your district's practice and any applicable CBA requirements.
-        </div>
-      </div>
-
-      <div style="margin-top:20px; padding-top:20px; border-top:1px solid var(--light-gray);">
+      <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--light-gray);">
         <button class="btn btn-secondary" onclick="prevStep(8)">&larr; Back to Document</button>
       </div>
     </div>
@@ -2314,7 +2311,7 @@ document.addEventListener('click', function(e){
 </div><!-- end main-content -->
 </div><!-- end page-layout -->
 
-<div style="text-align:center; padding:14px 20px 24px; font-size:0.72rem; color:var(--gray);">Trackument is a product of Intentional Schools LLC</div>
+<div style="text-align:center; padding:16px 16px 24px; font-size:0.72rem; color:var(--gray);">Trackument is a product of Intentional Schools LLC</div>
 
 <script>
 // ─── Citation Database ───────────────────────────────────────────────────────
@@ -2690,7 +2687,7 @@ function showStepError(msg) {
 
   const el = document.createElement('div');
   el.id = 'stepErrorMsg';
-  el.style.cssText = 'background:#fef2f2;border:1px solid #fca5a5;border-left:4px solid #dc2626;border-radius:3px;padding:11px 16px;font-size:0.85rem;color:#7f1d1d;margin-top:16px;';
+  el.style.cssText = 'background:#fef2f2;border:1px solid #fca5a5;border-left:4px solid #dc2626;border-radius:3px;padding:8px 16px;font-size:0.85rem;color:#7f1d1d;margin-top:16px;';
   el.textContent = msg;
 
   // Append to the currently active step's card
@@ -3029,6 +3026,7 @@ ${d.employeeDisplayName || d.employeeName}${d.employeeTitle ? '\n' + d.employeeT
 
 
 Signature: ______________________  Date: ______________________
+
 Signature acknowledges receipt of this ${docNoun} and does not constitute agreement with its contents.
 ${d.respondRight ? d.respondRight : 'The employee has the right to respond to this document per applicable Education Code and/or collective bargaining agreement provisions.'}
 
@@ -3099,7 +3097,7 @@ function renderMemo(text, data) {
       blankCount = 0;
       const content = line.replace(/^[•\-\*]\s+/, '')
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      const item = '<li style="margin-bottom:2px; margin-top:0;">' + content + '</li>';
+      const item = '<li style="margin-bottom:4px; margin-top:0;">' + content + '</li>';
       if (!inList) { inList = true; return '<ul style="margin:4px 0 4px 0; padding-left:2.2em; list-style-type:disc;">' + item; }
       return item;
     }
@@ -3119,7 +3117,7 @@ function renderMemo(text, data) {
   if (inList) htmlLines.push('</ul>');
   const htmlBody = htmlLines.join('\n');
 
-  output.innerHTML = '<div class="memo-letterhead" style="border-bottom:1px solid var(--navy); padding-bottom:10px; margin-bottom:14px;">'
+  output.innerHTML = '<div class="memo-letterhead" style="border-bottom:1px solid var(--navy); padding-bottom:8px; margin-bottom:16px;">'
     + logoHTML
     + '<div class="memo-letterhead-text">'
     + '<div class="memo-letterhead-district">' + (data.districtName || '') + '</div>'
@@ -3159,7 +3157,7 @@ function populateFactsReference(data) {
   ].filter(([, val]) => val && String(val).trim());
 
   panel.innerHTML = rows.map(([label, val]) =>
-    '<div style="margin-bottom:10px;"><div style="font-weight:700; color:var(--gray); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.03em; margin-bottom:2px;">' + escapeHtml(label) + '</div><div>' + escapeHtml(String(val)) + '</div></div>'
+    '<div style="margin-bottom:8px;"><div style="font-weight:700; color:var(--gray); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.03em; margin-bottom:4px;">' + escapeHtml(label) + '</div><div>' + escapeHtml(String(val)) + '</div></div>'
   ).join('') || '<em style="color:var(--gray);">No additional facts entered beyond the required fields.</em>';
 }
 
@@ -3206,8 +3204,8 @@ function downloadMemo() {
         + schoolLine
         + '</div>';
   const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + (data.docType || 'Memo') + '</title>'
-    + '<style>body{font-family:Arial,sans-serif;max-width:750px;margin:60px auto;font-size:12pt;line-height:1.8;color:#000}'
-    + '.letterhead{border-bottom:2px solid #1a2642;padding-bottom:16px;margin-bottom:28px}'
+    + '<style>body{font-family:Arial,sans-serif;max-width:750px;margin:48px auto;font-size:12pt;line-height:1.8;color:#000}'
+    + '.letterhead{border-bottom:2px solid #1a2642;padding-bottom:16px;margin-bottom:24px}'
     + '.district{font-size:16pt;font-weight:bold;color:#1a2642}.school{font-size:12pt;color:#444}'
     + 'pre{white-space:pre-wrap;font-family:Arial,sans-serif;font-size:12pt;line-height:1.8}</style></head><body>'
     + letterheadBlock
@@ -4123,8 +4121,8 @@ function updateSuggestedDirectives() {
 
   wrap.style.display = 'block';
   list.innerHTML = directives.map((d, i) => `
-    <div style="display:flex; align-items:flex-start; gap:10px; padding:10px 12px; background:var(--white); border:1px solid var(--light-gray); border-radius:2px;">
-      <input type="checkbox" id="dir-chk-${i}" checked style="margin-top:3px; flex-shrink:0; accent-color:var(--navy);" onchange="syncDirectivesField()">
+    <div style="display:flex; align-items:flex-start; gap:8px; padding:8px 8px; background:var(--white); border:1px solid var(--light-gray); border-radius:2px;">
+      <input type="checkbox" id="dir-chk-${i}" checked style="margin-top:4px; flex-shrink:0; accent-color:var(--navy);" onchange="syncDirectivesField()">
       <div contenteditable="true" spellcheck="true" id="dir-text-${i}" style="flex:1; font-size:0.85rem; line-height:1.5; color:var(--text); outline:none; min-height:20px;" oninput="syncDirectivesField()">${d.replace(/\[([^\]]+)\]/g, '<span class="fill-in">[$1]</span>')}</div>
     </div>
   `).join('');
@@ -4132,8 +4130,8 @@ function updateSuggestedDirectives() {
   // Support resources
   if (supportList) {
     supportList.innerHTML = getSuggestedSupport().map((s, i) => { s = s.replace(/\[([^\]]+)\]/g, '<span class="fill-in">[$1]</span>'); return `
-      <div style="display:flex; align-items:flex-start; gap:10px; padding:10px 12px; background:var(--white); border:1px solid var(--light-gray); border-radius:2px;">
-        <input type="checkbox" id="sup-chk-${i}" checked style="margin-top:3px; flex-shrink:0; accent-color:var(--navy);" onchange="syncSupportField()">
+      <div style="display:flex; align-items:flex-start; gap:8px; padding:8px 8px; background:var(--white); border:1px solid var(--light-gray); border-radius:2px;">
+        <input type="checkbox" id="sup-chk-${i}" checked style="margin-top:4px; flex-shrink:0; accent-color:var(--navy);" onchange="syncSupportField()">
         <div contenteditable="true" spellcheck="true" id="sup-text-${i}" style="flex:1; font-size:0.85rem; line-height:1.5; color:var(--text); outline:none; min-height:20px;" oninput="syncSupportField()">${s}</div>
       </div>
     `; }).join('');
@@ -4147,11 +4145,11 @@ function addCustomDirectiveRow(text) {
   const list = document.getElementById('customDirectivesList');
   if (!list) return;
   const div = document.createElement('div');
-  div.style.cssText = 'display:flex; align-items:flex-start; gap:10px; padding:10px 12px; background:var(--white); border:1px solid var(--light-gray); border-radius:2px;';
+  div.style.cssText = 'display:flex; align-items:flex-start; gap:8px; padding:8px 8px; background:var(--white); border:1px solid var(--light-gray); border-radius:2px;';
   div.innerHTML = `
-    <input type="checkbox" checked style="margin-top:3px; flex-shrink:0; accent-color:var(--navy);" onchange="syncDirectivesField()">
+    <input type="checkbox" checked style="margin-top:4px; flex-shrink:0; accent-color:var(--navy);" onchange="syncDirectivesField()">
     <div contenteditable="true" spellcheck="true" style="flex:1; font-size:0.85rem; line-height:1.5; color:var(--text); outline:none; min-height:20px;" oninput="syncDirectivesField()">${text || ''}</div>
-    <button onclick="this.closest('div').remove(); syncDirectivesField();" style="font-size:0.7rem; color:var(--gray); background:transparent; border:none; cursor:pointer; flex-shrink:0; margin-top:2px;" title="Remove">&times;</button>
+    <button onclick="this.closest('div').remove(); syncDirectivesField();" style="font-size:0.7rem; color:var(--gray); background:transparent; border:none; cursor:pointer; flex-shrink:0; margin-top:4px;" title="Remove">&times;</button>
   `;
   list.appendChild(div);
   const editable = div.querySelector('[contenteditable]');
@@ -4211,8 +4209,8 @@ async function loadSavedSupport() {
     if (wrap) wrap.style.display = 'block';
     list.innerHTML = entries.map(e => {
       const k = e.key;
-      return '<div style="display:flex; align-items:flex-start; gap:8px; padding:8px 12px; background:var(--white); border:1px solid var(--light-gray); border-radius:2px;">'
-        + '<button onclick="addSavedSupportToList(\'' + k + '\')" style="flex-shrink:0; font-size:0.72rem; background:var(--navy); color:var(--white); border:none; border-radius:2px; padding:3px 8px; cursor:pointer;">+ Use</button>'
+      return '<div style="display:flex; align-items:flex-start; gap:8px; padding:8px 8px; background:var(--white); border:1px solid var(--light-gray); border-radius:2px;">'
+        + '<button onclick="addSavedSupportToList(\'' + k + '\')" style="flex-shrink:0; font-size:0.72rem; background:var(--navy); color:var(--white); border:none; border-radius:2px; padding:4px 8px; cursor:pointer;">+ Use</button>'
         + '<span style="flex:1; font-size:0.85rem; line-height:1.5; color:var(--text);">' + e.text + '</span>'
         + '<button onclick="deleteSavedSupport(\'' + k + '\')" style="flex-shrink:0; font-size:0.7rem; color:var(--gray); background:transparent; border:none; cursor:pointer;" title="Delete">&#x2715;</button>'
         + '</div>';
@@ -4245,8 +4243,8 @@ async function loadSavedDirectives() {
     if (wrap) wrap.style.display = 'block';
     list.innerHTML = entries.map(e => {
       const k = e.key;
-      return '<div style="display:flex; align-items:flex-start; gap:8px; padding:8px 12px; background:var(--white); border:1px solid var(--light-gray); border-radius:2px;">'
-        + '<button onclick="addSavedDirectiveToList(\'' + k + '\')" style="flex-shrink:0; font-size:0.72rem; background:var(--navy); color:var(--white); border:none; border-radius:2px; padding:3px 8px; cursor:pointer;">+ Use</button>'
+      return '<div style="display:flex; align-items:flex-start; gap:8px; padding:8px 8px; background:var(--white); border:1px solid var(--light-gray); border-radius:2px;">'
+        + '<button onclick="addSavedDirectiveToList(\'' + k + '\')" style="flex-shrink:0; font-size:0.72rem; background:var(--navy); color:var(--white); border:none; border-radius:2px; padding:4px 8px; cursor:pointer;">+ Use</button>'
         + '<span style="flex:1; font-size:0.85rem; line-height:1.5; color:var(--text);">' + e.text + '</span>'
         + '<button onclick="deleteSavedDirective(\'' + k + '\')" style="flex-shrink:0; font-size:0.7rem; color:var(--gray); background:transparent; border:none; cursor:pointer;" title="Delete">&#x2715;</button>'
         + '</div>';
@@ -4276,11 +4274,11 @@ function addCustomSupportRow(text) {
   const list = document.getElementById('customSupportList');
   if (!list) return;
   const div = document.createElement('div');
-  div.style.cssText = 'display:flex; align-items:flex-start; gap:10px; padding:10px 12px; background:var(--white); border:1px solid var(--light-gray); border-radius:2px;';
+  div.style.cssText = 'display:flex; align-items:flex-start; gap:8px; padding:8px 8px; background:var(--white); border:1px solid var(--light-gray); border-radius:2px;';
   div.innerHTML = `
-    <input type="checkbox" checked style="margin-top:3px; flex-shrink:0; accent-color:var(--navy);" onchange="syncSupportField()">
+    <input type="checkbox" checked style="margin-top:4px; flex-shrink:0; accent-color:var(--navy);" onchange="syncSupportField()">
     <div contenteditable="true" spellcheck="true" style="flex:1; font-size:0.85rem; line-height:1.5; color:var(--text); outline:none; min-height:20px;" oninput="syncSupportField()">${text || ''}</div>
-    <button onclick="this.closest('div[style]').remove(); syncSupportField();" style="font-size:0.7rem; color:var(--gray); background:transparent; border:none; cursor:pointer; flex-shrink:0; margin-top:2px;" title="Remove">✕</button>
+    <button onclick="this.closest('div[style]').remove(); syncSupportField();" style="font-size:0.7rem; color:var(--gray); background:transparent; border:none; cursor:pointer; flex-shrink:0; margin-top:4px;" title="Remove">✕</button>
   `;
   list.appendChild(div);
   div.querySelector('[contenteditable]').focus();
@@ -4775,8 +4773,8 @@ function addCustomDocType() {
   const label = document.createElement('label');
   label.draggable = true;
   label.className = 'doctype-row';
-  label.style.cssText = 'display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:6px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;';
-  label.innerHTML = `<span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="${val}" checked style="accent-color:var(--navy);"> ${val}`;
+  label.style.cssText = 'display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;';
+  label.innerHTML = `<span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="${val}" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="${val}" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()">`;
   label.addEventListener('dragstart', dragDocType);
   label.addEventListener('dragover', e => e.preventDefault());
   label.addEventListener('drop', dropDocType);
@@ -5217,11 +5215,11 @@ function addAdminRow() {
   row.className = 'author-input-row';
   row.style.cssText = 'display:grid;grid-template-columns:90px 1fr 1fr 32px;gap:8px;margin-bottom:8px;align-items:center;';
   row.innerHTML = `
-    <select class="author-sal" style="padding:9px 10px;border:1px solid var(--light-gray);background:var(--cream);border-radius:2px;font-size:0.88rem;">
+    <select class="author-sal" style="padding:8px 8px;border:1px solid var(--light-gray);background:var(--cream);border-radius:2px;font-size:0.88rem;">
       <option>Mr.</option><option>Ms.</option><option>Mrs.</option><option>Dr.</option><option>Prof.</option><option value="">(None)</option>
     </select>
-    <input type="text" class="author-name-input" name="adminName" autocomplete="name" placeholder="Full name" style="padding:9px 12px;border:1px solid var(--light-gray);background:var(--cream);border-radius:2px;font-size:0.88rem;">
-    <input type="text" class="author-title-input" name="adminTitle" autocomplete="organization-title" placeholder="Title (e.g. Principal)" style="padding:9px 12px;border:1px solid var(--light-gray);background:var(--cream);border-radius:2px;font-size:0.88rem;">
+    <input type="text" class="author-name-input" name="adminName" autocomplete="name" placeholder="Full name" style="padding:8px 8px;border:1px solid var(--light-gray);background:var(--cream);border-radius:2px;font-size:0.88rem;">
+    <input type="text" class="author-title-input" name="adminTitle" autocomplete="organization-title" placeholder="Title (e.g. Principal)" style="padding:8px 8px;border:1px solid var(--light-gray);background:var(--cream);border-radius:2px;font-size:0.88rem;">
     <button type="button" onclick="this.closest('.author-input-row').remove()" style="background:transparent;border:1px solid var(--light-gray);border-radius:2px;color:var(--gray);cursor:pointer;font-size:1rem;padding:0;width:32px;height:36px;line-height:1;">×</button>
   `;
   container.appendChild(row);
@@ -5458,7 +5456,7 @@ async function loadSchoolProfileList() {
   list.innerHTML = schools.map(s => `
     <div class="cba-card">
       <div class="cba-card-info">
-        <div style="display:flex;align-items:center;gap:10px;">
+        <div style="display:flex;align-items:center;gap:8px;">
           ${s.logoURL ? '<img src="' + s.logoURL + '" style="max-height:32px;max-width:80px;object-fit:contain;" onerror="this.style.display=\'none\'">' : ''}
           <div class="cba-card-name">${s.name}</div>
         </div>
@@ -5468,7 +5466,7 @@ async function loadSchoolProfileList() {
         ${s.url ? '<div class="cba-card-preview">' + s.url + '</div>' : ''}
       </div>
       <div class="cba-card-actions">
-        <button class="btn-cba-edit" data-key="${s.key}" data-type="school-edit" style="font-size:0.72rem; background:var(--navy); color:var(--white); border:none; border-radius:2px; padding:4px 10px; cursor:pointer; margin-right:6px;">Edit</button>
+        <button class="btn-cba-edit" data-key="${s.key}" data-type="school-edit" style="font-size:0.72rem; background:var(--navy); color:var(--white); border:none; border-radius:2px; padding:4px 8px; cursor:pointer; margin-right:4px;">Edit</button>
         <button class="btn-cba-delete" data-key="${s.key}" data-type="school">Remove</button>
       </div>
     </div>
@@ -5813,7 +5811,7 @@ async function loadSetupCBAList() {
           <div class="cba-card-preview">
             ${e.sourceType === 'file' ? '📄 ' + e.sourceLabel : '🔗 ' + e.sourceLabel}
           </div>
-          <div style="font-size:0.72rem;color:var(--gray);margin-top:3px;">Saved ${e.savedAt}</div>
+          <div style="font-size:0.72rem;color:var(--gray);margin-top:4px;">Saved ${e.savedAt}</div>
         </div>
         <div class="cba-card-actions">
           <button class="btn-cba-delete" data-key="${e.key}" data-type="cba">Remove</button>
@@ -5985,7 +5983,7 @@ async function loadSetupHandbookList() {
           <div class="cba-card-preview">
             ${e.sourceType === 'file' ? '📄 ' + e.sourceLabel : '🔗 ' + e.sourceLabel}
           </div>
-          <div style="font-size:0.72rem;color:var(--gray);margin-top:3px;">Saved ${e.savedAt}</div>
+          <div style="font-size:0.72rem;color:var(--gray);margin-top:4px;">Saved ${e.savedAt}</div>
         </div>
         <div class="cba-card-actions">
           <button class="btn-cba-delete" data-key="${e.key}" data-type="handbook">Remove</button>
@@ -6087,7 +6085,7 @@ function renderCBACards(entries) {
     const typeIcon = entry.sourceType === 'file' ? '📄' : '🔗';
     return `
       <button onclick="useCBA('${entry.key}')"
-        style="padding:6px 16px; border-radius:20px; border:2px solid ${isActive ? 'var(--navy)' : 'var(--light-gray)'}; background:${isActive ? 'var(--navy)' : 'var(--white)'}; color:${isActive ? 'var(--white)' : 'var(--text)'}; font-size:0.82rem; font-weight:600; cursor:pointer; transition:all 0.15s;">
+        style="padding:4px 16px; border-radius:20px; border:2px solid ${isActive ? 'var(--navy)' : 'var(--light-gray)'}; background:${isActive ? 'var(--navy)' : 'var(--white)'}; color:${isActive ? 'var(--white)' : 'var(--text)'}; font-size:0.82rem; font-weight:600; cursor:pointer; transition:all 0.15s;">
         ${isActive ? '✓ ' : ''}${typeIcon} ${entry.name}${entry.unit ? ' <span style="font-weight:400;opacity:0.75;">(' + entry.unit + ')</span>' : ''}
       </button>
     `;
@@ -6228,7 +6226,7 @@ function renderPriorDocFiles() {
   const container = document.getElementById('priorDocFileList');
   if (!container) return;
   container.innerHTML = window._priorDocFiles.map((f, i) => `
-    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; font-size:0.83rem;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; font-size:0.83rem;">
       <span style="color:var(--navy);">📄 ${f.name}</span>
       <button onclick="removePriorDocFile(${i})" style="font-size:0.72rem; color:var(--gray); background:transparent; border:none; cursor:pointer; text-decoration:underline;">Remove</button>
     </div>
@@ -6260,7 +6258,7 @@ function renderWitnessFiles() {
   const container = document.getElementById('witnessFileList');
   if (!container) return;
   container.innerHTML = window._witnessFiles.map((f, i) => `
-    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; font-size:0.83rem;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; font-size:0.83rem;">
       <span style="color:var(--navy);">📄 ${f.name}</span>
       <button onclick="removeWitnessFile(${i})" style="font-size:0.72rem; color:var(--gray); background:transparent; border:none; cursor:pointer; text-decoration:underline;">Remove</button>
     </div>
@@ -6388,7 +6386,7 @@ async function loadMeritRulesList() {
         <div class="cba-card-info">
           <div class="cba-card-name">${e.name}</div>
           <div class="cba-card-preview">${e.sourceType === 'file' ? '📄 ' + e.sourceLabel : '🔗 ' + e.sourceLabel}</div>
-          <div style="font-size:0.72rem;color:var(--gray);margin-top:3px;">Saved ${e.savedAt}</div>
+          <div style="font-size:0.72rem;color:var(--gray);margin-top:4px;">Saved ${e.savedAt}</div>
         </div>
         <div class="cba-card-actions">
           <button class="btn-cba-delete" data-key="${e.key}" data-type="merit">Remove</button>
