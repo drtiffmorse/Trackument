@@ -1,4 +1,4 @@
-// BUILD: 2026-09-17-r3
+// BUILD: 2026-09-17-r4
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -1080,7 +1080,7 @@ app.get('/api/admin/districts', async (req, res) => {
 
 // ─── Static routes ────────────────────────────────────────────────────────────
 app.get('/privacy',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'privacy.html')));
-app.get('/admin/policies', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-policies.html')));
+app.get('/admin-policies', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-policies.html')));
 app.get('/terms',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'terms.html')));
 app.get('/checkout', (req, res) => res.sendFile(path.join(__dirname, 'public', 'checkout.html')));
 app.get('/contact', (req, res) => res.sendFile(path.join(__dirname, 'public', 'contact.html')));
