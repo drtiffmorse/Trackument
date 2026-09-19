@@ -1,4 +1,4 @@
-/* BUILD: 2026-09-19-r2 */
+/* BUILD: 2026-09-19-r5 */
 :root{
   --navy: #1a0256;
   --navy-deep: #1a0740;
@@ -58,7 +58,7 @@ img{ max-width:100%; display:block; }
 .header-inner{
   max-width:var(--content-max);
   margin:0 auto;
-  padding:16px 0;
+  padding:22px 0 18px;
   display:flex;
   align-items:center;
   gap:24px;
@@ -272,7 +272,7 @@ img{ max-width:100%; display:block; }
 /* ---------- Page hero (subpages) ---------- */
 .page-hero{ padding:60px 48px 40px; background:var(--cream); }
 .page-hero--pricing{ padding-top:42px; padding-bottom:0; }
-.page-hero--pricing .page-hero-inner{ margin-bottom:38px; }
+.page-hero--pricing .page-hero-inner{ margin-bottom:32px; }
 .page-hero--security{ padding-bottom:0; }
 .page-hero--fade{
   position:relative;
@@ -482,7 +482,7 @@ img{ max-width:100%; display:block; }
 .pricing-subhead{ font-size:var(--fs-body); line-height:var(--lh-body); color:var(--text); margin:16px 0 0; }
 
 .pricing-table-wrap{
-  max-width:var(--content-max); margin:44px auto 0;
+  max-width:var(--content-max); margin:24px auto 0;
   background:#fff; border:1px solid var(--rule); border-radius:16px;
   box-shadow:0 2px 10px rgba(40,11,91,0.06);
   overflow:hidden;
@@ -509,13 +509,16 @@ img{ max-width:100%; display:block; }
 .pricing-table tbody tr.row-school td{ background:rgba(47,156,144,0.05); }
 .pricing-table tbody tr.row-addon td:first-child{ border-left:4px solid var(--gold); }
 .pricing-table tbody tr.row-addon td{ background:rgba(224,91,14,0.05); }
-.pricing-table td.price-special{ font-weight:800; color:#1a7a4c; background:rgba(26,122,76,0.06); }
-.pricing-table thead th:last-child{ color:var(--gold-light); }
+/* Soft lavender so the special column never reads as the teal school-site row.
+   The extra specificity keeps the tint consistent down every row, including
+   the school and add-on rows that have their own row tints. */
+.pricing-table tbody tr td.price-special{ font-weight:800; background:rgba(26,2,86,0.045); }
+.pricing-table thead th:last-child{ color:#fff; }
 .pricing-footnote{ font-size:0.85rem; color:var(--text-light); padding:14px 24px; margin:0; border-top:1px solid var(--rule); }
 
 .pricing-value-row{
   display:grid; grid-template-columns:repeat(3, 1fr); gap:24px;
-  max-width:960px; margin:20px auto 0; padding:0;
+  max-width:960px; margin:0 auto; padding:0;
 }
 .pricing-value-item{ display:flex; align-items:center; justify-content:center; gap:8px; font-size:1.05rem; font-weight:700; color:var(--navy); white-space:nowrap; }
 .pricing-value-item svg{ width:20px; height:20px; flex-shrink:0; color:var(--teal); }
@@ -565,7 +568,7 @@ img{ max-width:100%; display:block; }
 .pricing-feature{ display:flex; align-items:center; gap:10px; font-size:var(--fs-body); color:var(--text); }
 .pricing-feature svg{ width:15px; height:15px; flex-shrink:0; }
 .plus-sign{ font-size:2rem; font-weight:800; color:var(--navy); text-align:center; }
-.signup-row{ display:flex; align-items:center; justify-content:center; margin-top:22px; padding:0 48px; }
+.signup-row{ display:flex; align-items:center; justify-content:center; margin-top:24px; padding:0 48px; }
 .btn-signup{
   display:inline-flex; align-items:center; padding:11px 22px; border-radius:8px;
   background:var(--navy); color:#fff !important; font-weight:700; font-size:1.1rem;
@@ -623,7 +626,7 @@ img{ max-width:100%; display:block; }
 .footer-brand p{ font-size:var(--fs-body); line-height:var(--lh-body); margin-top:14px; max-width:310px; color:rgba(255,255,255,0.72); }
 .footer-col h4{
   font-family:'IBM Plex Mono',monospace; font-size:0.85rem; text-transform:uppercase;
-  letter-spacing:0.04em; color:var(--gold-light); margin:0 0 14px;
+  letter-spacing:0.04em; color:#fff; margin:0 0 14px;
 }
 .footer-col a{ display:block; text-decoration:none; font-size:1.3rem; color:rgba(255,255,255,0.75); margin-bottom:10px; transition:color .15s ease; }
 .footer-col a:hover{ color:#fff; }
@@ -637,7 +640,7 @@ img{ max-width:100%; display:block; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 900px){
-  .header-inner{ padding-top:14px; padding-bottom:14px; }
+  .header-inner{ padding-top:18px; padding-bottom:14px; }
   .site-header{ padding-left:24px; padding-right:24px; }
   .site-header::after{ margin:0 -24px; }
   .wrap, .page-hero-inner{ padding-left:24px; padding-right:24px; }
@@ -662,4 +665,37 @@ img{ max-width:100%; display:block; }
   .footer-top{ flex-direction:column; align-items:center; text-align:center; gap:32px; }
   .footer-brand{ align-items:center; }
   .credibility-row{ grid-template-columns:repeat(2, 1fr); }
+}
+
+/* Pricing table on phones: each plan becomes its own card instead of a table
+   that is wider than the screen. Labels come from each cell's data-label. */
+@media (max-width: 640px){
+  .pricing-table, .pricing-table tbody{ display:block; }
+  .pricing-table thead{ display:none; }
+  .pricing-table tbody tr{
+    display:grid; grid-template-columns:1fr; row-gap:8px;
+    padding:16px; border-top:1px solid var(--rule); border-left:4px solid var(--navy);
+  }
+  .pricing-table tbody tr:first-child{ border-top:none; }
+  .pricing-table tbody tr.row-school{ border-left-color:var(--teal); background:rgba(47,156,144,0.05); }
+  .pricing-table tbody tr.row-addon{ border-left-color:var(--gold); background:rgba(224,91,14,0.05); }
+  .pricing-table tbody td,
+  .pricing-table tbody tr.row-school td,
+  .pricing-table tbody tr.row-addon td{
+    display:block; padding:0; border:none !important; text-align:left; background:none;
+  }
+  .pricing-table tbody td:nth-child(2){ font-size:1.05rem; }
+  .pricing-table tbody tr td[data-label]{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    font-size:1.05rem;
+  }
+  .pricing-table tbody tr td[data-label]::before{
+    content:attr(data-label); font-size:0.8rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.04em; color:var(--text-light);
+  }
+  .pricing-table tbody tr td.price-special{
+    background:rgba(26,2,86,0.045); border-radius:8px; padding:8px 12px; margin:0 -12px;
+  }
+  .pricing-table tbody td:last-child{ font-size:1.1rem; }
+  .pricing-footnote{ padding:14px 16px; }
 }
