@@ -1,4 +1,4 @@
-/* BUILD: 2026-09-17-r2 */
+/* BUILD: 2026-09-19-r2 */
 :root{
   --navy: #1a0256;
   --navy-deep: #1a0740;
@@ -515,19 +515,17 @@ img{ max-width:100%; display:block; }
 
 .pricing-value-row{
   display:grid; grid-template-columns:repeat(3, 1fr); gap:24px;
-  max-width:700px; margin:22px auto 0; padding:0 48px;
+  max-width:960px; margin:20px auto 0; padding:0;
 }
-.pricing-value-item{ display:flex; align-items:center; justify-content:center; gap:10px; font-size:1.15rem; font-weight:700; color:var(--navy); }
+.pricing-value-item{ display:flex; align-items:center; justify-content:center; gap:8px; font-size:1.05rem; font-weight:700; color:var(--navy); white-space:nowrap; }
 .pricing-value-item svg{ width:20px; height:20px; flex-shrink:0; color:var(--teal); }
 
-.purchasing-docs-line{ text-align:center; font-size:1.15rem; color:var(--text); margin:14px 0 8px; }
+.purchasing-docs-line{ text-align:center; font-size:1rem; color:var(--text); margin:16px 0 0; }
 .purchasing-docs-btn{
-  display:inline-flex; align-items:center; margin-left:10px;
-  padding:9px 22px; border:1.5px solid var(--navy); border-radius:20px;
-  color:var(--navy); font-weight:700; font-size:0.98rem; text-decoration:none;
-  transition:background .15s ease;
+  margin-left:6px; color:var(--navy); font-weight:700;
+  text-decoration:underline; text-underline-offset:3px; text-decoration-thickness:1.5px;
 }
-.purchasing-docs-btn:hover{ background:rgba(26,2,86,0.06); }
+.purchasing-docs-btn:hover{ color:var(--teal); }
 
 .price-badge{
   display:inline-block;
@@ -567,7 +565,7 @@ img{ max-width:100%; display:block; }
 .pricing-feature{ display:flex; align-items:center; gap:10px; font-size:var(--fs-body); color:var(--text); }
 .pricing-feature svg{ width:15px; height:15px; flex-shrink:0; }
 .plus-sign{ font-size:2rem; font-weight:800; color:var(--navy); text-align:center; }
-.signup-row{ display:flex; align-items:center; justify-content:center; margin-top:18px; padding:0 48px; }
+.signup-row{ display:flex; align-items:center; justify-content:center; margin-top:22px; padding:0 48px; }
 .btn-signup{
   display:inline-flex; align-items:center; padding:11px 22px; border-radius:8px;
   background:var(--navy); color:#fff !important; font-weight:700; font-size:1.1rem;
@@ -648,12 +646,18 @@ img{ max-width:100%; display:block; }
   .hero-visual{ order:-1; justify-content:center; }
   .scope-inner{ grid-template-columns:1fr; }
   .pricing-row{ grid-template-columns:1fr; padding-left:24px; padding-right:24px; }
+  .pricing-value-row{ grid-template-columns:1fr; gap:12px; }
   .plus-sign{ display:none; }
   .primary-nav{ gap:14px; font-size:0.9rem; }
 }
 @media (max-width: 640px){
   .header-inner{ flex-wrap:wrap; }
   .primary-nav{ justify-content:flex-start; flex-basis:100%; order:3; padding-top:8px; flex-wrap:wrap; row-gap:10px; margin-right:0 !important; }
+  /* Let the logo shrink to fit narrow screens instead of running off the edge. */
+  .site-header .brand{ flex-shrink:1; min-width:0; max-width:100%; }
+  .site-header .logo-horizontal{ height:auto; width:100%; max-width:280px; }
+  .primary-nav{ column-gap:16px; row-gap:12px; }
+  .primary-nav a, .primary-nav .btn-login{ font-size:0.95rem; }
   .hero h1{ font-size:2.2rem; }
   .footer-top{ flex-direction:column; align-items:center; text-align:center; gap:32px; }
   .footer-brand{ align-items:center; }
