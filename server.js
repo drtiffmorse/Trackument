@@ -1,4 +1,4 @@
-// BUILD: 2026-09-17-r5
+// BUILD: 2026-09-19-r1
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -372,6 +372,142 @@ app.get('/api/auth/logout', (req, res) => {
   res.redirect('/login');
 });
 
+// ─── Google Drive connection (separate from login) ────────────────────────────
+// Logging in with Google only ever grants identity (email/profile). Saving a
+// document to someone's Drive needs a second, explicit permission they grant
+// on purpose, using the narrow drive.file scope: Trackument can create files
+// it makes, and nothing else in their Drive is visible to it.
+app.get('/api/drive/connect', async (req, res) => {
+  if (!GOOGLE_CLIENT_ID) return res.redirect('/app?drive=not_configured');
+  const cookies = parseCookies(req.headers.cookie);
+  const session = await getValidSession(cookies[SESSION_COOKIE_NAME]);
+  if (!session) return res.redirect('/login');
+
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: BASE_URL + '/api/drive/callback',
+    response_type: 'code',
+    scope: 'https://www.googleapis.com/auth/drive.file',
+    access_type: 'offline',
+    prompt: 'consent', // forces a refresh_token every time, not just the first connection
+    login_hint: session.email,
+  });
+  res.redirect('https://accounts.google.com/o/oauth2/v2/auth?' + params.toString());
+});
+
+app.get('/api/drive/callback', async (req, res) => {
+  const code = req.query.code;
+  const cookies = parseCookies(req.headers.cookie);
+  const session = await getValidSession(cookies[SESSION_COOKIE_NAME]);
+  if (!session) return res.redirect('/login');
+  if (!code) return res.redirect('/app?drive=denied');
+
+  try {
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: GOOGLE_CLIENT_ID,
+        client_secret: GOOGLE_CLIENT_SECRET,
+        redirect_uri: BASE_URL + '/api/drive/callback',
+        grant_type: 'authorization_code',
+      }),
+    });
+    const tokenData = await tokenRes.json();
+    if (!tokenData.refresh_token) {
+      console.error('Drive connect: no refresh_token in response:', JSON.stringify(tokenData));
+      return res.redirect('/app?drive=failed');
+    }
+
+    await pool.query(`
+      INSERT INTO google_drive_connections (email, refresh_token, connected_at)
+      VALUES ($1, $2, now())
+      ON CONFLICT (email) DO UPDATE SET refresh_token = EXCLUDED.refresh_token, connected_at = now()
+    `, [session.email, tokenData.refresh_token]);
+
+    res.redirect('/app?drive=connected');
+  } catch (err) {
+    console.error('Drive connect failed:', err.message);
+    res.redirect('/app?drive=failed');
+  }
+});
+
+// Lets the frontend check connection status without exposing the token itself.
+app.get('/api/drive/status', async (req, res) => {
+  const cookies = parseCookies(req.headers.cookie);
+  const session = await getValidSession(cookies[SESSION_COOKIE_NAME]);
+  if (!session) return res.status(401).json({ connected: false });
+  try {
+    const { rows } = await pool.query('SELECT email FROM google_drive_connections WHERE email = $1', [session.email]);
+    res.json({ connected: rows.length > 0 });
+  } catch (err) {
+    res.json({ connected: false });
+  }
+});
+
+async function getDriveAccessToken(email) {
+  const { rows } = await pool.query('SELECT refresh_token FROM google_drive_connections WHERE email = $1', [email]);
+  if (rows.length === 0) return null;
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      refresh_token: rows[0].refresh_token,
+      grant_type: 'refresh_token',
+    }),
+  });
+  const data = await res.json();
+  if (!data.access_token) {
+    console.error('Drive token refresh failed:', JSON.stringify(data));
+    return null;
+  }
+  return data.access_token;
+}
+
+// Uploads a generated document directly into the logged-in administrator's
+// own Google Drive. Only ever touches files this app itself creates.
+app.post('/api/drive/save', async (req, res) => {
+  const cookies = parseCookies(req.headers.cookie);
+  const session = await getValidSession(cookies[SESSION_COOKIE_NAME]);
+  if (!session) return res.status(401).json({ error: 'Not logged in.' });
+
+  const { filename, content, mimeType } = req.body;
+  if (!filename || !content) return res.status(400).json({ error: 'Missing filename or content.' });
+
+  try {
+    const accessToken = await getDriveAccessToken(session.email);
+    if (!accessToken) return res.status(409).json({ error: 'not_connected' });
+
+    const boundary = 'trackument-' + crypto.randomBytes(12).toString('hex');
+    const metadata = JSON.stringify({ name: filename });
+    const body =
+      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n` +
+      `--${boundary}\r\nContent-Type: ${mimeType || 'text/html'}\r\n\r\n${content}\r\n` +
+      `--${boundary}--`;
+
+    const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + accessToken,
+        'Content-Type': `multipart/related; boundary=${boundary}`,
+      },
+      body,
+    });
+    const uploadData = await uploadRes.json();
+    if (!uploadRes.ok) {
+      console.error('Drive upload failed:', JSON.stringify(uploadData));
+      return res.status(500).json({ error: uploadData.error?.message || 'Upload failed.' });
+    }
+    res.json({ ok: true, fileId: uploadData.id, webViewLink: `https://drive.google.com/file/d/${uploadData.id}/view` });
+  } catch (err) {
+    console.error('Drive save failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Lets the frontend ask "who am I logged in as" without being able to read the
 // HttpOnly session cookie directly. Used on /app load to automatically pull the
 // right district's saved profile, instead of only relying on this browser's own
@@ -450,6 +586,16 @@ async function initDb() {
       policy_text TEXT NOT NULL,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       UNIQUE(domain, policy_number)
+    );
+  `);
+  // One row per Trackument user who has connected their Google Drive. Only
+  // ever used with the narrow drive.file scope, so Trackument can create
+  // files in their Drive but cannot see or touch anything else there.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS google_drive_connections (
+      email TEXT PRIMARY KEY,
+      refresh_token TEXT NOT NULL,
+      connected_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `);
   // Safe to run repeatedly -- adds the column if this table already existed from an earlier version.
