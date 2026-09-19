@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-17-r13 -->
+<!-- BUILD: 2026-09-19-r2 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1555,6 +1555,7 @@ if (window.location.protocol === 'file:') {
     <div class="district-header-name" id="headerDistrictName" style="display:none; font-size:0.8rem; font-weight:600; color:#fff; background:rgba(147,112,219,0.1); padding:4px 16px; border-radius:20px; margin-left:24px;"></div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
+    <div id="draftSaveIndicator" style="font-size:0.75rem; color:rgba(255,255,255,0.5); opacity:0; transition:opacity 0.4s ease; white-space:nowrap;">✓ Progress saved</div>
     <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.8rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:4px 8px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap;">🔒 Privacy Protected</div>
     <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:4px 16px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">+ New Writeup</button>
     <button onclick="openFeedback()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:4px 16px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">💬 Feedback</button>
@@ -2259,8 +2260,10 @@ document.addEventListener('click', function(e){
       <div class="output-actions" style="margin-top:16px;">
         <button class="btn btn-secondary" onclick="copyMemo()" id="copyMemoBtn">Copy to Clipboard</button>
         <button class="btn btn-secondary" onclick="downloadMemo()" id="downloadMemoBtn">Download Document</button>
+        <button class="btn btn-secondary" onclick="saveToGoogleDrive()" id="saveToDriveBtn">Save to Google Drive</button>
         <button class="btn btn-secondary" onclick="startOver()">Start New Document</button>
       </div>
+      <div class="status" id="driveSaveStatus" style="margin-top:8px; display:none; font-size:0.85rem;"></div>
     </div>
     <div style="margin-top:16px; text-align:center;">
       <button class="btn btn-next" onclick="nextStep(7)">Next Steps &rarr;</button>
@@ -3178,18 +3181,16 @@ function copyMeetingEmail() {
   navigator.clipboard.writeText(text).then(() => showToast('Email copied to clipboard'));
 }
 
-function downloadMemo() {
+function buildMemoHtmlAndFilename() {
   const output = document.getElementById('memoOutput');
-  if (!output) return;
+  if (!output) return null;
 
-  // Build plain text version for download
   const text = output.innerText || output.textContent || '';
   const data = collectData();
   const empName = (data.employeeName || 'document').replace(/[^a-z0-9]/gi, '_');
   const dateStr = new Date().toISOString().slice(0, 10);
-  const filename = (empName + '_' + (data.docType || 'memo') + '_' + dateStr + '.txt').replace(/\s+/g, '_');
+  const filename = (empName + '_' + (data.docType || 'memo') + '_' + dateStr + '.html').replace(/\s+/g, '_');
 
-  // Create downloadable HTML file that looks like the document
   const escapedText = text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const schoolLine = data.schoolURL ? '<div class="school">' + data.schoolURL + '</div>' : '';
   const letterheadBlock = data.schoolLetterhead
@@ -3214,13 +3215,71 @@ function downloadMemo() {
     + letterheadBlock
     + '<pre>' + escapedText + '</pre></body></html>';
 
+  return { html, filename };
+}
+
+function downloadMemo() {
+  const built = buildMemoHtmlAndFilename();
+  if (!built) return;
+  const { html, filename } = built;
+
   const blob = new Blob([html], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = filename.replace('.txt', '.html');
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+async function saveToGoogleDrive() {
+  const built = buildMemoHtmlAndFilename();
+  if (!built) return;
+  const { html, filename } = built;
+
+  const btn = document.getElementById('saveToDriveBtn');
+  const statusEl = document.getElementById('driveSaveStatus');
+  const originalLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  statusEl.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/drive/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename, content: html, mimeType: 'text/html' })
+    });
+    const data = await res.json();
+
+    if (res.status === 409 && data.error === 'not_connected') {
+      // Not connected yet. The generated document text doesn't survive a full
+      // page redirect, so rather than pretend to silently resume, tell the
+      // administrator plainly what to expect before sending them to Google.
+      if (confirm('You need to connect Google Drive first. You\'ll be taken to Google to approve access, then brought back here, and you\'ll need to click "Save to Google Drive" again since the draft document itself doesn\'t carry over. Continue?')) {
+        window.location.href = '/api/drive/connect';
+      } else {
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+      }
+      return;
+    }
+
+    if (!res.ok) throw new Error(data.error || 'Save failed.');
+
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+    statusEl.className = 'status';
+    statusEl.style.display = 'block';
+    statusEl.style.color = 'var(--success)';
+    statusEl.innerHTML = '✓ Saved to Google Drive. <a href="' + data.webViewLink + '" target="_blank" style="color:var(--navy); font-weight:700;">Open it →</a>';
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+    statusEl.style.display = 'block';
+    statusEl.style.color = '#c0392b';
+    statusEl.textContent = 'Could not save to Drive: ' + err.message;
+  }
 }
 
 function copyMemo() {
@@ -4591,7 +4650,15 @@ async function saveFormState() {
   });
   state._situations = Array.from(selectedSituations);
   state._schoolKey = window._selectedSchool?.key || '';
+  state._currentStep = currentStep;
+  state._maxReachedStep = maxReachedStep;
   await store.set('form:draft', JSON.stringify(state));
+  const indicator = document.getElementById('draftSaveIndicator');
+  if (indicator) {
+    indicator.style.opacity = '1';
+    clearTimeout(window._draftIndicatorTimeout);
+    window._draftIndicatorTimeout = setTimeout(() => { indicator.style.opacity = '0'; }, 1500);
+  }
 }
 
 async function restoreFormState() {
@@ -4633,6 +4700,19 @@ async function restoreFormState() {
 
   const docTypeVal = document.getElementById('docType')?.value;
   if (docTypeVal) toggleOtherDocType(docTypeVal);
+
+  // Jump back to whichever step they were on, and let them know their
+  // in-progress draft came back, rather than silently pre-filling fields
+  // they might not notice on a step they haven't reached yet.
+  if (typeof state._currentStep === 'number' && state._currentStep > 0) {
+    document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
+    currentStep = state._currentStep;
+    maxReachedStep = Math.max(state._maxReachedStep || state._currentStep, state._currentStep, maxReachedStep || 0);
+    const stepEl = document.getElementById('step-' + currentStep);
+    if (stepEl) stepEl.classList.add('active');
+    updateSideNav();
+    showToast('✓ Your in-progress writeup was restored');
+  }
 }
 
 function updateGenSummary() {
@@ -4832,7 +4912,28 @@ function populateDocTypeSelect(types) {
 
 window._districtProfile = null;
 
+// Clears everything locally cached that's specific to a district (profile,
+// school sites, CBAs, handbooks, merit rules) -- used when the browser has
+// another district's data cached from a previous login and the person now
+// logged in belongs to a genuinely different one.
+async function clearStaleDistrictData() {
+  try {
+    await store.delete('district:profile');
+    const prefixes = ['school:', 'cba:', 'handbook:', 'merit:'];
+    for (const prefix of prefixes) {
+      const result = await store.list(prefix);
+      const keys = result?.keys || [];
+      for (const key of keys) {
+        try { await store.delete(key); } catch (e) {}
+      }
+    }
+  } catch (e) {
+    // Best-effort -- a failed cleanup shouldn't block the person from using the app.
+  }
+}
+
 async function loadDistrictProfile() {
+  let sessionDomain = null;
   try {
     // First, ask the server who's logged in and pull that district's saved
     // profile directly. This is what makes Google login actually restore your
@@ -4842,7 +4943,8 @@ async function loadDistrictProfile() {
       const meRes = await fetch('/api/me');
       const me = await meRes.json();
       if (me.loggedIn && me.domain) {
-        const found = await pullDistrictSettings(me.domain);
+        sessionDomain = me.domain.trim().toLowerCase();
+        const found = await pullDistrictSettings(sessionDomain);
         if (found) {
           applyDistrictProfile(window._districtProfile);
           await loadSetupCBAList();
@@ -4858,7 +4960,17 @@ async function loadDistrictProfile() {
 
     const profileResult = await store.get('district:profile');
     if (profileResult?.value) {
-      window._districtProfile = JSON.parse(profileResult.value);
+      const cachedProfile = JSON.parse(profileResult.value);
+      // This browser may have another district's data cached from a previous
+      // login. Only trust it if it actually belongs to whoever is logged in
+      // right now -- otherwise a brand-new district (no server-side settings
+      // yet) would incorrectly show the last district's information.
+      if (sessionDomain && cachedProfile.domain && cachedProfile.domain.trim().toLowerCase() !== sessionDomain) {
+        await clearStaleDistrictData();
+        openSetup();
+        return;
+      }
+      window._districtProfile = cachedProfile;
       applyDistrictProfile(window._districtProfile);
     } else {
       // No profile found anywhere -- show setup regardless of setup:complete flag
@@ -6446,6 +6558,14 @@ Promise.resolve().then(() => {
   loadSavedSupport();
   attachFormStateSavers();
   attachDistrictFieldSavers();
+
+  const driveParam = new URLSearchParams(window.location.search).get('drive');
+  if (driveParam) {
+    history.replaceState(null, '', window.location.pathname);
+    if (driveParam === 'connected') showToast('✓ Google Drive connected. Generate your document, then click "Save to Google Drive."');
+    else if (driveParam === 'failed') alert('Could not connect Google Drive. Please try again.');
+    else if (driveParam === 'denied') alert('Google Drive connection was not completed.');
+  }
 });
 </script>
 </body>
