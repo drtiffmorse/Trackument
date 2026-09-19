@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-15-r7 -->
+<!-- BUILD: 2026-09-19-r1 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -139,6 +139,23 @@
 
 <script src="assets/reveal.js"></script>
 <script>
+  // Links like "Request Purchasing Documents" send people here with
+  // ?topic=purchasing so the form is ready to go. This replaces the old
+  // mailto: links, which did nothing on computers without an email app set up.
+  (function () {
+    var topic = new URLSearchParams(window.location.search).get('topic');
+    if (topic === 'purchasing') {
+      document.querySelector('.contact-hero-inner h1').textContent = 'Request Purchasing Documents';
+      document.querySelector('.contact-hero-inner .sub').textContent = 'Tell us who to send them to, and we will email your quote, W-9, invoice, or vendor packet.';
+      var msg = document.getElementById('contactMessage');
+      if (!msg.value) msg.value = 'I would like to request purchasing documents for our district. Please send: ';
+      document.title = 'Request Purchasing Documents | Trackument';
+    } else if (topic === 'training') {
+      var tmsg = document.getElementById('contactMessage');
+      if (!tmsg.value) tmsg.value = 'I would like to learn more about custom training on documenting employee discipline for our team.';
+    }
+  })();
+
   document.getElementById('contactForm').addEventListener('submit', async function (e) {
     e.preventDefault();
     var name = document.getElementById('contactName').value.trim();

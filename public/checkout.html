@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-19-r1 -->
+<!-- BUILD: 2026-09-19-r8 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -37,15 +37,15 @@
     header::after{
       content:'';display:block;height:4px;
       margin:0 -48px;
-      background:linear-gradient(90deg,#280b5b 0 25%,#2f9c90 25% 50%,#e05b0e 50% 75%,#dc012b 75% 100%);
+      background:linear-gradient(90deg,#1a0256 0 25%,#048784 25% 50%,#e05b0e 50% 75%,#c80204 75% 100%);
     }
     .header-inner{
-      max-width:1400px;margin:0 auto;
-      padding:14px 0;
+      max-width:1200px;margin:0 auto;
+      padding:22px 0 18px;
       display:flex;align-items:center;gap:24px;
     }
     .logo{display:flex;align-items:center;gap:8px;}
-    .logo img.logo-horizontal{width:200px;height:auto;max-width:100%;}
+    .logo img.logo-horizontal{height:74px;width:auto;max-width:100%;}
     .logo-brand-text{display:flex;flex-direction:column;}
     .logo-lockup{height:72px;width:auto;display:block;}
     .logo-horizontal{height:66px;width:auto;display:block;}
@@ -53,13 +53,13 @@
     .logo-brand-text img.wordmark{height:23px;width:auto;display:block;}
     .logo-subline{font-family:'IBM Plex Mono',monospace;font-size:0.66rem;text-transform:uppercase;color:var(--indigo);font-weight:700;margin-top:5px;white-space:nowrap;}
     .logo-tag{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;text-transform:uppercase;color:var(--orange);font-weight:600;margin-top:3px;white-space:nowrap;}
-    .checkout-nav{flex:1;display:flex;align-items:center;justify-content:flex-end;gap:28px;margin-right:24px;}
-    .checkout-nav a{font-size:0.92rem;font-weight:600;color:var(--text);opacity:0.85;}
+    .checkout-nav{flex:1;display:flex;align-items:center;justify-content:flex-end;gap:clamp(10px,2.4vw,34px);margin-right:0;}
+    .checkout-nav a{font-size:1.15rem;font-weight:700;color:#1a0256;opacity:0.9;white-space:nowrap;}
     .checkout-nav a:hover{opacity:1;}
     .btn-login{
       display:inline-flex;align-items:center;
-      font-weight:600;font-size:0.92rem;
-      color:var(--indigo);opacity:0.85;
+      font-weight:600;font-size:1.15rem;
+      color:#1a0256;opacity:0.85;
       transition:opacity .15s;
     }
     .btn-login:hover{opacity:1;}
@@ -226,13 +226,6 @@
     .site-row input:focus{outline:none;border-color:var(--indigo);}
 
     /* ── Payment method ── */
-    .privacy-note{
-      display:flex; align-items:center; gap:10px;
-      background:#f3f0fb; border:1px solid var(--border); border-radius:10px;
-      padding:12px 16px; margin-bottom:16px;
-      font-size:0.9rem; font-weight:600; color:var(--indigo);
-    }
-    .privacy-note svg{ width:18px; height:18px; flex-shrink:0; color:var(--teal); }
     .payment-label{
       font-size:0.8rem;font-weight:600;color:var(--indigo);
       letter-spacing:0.02em;margin-bottom:10px;
@@ -351,8 +344,11 @@
       .hero{padding:48px 20px 64px;}
       .section,.faq-section{padding:0 14px;}
       .checkout-card{padding:24px 18px;}
-      .header-inner{flex-wrap:wrap;}
-      .checkout-nav{flex-basis:100%;order:3;justify-content:flex-start;flex-wrap:wrap;row-gap:10px;padding-top:8px;margin-right:0;}
+      .header-inner{flex-wrap:wrap;padding:18px 0 14px;}
+      .logo{flex-shrink:1;min-width:0;max-width:100%;}
+      .logo img.logo-horizontal{height:auto;width:100%;max-width:280px;}
+      .checkout-nav{flex-basis:100%;order:3;justify-content:flex-start;flex-wrap:wrap;column-gap:16px;row-gap:12px;padding-top:8px;margin-right:0;}
+      .checkout-nav a, .btn-login{font-size:0.95rem;}
     }
   </style>
 </head>
@@ -375,7 +371,7 @@
 
 <div class="hero">
   <h1>Straightforward pricing for districts and sites</h1>
-  <p>One annual license gives your administrators access to district-configured, legally grounded employee discipline documentation, without per-user fees.</p>
+  <p>One annual license gives your administrators legally grounded employee discipline documentation built on your district&rsquo;s own policies and bargaining agreements, with no per-user fees.</p>
 </div>
 
 <div class="section">
@@ -383,7 +379,7 @@
   <div class="pricing-checklist">
     <div class="pricing-check-item">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
-      <span>Unlimited administrators at included sites</span>
+      <span>Unlimited administrators</span>
     </div>
     <div class="pricing-check-item">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
@@ -465,12 +461,7 @@
 
     <div class="agree-row training-row">
       <input type="checkbox" id="wantsTraining">
-      <label for="wantsTraining">I'd also like to add custom training for my team. <span class="training-note">Trackument staff will follow up after signup with pricing and schedule information.</span></label>
-    </div>
-
-    <div class="privacy-note">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-      <span>Employee names stay private. Real employee names never leave the browser.</span>
+      <label for="wantsTraining">I'd also like to add custom training for my team on documenting employee discipline. <span class="training-note">Trackument staff will follow up after signup with pricing and schedule information.</span></label>
     </div>
 
     <div class="payment-label">Payment method</div>
@@ -485,18 +476,19 @@
         <input type="radio" name="paymentMethod" value="invoice" onchange="selectPayment('invoice')">
         <div class="pay-icon">📋</div>
         <div class="pay-name">Purchase Order / Check</div>
-        <div class="pay-sub">Invoice within 24 hours</div>
+        <div class="pay-sub">Invoice emailed right away</div>
       </label>
     </div>
 
     <div class="procurement-callout" id="procurementCallout">
-      <span>Need a quote, PO, or vendor packet?</span>
-      <a href="mailto:sales@trackument.com?subject=Vendor%20Documents%20Request" class="procurement-btn">Request Vendor Documents</a>
+      <span>Need a quote, W&#8209;9, invoice, or vendor packet?</span>
+      <a href="/contact?topic=purchasing" class="procurement-btn">Request Purchasing Documents</a>
     </div>
 
     <div class="form-row" id="poNumberRow" style="display:none;">
       <label>Purchase order number <span style="font-weight:400; color:var(--muted);">(optional)</span></label>
       <input type="text" id="poNumber" placeholder="e.g. PO-2026-0142">
+      <span class="training-note">Enter your PO number to activate your district right away. No PO yet? We will email an invoice your business office can use to create one.</span>
     </div>
 
     <div class="error-msg" id="errorMsg"></div>
@@ -520,11 +512,11 @@
   </details>
   <details class="faq-item">
     <summary>How many administrators can use Trackument?</summary>
-    <p>Every principal, assistant principal, and district administrator at your included sites can use Trackument at no additional cost.</p>
+    <p>Every principal, assistant principal, and district administrator can use Trackument at no additional cost.</p>
   </details>
   <details class="faq-item">
     <summary>What does custom training include?</summary>
-    <p>Training is built around what your team actually needs. Common options include best practices for employee discipline documentation generally, hands-on training on using Trackument itself, onboarding sessions for new administrators, or a refresher for your team after a policy or bargaining agreement change. Check the box during signup and we'll follow up with you.</p>
+    <p>Training is built around what your team actually needs. Options include training on documenting employee discipline, such as writing clear, factual, and defensible records that follow due process and your bargaining agreements. We also offer hands-on training on using Trackument itself, onboarding sessions for new administrators, and refreshers for your team after a policy or bargaining agreement change. Check the box during signup and we'll follow up with you.</p>
   </details>
   <details class="faq-item">
     <summary>What if we need to add sites mid-year?</summary>
@@ -674,7 +666,8 @@
     // actual signup once the district has agreed to the terms.
     sessionStorage.setItem('pendingSignup', JSON.stringify({
       districtName, contactName, contactTitle, contactPhone, contactEmail,
-      districtDomain, tier: selectedTier, wantsTraining, method, poNumber
+      districtDomain, tier: selectedTier, wantsTraining, method, poNumber,
+      testKey: new URLSearchParams(window.location.search).get('testkey') || undefined
     }));
     window.location.href = '/terms';
   }
