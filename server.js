@@ -1,4 +1,4 @@
-// BUILD: 2026-09-19-r1
+// BUILD: 2026-09-19-r4
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -38,6 +38,13 @@ const isInternalDb = DATABASE_URL.includes('.railway.internal');
 const pool = new Pool({
   connectionString: DATABASE_URL,
   ssl: isInternalDb ? false : { rejectUnauthorized: false }
+});
+
+// Keep every API response out of search engines. One global rule instead of
+// per-route headers, so new /api/ routes are covered automatically.
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) res.set('X-Robots-Tag', 'noindex, nofollow');
+  next();
 });
 
 let stripe = null;
@@ -139,7 +146,7 @@ app.get('/login', (req, res) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Log in — Trackument</title>
+  <title>Log in | Trackument</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
@@ -728,7 +735,7 @@ async function sendNotificationEmail({ to, subject, text }) {
 async function notifyTrainingRequest({ districtName, contactName, contactEmail, tierLabel }) {
   await sendNotificationEmail({
     to: TRAINING_NOTIFY_EMAIL,
-    subject: 'Custom training requested — ' + districtName,
+    subject: 'Custom training requested: ' + districtName,
     text: `${contactName} from ${districtName} requested custom training during signup.\n\nContact: ${contactName} <${contactEmail}>\nPlan selected: ${tierLabel}\n\nFollow up to schedule and quote pricing.`,
   });
 }
@@ -764,7 +771,7 @@ async function sendRenewalReminders() {
       await sendNotificationEmail({
         to: d.contact_email,
         subject: `Your Trackument license renews on ${renewDateStr}`,
-        text: `Hi ${d.contact_name || 'there'},\n\nThis is a reminder that ${d.district_name}'s Trackument license (${d.tier_label || 'your current plan'}) is scheduled to renew on ${renewDateStr}. Your card on file will be charged automatically on that date unless you cancel first.${manageLine}\n\nQuestions? Just reply to this email.\n\n— Trackument`,
+        text: `Hi ${d.contact_name || 'there'},\n\nThis is a reminder that ${d.district_name}'s Trackument license (${d.tier_label || 'your current plan'}) is scheduled to renew on ${renewDateStr}. Your card on file will be charged automatically on that date unless you cancel first.${manageLine}\n\nQuestions? Just reply to this email.\n\nThe Trackument Team`,
       });
       await pool.query(`UPDATE districts SET renewal_reminder_sent_for = renewal_date WHERE domain = $1`, [d.domain]);
       console.log('Sent renewal reminder to', d.district_name, d.contact_email);
@@ -823,7 +830,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
       });
       await sendNotificationEmail({
         to: SALES_NOTIFY_EMAIL,
-        subject: 'New sale — ' + meta.districtName,
+        subject: 'New sale: ' + meta.districtName,
         text: `${meta.contactName} <${meta.contactEmail || session.customer_email}> from ${meta.districtName} just completed payment.\n\nDomain: ${meta.districtDomain}\nPlan: ${meta.tierLabel}\nAmount: $${(session.amount_total / 100).toLocaleString()}\nRenews: ${renewalDate ? new Date(renewalDate).toLocaleDateString() : 'unknown'}\n\nThey now have access at trackument.com/login using the shared beta password. No further action needed on your end unless you want to reach out personally.`,
       });
     }
@@ -881,10 +888,10 @@ app.post('/api/anthropic', async (req, res) => {
 // ─── Stripe checkout session ──────────────────────────────────────────────────
 // Pricing tiers -- must stay in sync with the TIERS array in public/checkout.html
 const PRICING_TIERS = [
-  { label: 'District — up to 5,000 ADA', price: 5000 },
-  { label: 'District — up to 10,000 ADA', price: 10000 },
-  { label: 'District — up to 20,000 ADA', price: 15000 },
-  { label: 'District — over 20,000 ADA', price: 20000 },
+  { label: 'District: up to 5,000 ADA', price: 5000 },
+  { label: 'District: 5,001–10,000 ADA', price: 10000 },
+  { label: 'District: 10,001–20,000 ADA', price: 15000 },
+  { label: 'District: 20,001+ ADA', price: 20000 },
   { label: 'Individual school site', price: 1000 },
 ];
 
@@ -898,7 +905,7 @@ app.post('/api/contact', express.json(), async (req, res) => {
 
   await sendNotificationEmail({
     to: SALES_NOTIFY_EMAIL,
-    subject: 'New contact form message — ' + name,
+    subject: 'New contact form message: ' + name,
     text: `${name} <${email}> sent a message via the Trackument contact form:${roleLine}${phoneLine}\n\n${message}`,
   });
 
@@ -916,7 +923,7 @@ app.post('/api/feedback', express.json(), async (req, res) => {
   try {
     await sendNotificationEmail({
       to: FEEDBACK_NOTIFY_EMAIL,
-      subject: 'New product feedback' + (districtDomain ? ' — ' + districtDomain : ''),
+      subject: 'New product feedback' + (districtDomain ? ': ' + districtDomain : ''),
       text: `New feedback submitted from inside Trackument.\n\nDistrict: ${districtDomain || 'unknown'}\nPage: ${page || 'unknown'}\n\n${feedback}`,
     });
     console.log('=== PRODUCT FEEDBACK ===\nDistrict:', districtDomain || 'unknown', '\nPage:', page || 'unknown', '\nFeedback:', feedback);
@@ -946,7 +953,7 @@ app.post('/api/checkout', async (req, res) => {
     await recordInvoiceRequest({ districtName, contactName, contactEmail, districtDomain, sitesNum, totalDue: totalCents / 100, tierLabel: selectedTier.label, agreedAt, wantsTraining, contactTitle, contactPhone });
     await sendNotificationEmail({
       to: SALES_NOTIFY_EMAIL,
-      subject: 'Invoice requested — ' + districtName,
+      subject: 'Invoice requested: ' + districtName,
       text: `${contactName}${contactTitle ? ' (' + contactTitle + ')' : ''} <${contactEmail}> from ${districtName} requested an invoice at signup.\n\nPhone: ${contactPhone || 'not provided'}\nDomain: ${districtDomain}\nPlan: ${selectedTier.label}\nAmount: $${(totalCents / 100).toLocaleString()}\nWants training: ${wantsTraining ? 'Yes' : 'No'}\n\nSend a formal invoice to ${contactEmail} within 24 hours per our published terms.`,
     });
     console.log('=== INVOICE REQUEST ===\nDistrict:', districtName, '\nContact:', contactName, contactTitle, contactEmail, contactPhone, '\nDomain:', districtDomain, '\nTier:', selectedTier.label, '\nAmount: $' + (totalCents / 100), '\nAgreed to contract:', agreedAt, '\nWants training:', !!wantsTraining);
@@ -964,7 +971,7 @@ app.post('/api/checkout', async (req, res) => {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: 'Trackument — Annual License',
+            name: 'Trackument Annual License',
             description: districtName + ' · ' + selectedTier.label,
           },
           unit_amount: totalCents,
@@ -976,12 +983,68 @@ app.post('/api/checkout', async (req, res) => {
         metadata: { districtName, contactName, contactEmail, districtDomain, tierLabel: selectedTier.label, contactTitle: contactTitle || '', contactPhone: contactPhone || '' },
       },
       metadata: { districtName, contactName, contactEmail, districtDomain, tierLabel: selectedTier.label, agreedToContractAt: agreedAt, wantsTraining: String(!!wantsTraining), contactTitle: contactTitle || '', contactPhone: contactPhone || '' },
+      // Shows the "Add promotion code" link so customers can enter codes
+      // created in the Stripe Dashboard (for example, a 10% off code).
+      allow_promotion_codes: true,
       success_url: BASE_URL + '/welcome?session_id={CHECKOUT_SESSION_ID}',
       cancel_url: BASE_URL + '/checkout',
     });
     res.json({ url: session.url });
   } catch (err) {
     res.status(500).json({ error: 'Payment error: ' + err.message });
+  }
+});
+
+// ─── Admin-only $1 test checkout ──────────────────────────────────────────────
+// Lets Tiffany run a real, live-mode purchase for $1 to confirm the whole flow
+// (payment, webhook, district activation, welcome page, promo codes) without
+// paying a real tier price. Protected by ADMIN_KEY, so no customer can reach it.
+// Open in a browser:
+//   /api/admin/test-checkout?key=ADMIN_KEY&domain=yourdomain.com&email=you@yourdomain.com
+// Optional: &name=Test%20District
+// Afterward, refund the payment AND cancel the subscription in Stripe. Canceling
+// fires customer.subscription.deleted, which marks this test district canceled.
+app.get('/api/admin/test-checkout', async (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'Unauthorized' });
+  if (!stripe) return res.status(500).send('Payment system not configured.');
+
+  const districtDomain = (req.query.domain || '').trim().toLowerCase();
+  const contactEmail = (req.query.email || '').trim();
+  const districtName = (req.query.name || 'Test District').trim();
+  if (!districtDomain || !contactEmail.includes('@')) {
+    return res.status(400).send('Add both a domain and an email to the link, for example: &domain=yourdomain.com&email=you@yourdomain.com');
+  }
+
+  const tierLabel = 'TEST: $1 live checkout';
+  const agreedAt = new Date().toISOString();
+  const meta = { districtName, contactName: 'Test Purchase', contactEmail, districtDomain, tierLabel, contactTitle: '', contactPhone: '' };
+
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'subscription',
+      customer_email: contactEmail,
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'Trackument Annual License (TEST)',
+            description: districtName + ' · ' + tierLabel,
+          },
+          unit_amount: 100, // $1.00
+          recurring: { interval: 'year' },
+        },
+        quantity: 1,
+      }],
+      subscription_data: { metadata: meta },
+      metadata: { ...meta, agreedToContractAt: agreedAt, wantsTraining: 'false', isTest: 'true' },
+      allow_promotion_codes: true,
+      success_url: BASE_URL + '/welcome?session_id={CHECKOUT_SESSION_ID}',
+      cancel_url: BASE_URL + '/checkout',
+    });
+    res.redirect(303, session.url);
+  } catch (err) {
+    res.status(500).send('Payment error: ' + err.message);
   }
 });
 
@@ -1281,7 +1344,7 @@ app.get('/api/agreement/download', async (req, res) => {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Trackument Service Agreement — ${district.district_name}</title>
+  <title>Trackument Service Agreement: ${district.district_name}</title>
   <style>
     body{font-family:Georgia,serif;max-width:760px;margin:40px auto;padding:0 24px;color:#1a1a1a;line-height:1.7;}
     h1{font-family:Arial,sans-serif;font-size:1.4rem;color:#1a0256;margin-bottom:4px;}
