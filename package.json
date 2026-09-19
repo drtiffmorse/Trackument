@@ -8,7 +8,7 @@
     "node-fetch": "^2.7.0",
     "pg": "^8.11.3",
     "stripe": "^14.0.0",
-    "pdf-parse":"^2.4.5"
+    "pdf-parse": "^2.4.5"
   },
-  "engines": { "node": ">=18.0.0" }
+  "engines": { "node": "22.x" }
 }
