@@ -1,4 +1,4 @@
-// BUILD: 2026-09-19-r9
+// BUILD: 2026-09-19-r11
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -915,7 +915,7 @@ async function createInvoiceSubscription({ districtName, contactEmail, districtD
     stripeInvoiceId: invoice ? invoice.id : null,
     invoiceUrl: invoice ? invoice.hosted_invoice_url : null,
     invoicePdf: invoice ? invoice.invoice_pdf : null,
-    renewalDate: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
+    renewalDate: subscriptionPeriodEnd(sub) ? new Date(subscriptionPeriodEnd(sub) * 1000).toISOString() : null,
   };
 }
 
@@ -987,6 +987,27 @@ async function sendAccessActivatedEmail({ districtName, contactName, contactEmai
   });
 }
 
+// Stripe changes the shape of webhook events by API version. Your live
+// endpoint sends newer events (2025+), where a subscription's period end lives
+// on its items and an invoice's subscription lives under invoice.parent. These
+// helpers read either the old or the new shape.
+function subscriptionPeriodEnd(sub) {
+  if (!sub) return null;
+  if (sub.current_period_end) return sub.current_period_end;
+  const item = sub.items && sub.items.data && sub.items.data[0];
+  return (item && item.current_period_end) || null;
+}
+function invoiceSubscriptionId(invoice) {
+  if (!invoice) return null;
+  if (typeof invoice.subscription === 'string') return invoice.subscription;
+  if (invoice.subscription && invoice.subscription.id) return invoice.subscription.id;
+  const details = invoice.parent && invoice.parent.subscription_details;
+  if (details && details.subscription) return typeof details.subscription === 'string' ? details.subscription : details.subscription.id;
+  const line = invoice.lines && invoice.lines.data && invoice.lines.data.find(l => l.subscription || (l.parent && l.parent.subscription_item_details));
+  if (line) return line.subscription || line.parent.subscription_item_details.subscription || null;
+  return null;
+}
+
 // ─── Stripe webhook (raw body) ────────────────────────────────────────────────
 app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   if (!stripe) return res.status(400).json({ error: 'Stripe not configured' });
@@ -1006,6 +1027,9 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
     return res.status(400).json({ error: err.message });
   }
 
+  // Any error while handling an event returns 500 so Stripe retries it later,
+  // instead of leaving the request hanging.
+  try {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const meta = session.metadata || {};
@@ -1014,7 +1038,8 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
       if (session.subscription) {
         try {
           const sub = await stripe.subscriptions.retrieve(session.subscription);
-          renewalDate = new Date(sub.current_period_end * 1000).toISOString();
+          const periodEnd = subscriptionPeriodEnd(sub);
+          renewalDate = periodEnd ? new Date(periodEnd * 1000).toISOString() : null;
         } catch (err) {
           console.error('Could not retrieve subscription for renewal date:', err.message);
         }
@@ -1046,8 +1071,9 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
   // stored renewal_date accurate so the reminder job always checks the real date.
   if (event.type === 'customer.subscription.updated') {
     const sub = event.data.object;
-    const renewalDate = new Date(sub.current_period_end * 1000).toISOString();
-    await pool.query(
+    const periodEnd = subscriptionPeriodEnd(sub);
+    const renewalDate = periodEnd ? new Date(periodEnd * 1000).toISOString() : null;
+    if (renewalDate) await pool.query(
       `UPDATE districts SET renewal_date = $1, renewal_reminder_sent_for = NULL WHERE stripe_subscription_id = $2`,
       [renewalDate, sub.id]
     );
@@ -1057,13 +1083,14 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
   // guarantees access is on, including a district that paid before sending a PO.
   if (event.type === 'invoice.paid') {
     const invoice = event.data.object;
-    if (invoice.collection_method === 'send_invoice' && invoice.subscription) {
+    const subId = invoiceSubscriptionId(invoice);
+    if (invoice.collection_method === 'send_invoice' && subId) {
       const { rows } = await pool.query(
         `UPDATE districts SET payment_status = 'paid', amount_paid = $1, status = 'active',
                 activated_at = COALESCE(activated_at, now())
          WHERE stripe_subscription_id = $2
          RETURNING district_name, domain`,
-        [invoice.amount_paid, invoice.subscription]
+        [invoice.amount_paid, subId]
       );
       if (rows[0]) {
         await sendNotificationEmail({
@@ -1079,9 +1106,10 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
   // lets Tiffany decide whether to follow up personally or pause the account.
   if (event.type === 'invoice.overdue') {
     const invoice = event.data.object;
-    if (invoice.collection_method === 'send_invoice' && invoice.subscription) {
-      await pool.query(`UPDATE districts SET payment_status = 'overdue' WHERE stripe_subscription_id = $1`, [invoice.subscription]);
-      const { rows } = await pool.query(`SELECT district_name, domain, contact_name, contact_email, po_number FROM districts WHERE stripe_subscription_id = $1 LIMIT 1`, [invoice.subscription]);
+    const subId = invoiceSubscriptionId(invoice);
+    if (invoice.collection_method === 'send_invoice' && subId) {
+      await pool.query(`UPDATE districts SET payment_status = 'overdue' WHERE stripe_subscription_id = $1`, [subId]);
+      const { rows } = await pool.query(`SELECT district_name, domain, contact_name, contact_email, po_number FROM districts WHERE stripe_subscription_id = $1 LIMIT 1`, [subId]);
       const d = rows[0] || {};
       await sendNotificationEmail({
         to: SALES_NOTIFY_EMAIL,
@@ -1099,6 +1127,10 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
       `UPDATE districts SET status = 'canceled' WHERE stripe_subscription_id = $1`,
       [sub.id]
     );
+  }
+  } catch (err) {
+    console.error('Webhook handling failed for', event.type, event.id, '-', err.message);
+    return res.status(500).json({ error: 'Webhook handling failed.' });
   }
   res.json({ received: true });
 });
@@ -1624,6 +1656,103 @@ app.delete('/api/admin/board-policies/:id', async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── District-managed board policies ─────────────────────────────────────────
+// Districts can upload their own board policy PDFs from District Settings.
+// The text is split into individual policies (BP/AR/BB/E numbers) and saved
+// for the signed-in district's domain only, alongside anything Trackument
+// staff added through the admin tool.
+function parsePolicyText(raw) {
+  const markerRegex = /^(?:[A-Z][A-Za-z/&]*\s+){0,2}((?:BP|AR|BB|E)\s*\d{3,5}(?:\.\d+)?)\b(.*)$/gm;
+  const matches = [...String(raw || '').matchAll(markerRegex)];
+  const policies = [];
+  for (let i = 0; i < matches.length; i++) {
+    const m = matches[i];
+    const num = m[1].replace(/\s+/g, ' ').trim();
+    const start = m.index + m[0].length;
+    const end = i + 1 < matches.length ? matches[i + 1].index : raw.length;
+    const body = raw.slice(start, end).trim();
+    let title = m[2].trim();
+    let text = body;
+    if (!title) {
+      const lines = body.split('\n');
+      title = (lines[0] || '').trim();
+      text = lines.slice(1).join('\n').trim();
+    }
+    if (text || body) policies.push({ policyNumber: num, title: title.slice(0, 300), policyText: text || body });
+  }
+  // A policy number can repeat (for example, a running header on every page).
+  // Keep the longest text for each number.
+  const byNumber = new Map();
+  for (const p of policies) {
+    const prev = byNumber.get(p.policyNumber);
+    if (!prev || p.policyText.length > prev.policyText.length) byNumber.set(p.policyNumber, p);
+  }
+  return [...byNumber.values()];
+}
+
+app.get('/api/district/board-policies', requireAppAccess, async (req, res) => {
+  const domain = req.districtSession.district_domain;
+  try {
+    const { rows } = await pool.query(
+      'SELECT id, policy_number, title, updated_at FROM board_policies WHERE domain = $1 ORDER BY policy_number',
+      [domain]
+    );
+    res.json({ policies: rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load board policies.' });
+  }
+});
+
+app.post('/api/district/board-policies/upload', requireAppAccess, async (req, res) => {
+  const domain = req.districtSession.district_domain;
+  const { filename, dataBase64 } = req.body || {};
+  if (!dataBase64) return res.status(400).json({ error: 'No file received.' });
+  if (!String(filename || '').toLowerCase().endsWith('.pdf')) return res.status(400).json({ error: 'Please upload board policies as PDF files.' });
+  if (!pdfParse) return res.status(500).json({ error: 'PDF reading is temporarily unavailable. Please try again later, or email your policies to help@trackument.com.' });
+  let text;
+  try {
+    const base64 = dataBase64.includes(',') ? dataBase64.split(',')[1] : dataBase64;
+    const parser = new pdfParse.PDFParse({ data: Buffer.from(base64, 'base64') });
+    text = (await parser.getText()).text || '';
+  } catch (err) {
+    console.error('District policy PDF read failed:', filename, err.message);
+    return res.status(400).json({ error: 'We could not read ' + filename + '. If it is a scanned image, please upload a text-based PDF from your policy website.' });
+  }
+  const policies = parsePolicyText(text);
+  if (policies.length === 0) {
+    return res.status(400).json({ error: 'We read ' + filename + ' but could not find policy numbers such as BP 4118 or AR 4218. Please upload policy PDFs downloaded from your board policy website, or email them to help@trackument.com and we will add them for you.' });
+  }
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (const p of policies) {
+      await client.query(`
+        INSERT INTO board_policies (domain, policy_number, title, policy_text, updated_at)
+        VALUES ($1, $2, $3, $4, now())
+        ON CONFLICT (domain, policy_number) DO UPDATE SET
+          title = EXCLUDED.title, policy_text = EXCLUDED.policy_text, updated_at = now()
+      `, [domain, p.policyNumber, p.title, p.policyText]);
+    }
+    await client.query('COMMIT');
+    res.json({ ok: true, filename, saved: policies.length, policyNumbers: policies.map(p => p.policyNumber) });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: 'Could not save policies from ' + filename + '.' });
+  } finally {
+    client.release();
+  }
+});
+
+app.delete('/api/district/board-policies/:id', requireAppAccess, async (req, res) => {
+  try {
+    const { rowCount } = await pool.query('DELETE FROM board_policies WHERE id = $1 AND domain = $2', [req.params.id, req.districtSession.district_domain]);
+    if (!rowCount) return res.status(404).json({ error: 'Policy not found.' });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not remove that policy.' });
   }
 });
 
