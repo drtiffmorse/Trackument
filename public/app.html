@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-19-r2 -->
+<!-- BUILD: 2026-09-19-r3 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1224,6 +1224,17 @@
         <button class="btn btn-secondary" onclick="testBPConnection()" id="bpTestBtn" style="font-size:0.78rem; white-space:nowrap; flex-shrink:0; padding:8px 16px;">Test Connection</button>
       </div>
       <div id="bpTestResult" style="font-size:0.82rem; margin-top:4px; display:none; padding:8px 8px; border-radius:2px;"></div>
+
+      <label style="margin-top:24px;">Board Policy Documents</label>
+      <div class="setup-section-sub" style="margin-top:0; margin-bottom:8px;">Upload your board policies and administrative regulations as PDFs, downloaded from your board policy website. Trackument reads each policy so your writeups can cite and quote your district's actual policy language. You can upload several files at once, and everyone at your district will share them.</div>
+      <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="bpDropZone" onclick="document.getElementById('bpFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleBPDrop(event)">
+        <div style="font-size:0.85rem;color:var(--gray);margin-bottom:8px;">Drag and drop, or</div>
+        <button type="button" onclick="event.stopPropagation(); document.getElementById('bpFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:8px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
+        <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF files only (.pdf)</div>
+        <input type="file" id="bpFileInput" accept=".pdf,application/pdf" multiple style="display:none;" onchange="handleBPFiles(this.files); this.value='';">
+      </div>
+      <div id="bpUploadStatus" style="display:none;font-size:0.82rem;margin-top:8px;padding:8px;border-radius:2px;"></div>
+      <div id="bpPolicyList" style="margin-top:8px;"></div>
 
       <label>County</label>
       <input type="text" id="setupCounty" name="county" autocomplete="off" placeholder="e.g. Ventura">
@@ -5254,7 +5265,107 @@ function testImage(src) {
 
 // ─── Tab switching ────────────────────────────────────────────────────────────
 
+// ─── Board policy documents (district-uploaded) ──────────────────────────────
+function bpEscape(str) {
+  const div = document.createElement('div');
+  div.textContent = str == null ? '' : String(str);
+  return div.innerHTML;
+}
+
+async function loadBoardPolicyList() {
+  const list = document.getElementById('bpPolicyList');
+  if (!list) return;
+  try {
+    const res = await fetch('/api/district/board-policies');
+    if (!res.ok) { list.innerHTML = ''; return; }
+    const data = await res.json();
+    const policies = data.policies || [];
+    if (policies.length === 0) {
+      list.innerHTML = '<div style="font-size:0.85rem;color:var(--gray);font-style:italic;padding:8px 0;">No board policies uploaded yet.</div>';
+      return;
+    }
+    list.innerHTML =
+      '<div style="font-size:0.82rem;font-weight:700;color:var(--navy);margin:8px 0;">' + policies.length + (policies.length === 1 ? ' policy' : ' policies') + ' on file</div>' +
+      '<div style="max-height:240px;overflow-y:auto;border:1px solid var(--light-gray);border-radius:3px;">' +
+      policies.map(p =>
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 16px;border-bottom:1px solid var(--light-gray);font-size:0.85rem;">' +
+          '<span><strong>' + bpEscape(p.policy_number) + '</strong>' + (p.title ? ' &middot; ' + bpEscape(p.title) : '') + '</span>' +
+          '<button type="button" onclick="removeBoardPolicy(' + Number(p.id) + ')" style="font-size:0.72rem;color:var(--gray);background:transparent;border:none;cursor:pointer;text-decoration:underline;flex-shrink:0;">Remove</button>' +
+        '</div>'
+      ).join('') +
+      '</div>';
+  } catch (err) {
+    list.innerHTML = '';
+  }
+}
+
+function showBPStatus(message, ok) {
+  const el = document.getElementById('bpUploadStatus');
+  if (!el) return;
+  el.style.display = 'block';
+  el.style.background = ok ? '#f0fdf4' : '#fef2f2';
+  el.style.border = '1px solid ' + (ok ? '#86efac' : '#fca5a5');
+  el.style.color = ok ? '#166534' : '#7f1d1d';
+  el.innerHTML = message;
+}
+
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.onerror = () => reject(new Error('Could not read ' + file.name));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleBPFiles(fileList) {
+  const files = Array.from(fileList || []).filter(Boolean);
+  if (files.length === 0) return;
+  const results = [];
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    showBPStatus('Reading ' + bpEscape(file.name) + ' (' + (i + 1) + ' of ' + files.length + ')...', true);
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      results.push({ ok: false, text: bpEscape(file.name) + ': please upload PDF files only.' });
+      continue;
+    }
+    try {
+      const dataBase64 = await readFileAsDataURL(file);
+      const res = await fetch('/api/district/board-policies/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, dataBase64 })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Upload failed.');
+      results.push({ ok: true, text: bpEscape(file.name) + ': found ' + data.saved + (data.saved === 1 ? ' policy.' : ' policies.') });
+    } catch (err) {
+      results.push({ ok: false, text: bpEscape(err.message) });
+    }
+  }
+  showBPStatus(results.map(r => (r.ok ? '&#10003; ' : '&#9888; ') + r.text).join('<br>'), results.every(r => r.ok));
+  document.getElementById('bpDropZone').style.borderColor = 'var(--light-gray)';
+  loadBoardPolicyList();
+}
+
+function handleBPDrop(e) {
+  e.preventDefault();
+  handleBPFiles(e.dataTransfer.files);
+}
+
+async function removeBoardPolicy(id) {
+  if (!confirm('Remove this policy? Writeups will no longer quote it.')) return;
+  try {
+    const res = await fetch('/api/district/board-policies/' + id, { method: 'DELETE' });
+    if (!res.ok) throw new Error();
+    loadBoardPolicyList();
+  } catch (err) {
+    showToast('Could not remove that policy. Please try again.');
+  }
+}
+
 function switchTab(tab) {
+  if (tab === 'district') loadBoardPolicyList();
   const tabIds = { district: 'District', schools: 'Schools' };
   Object.keys(tabIds).forEach(t => {
     const suffix = tabIds[t];
