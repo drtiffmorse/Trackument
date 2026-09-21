@@ -1,4 +1,4 @@
-// BUILD: 2026-09-20-r4
+// BUILD: 2026-09-20-r6
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -40,6 +40,15 @@ const pool = new Pool({
 
 // Keep every API response out of search engines. One global rule instead of
 // per-route headers, so new /api/ routes are covered automatically.
+// Express 4 does not catch errors thrown inside async handlers, so wrap them.
+// Without this, one failed query in a route without its own try/catch takes
+// down the whole server for everyone.
+const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
+['get', 'post', 'put', 'delete', 'patch'].forEach((method) => {
+  const original = app[method].bind(app);
+  app[method] = (path, ...handlers) => original(path, ...handlers.map(h => (typeof h === 'function' && h.length <= 3 ? asyncRoute(h) : h)));
+});
+
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) res.set('X-Robots-Tag', 'noindex, nofollow');
   next();
@@ -2094,6 +2103,64 @@ app.get('/app', (req, res) => res.sendFile(path.join(__dirname, 'public', 'app.h
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
+// Emails Tiffany when something breaks, without turning a broken loop into a
+// thousand messages: one email per distinct problem every fifteen minutes, and
+// no more than eight in an hour.
+const errorEmailSentAt = new Map();
+let errorEmailsThisHour = 0;
+let errorEmailHourStarted = Date.now();
+async function reportServerError({ where, message, stack, method, url }) {
+  try {
+    if (Date.now() - errorEmailHourStarted > 60 * 60 * 1000) { errorEmailsThisHour = 0; errorEmailHourStarted = Date.now(); }
+    const key = where + '|' + String(message).slice(0, 120);
+    const last = errorEmailSentAt.get(key) || 0;
+    if (Date.now() - last < 15 * 60 * 1000) return;
+    if (errorEmailsThisHour >= 8) return;
+    errorEmailSentAt.set(key, Date.now());
+    errorEmailsThisHour++;
+    await sendNotificationEmail({
+      to: SALES_NOTIFY_EMAIL,
+      subject: 'Trackument error: ' + String(message).slice(0, 80),
+      text: [
+        'Something failed on the Trackument server.',
+        '',
+        'Where: ' + where,
+        method && url ? 'Request: ' + method + ' ' + url : '',
+        'Time: ' + new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }) + ' Pacific',
+        '',
+        'Message:',
+        String(message),
+        '',
+        'First lines of the trace:',
+        String(stack || 'none').split('\n').slice(0, 6).join('\n'),
+        '',
+        'Full details are in the Railway deployment logs.',
+      ].filter(Boolean).join('\n'),
+    });
+  } catch (err) {
+    console.error('Could not send error notice:', err.message);
+  }
+}
+
+// Anything that slips past a route's own error handling ends here, so the
+// visitor gets a clean message and the server stays up.
+app.use((err, req, res, next) => {
+  console.error('Unhandled error on', req.method, req.originalUrl, '-', err && err.message);
+  reportServerError({ where: 'Request handler', message: (err && err.message) || 'Unknown error', stack: err && err.stack, method: req.method, url: req.originalUrl });
+  if (res.headersSent) return next(err);
+  if (req.path.startsWith('/api/')) return res.status(500).json({ error: 'Something went wrong on our end. Please try again.' });
+  res.status(500).send('Something went wrong on our end. Please try again.');
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled promise rejection:', reason && (reason.stack || reason.message || reason));
+  reportServerError({ where: 'Background task', message: (reason && (reason.message || reason)) || 'Unknown error', stack: reason && reason.stack });
+});
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err && (err.stack || err.message));
+  reportServerError({ where: 'Server process', message: (err && err.message) || 'Unknown error', stack: err && err.stack });
+});
 
 initDb()
   .then(() => {
