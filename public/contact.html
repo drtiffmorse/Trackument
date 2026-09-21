@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-19-r1 -->
+<!-- BUILD: 2026-09-20-r1 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,7 +27,17 @@
 </script>
 <style>
   .contact-hero{ padding:80px 48px 0; background:var(--cream); }
-  .contact-hero-inner{ max-width:560px; margin:0 auto; text-align:center; }
+  /* The heading block lines up with the form card below it, same width and
+     same left edge, rather than floating centered above it. */
+  .contact-hero-inner{ max-width:560px; margin:0 auto; text-align:left; }
+  .contact-hero-inner h1{
+    font-size:var(--fs-headline); font-weight:800; letter-spacing:-0.02em;
+    color:var(--navy); margin:0;
+  }
+  .contact-hero-inner p.sub{
+    font-size:var(--fs-body); line-height:var(--lh-body); color:var(--text);
+    margin:16px 0 0;
+  }
   .contact-form-wrap{
     max-width:560px; margin:44px auto 100px;
     background:#fff; border:1px solid var(--rule); border-radius:16px;
@@ -43,13 +53,13 @@
   .contact-field textarea{ min-height:130px; }
   .contact-submit{
     width:100%; padding:14px; border:none; border-radius:8px;
-    background:var(--gold); color:var(--navy); font-weight:700; font-size:1.02rem;
+    background:var(--gold); color:#fff; font-weight:700; font-size:1.02rem;
     cursor:pointer; transition:opacity .15s ease;
   }
   .contact-submit:hover{ opacity:0.88; }
   .contact-submit:disabled{ opacity:0.6; cursor:not-allowed; }
   .contact-error{ display:none; color:var(--red); font-size:0.9rem; margin-bottom:14px; }
-  .contact-success{ display:none; text-align:center; padding:20px 0; }
+  .contact-success{ display:none; text-align:left; padding:20px 0; }
   .contact-success h3{ color:var(--navy); font-size:1.3rem; margin-bottom:8px; }
   .contact-success p{ color:var(--text-light); }
 </style>

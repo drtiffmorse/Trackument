@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-17-r3 -->
+<!-- BUILD: 2026-09-20-r2 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -129,7 +129,7 @@
   <header>
     <div>
       <h1>Board Policies Admin</h1>
-      <div class="sub">Internal tool — paste real district policy text copied from Simbli/eBoard</div>
+      <div class="sub">Internal tool for loading real district policy text copied from Simbli or eBoard</div>
     </div>
     <button class="btn-secondary" style="background:rgba(255,255,255,0.1); color:#fff; border-color:rgba(255,255,255,0.3);" onclick="logout()">Log out</button>
   </header>
@@ -177,18 +177,18 @@
         A single PDF containing more than one document (a policy plus an attached exhibit, for example) is split correctly.
       </p>
 
-      <label>Upload PDFs</label>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+        <label style="margin:0;">Upload PDFs</label>
+        <button class="btn-primary" id="extractBtn" onclick="extractAndParsePdfs()" style="display:none;">Read PDFs and add policies</button>
+      </div>
       <div id="pdfDropZone" style="background:#fff; border:2px dashed var(--light-gray); border-radius:6px; padding:24px; text-align:center; cursor:pointer;" onclick="document.getElementById('pdfFileInput').click()" ondragover="event.preventDefault(); this.style.borderColor='var(--gold)';" ondragleave="this.style.borderColor='var(--light-gray)';" ondrop="handlePdfDrop(event)">
         <div style="font-size:0.9rem; color:var(--gray); margin-bottom:10px;">Drag and drop PDF files here, or</div>
         <button type="button" onclick="event.stopPropagation(); document.getElementById('pdfFileInput').click()" style="background:var(--gold); color:#fff; border:none; border-radius:6px; padding:9px 20px; font-size:0.85rem; font-weight:700; cursor:pointer;">Choose Files</button>
         <div style="font-size:0.75rem; color:var(--gray); margin-top:10px;">You can select multiple PDFs at once.</div>
         <input type="file" id="pdfFileInput" accept="application/pdf" multiple style="display:none;" onchange="handlePdfFiles(this.files)">
       </div>
-      <div id="pdfFileList" style="margin-top:12px;"></div>
-      <div style="margin-top:14px;">
-        <button class="btn-primary" id="extractBtn" onclick="extractAndParsePdfs()" style="display:none;">Extract text and preview policies</button>
-      </div>
       <div class="status" id="extractStatus"></div>
+      <div id="pdfFileList" style="margin-top:12px;"></div>
 
       <div style="display:flex; align-items:center; gap:12px; margin:24px 0;">
         <div style="flex:1; height:1px; background:var(--light-gray);"></div>
@@ -206,19 +206,9 @@ Prior to any suspension...
 BB 9270  Conflict of Interest
 ..."></textarea>
       <div style="margin-top:14px;">
-        <button class="btn-primary" onclick="parseBulkPaste()">Preview policies found</button>
+        <button class="btn-primary" onclick="parseBulkPaste()">Add these policies</button>
       </div>
-      <div id="bulkPreviewWrap" style="display:none; margin-top:20px;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-          <div style="font-size:0.9rem; font-weight:700; color:var(--indigo);"><span id="bulkPreviewCount">0</span> policies found</div>
-        </div>
-        <div id="bulkPreviewList"></div>
-        <div style="margin-top:16px; display:flex; gap:10px; align-items:center;">
-          <button class="btn-primary" onclick="saveBulkPolicies()">Save all to this district</button>
-          <button class="btn-secondary" onclick="document.getElementById('bulkPreviewWrap').style.display='none';">Cancel</button>
-        </div>
-        <div class="status" id="bulkSaveStatus"></div>
-      </div>
+      <div class="status" id="bulkSaveStatus"></div>
     </div>
 
     <div class="card" id="listCard" style="display:none;">
@@ -385,7 +375,6 @@ async function deletePolicy(id, num) {
 function showBulkMode() {
   document.getElementById('addCard').style.display = 'none';
   document.getElementById('bulkCard').style.display = 'block';
-  document.getElementById('bulkPreviewWrap').style.display = 'none';
   document.getElementById('bulkSaveStatus').className = 'status';
 }
 
@@ -488,8 +477,9 @@ async function extractAndParsePdfs() {
 // Recognizes lines like "BP 4118", "AR 4118.1", "BB 9270" etc. at the start of
 // a line as the beginning of a new policy. Everything up to the next such line
 // (or the end of the text) becomes that policy's content. The first non-empty
-// line after the number is used as a starting guess for the title, editable
-// in the preview before saving.
+// line after the number is used as the title. Policies are added to the
+// loaded district right away, and each one can be edited or removed from the
+// saved list below.
 function parseBulkPaste() {
   const raw = document.getElementById('bulkPasteText').value;
   const markerRegex = /^(?:[A-Z][A-Za-z/&]*\s+){0,2}((?:BP|AR|BB|E)\s*\d{3,5}(?:\.\d+)?)\b(.*)$/gm;
@@ -522,44 +512,17 @@ function parseBulkPaste() {
   }
 
   window._bulkParsed = policies;
-  renderBulkPreview(policies);
-}
-
-function renderBulkPreview(policies) {
-  document.getElementById('bulkPreviewCount').textContent = policies.length;
-  const list = document.getElementById('bulkPreviewList');
-  list.innerHTML = policies.map((p, i) => `
-    <div class="policy-item">
-      <div class="row-2" style="margin-bottom:8px;">
-        <div>
-          <label style="font-size:0.7rem;">Policy number</label>
-          <input type="text" value="${escapeAttr(p.policyNumber)}" oninput="window._bulkParsed[${i}].policyNumber=this.value" style="padding:7px 10px; font-size:0.85rem;">
-        </div>
-        <div>
-          <label style="font-size:0.7rem;">Title</label>
-          <input type="text" value="${escapeAttr(p.title)}" oninput="window._bulkParsed[${i}].title=this.value" style="padding:7px 10px; font-size:0.85rem;">
-        </div>
-      </div>
-      <div style="font-size:0.8rem; color:var(--muted); max-height:100px; overflow-y:auto; white-space:pre-wrap; border-top:1px solid var(--border); padding-top:8px;">${escapeHtml(p.policyText).slice(0, 500)}${p.policyText.length > 500 ? '…' : ''}</div>
-    </div>
-  `).join('');
-  document.getElementById('bulkPreviewWrap').style.display = 'block';
-}
-
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str || '';
-  return div.innerHTML;
-}
-function escapeAttr(str) {
-  return escapeHtml(str).replace(/"/g, '&quot;');
+  saveBulkPolicies();
 }
 
 async function saveBulkPolicies() {
   const statusEl = document.getElementById('bulkSaveStatus');
   const policies = window._bulkParsed || [];
+  window._bulkParsed = [];
   if (!currentDomain) { alert('Load a district first.'); return; }
   if (policies.length === 0) return;
+  statusEl.className = 'status ok';
+  statusEl.textContent = `Adding ${policies.length} policies to ${currentDomain}...`;
 
   try {
     const res = await fetch('/api/admin/board-policies/bulk', {
@@ -571,11 +534,17 @@ async function saveBulkPolicies() {
     if (!res.ok) throw new Error(data.error || 'Save failed');
 
     statusEl.className = 'status ok';
-    statusEl.textContent = `✓ Saved ${data.saved} of ${policies.length} policies for ${currentDomain}` +
+    statusEl.textContent = `✓ Added ${data.saved} of ${policies.length} policies to ${currentDomain}` +
       (data.failed && data.failed.length ? ` (skipped: ${data.failed.join(', ')})` : '');
     document.getElementById('bulkPasteText').value = '';
-    document.getElementById('bulkPreviewWrap').style.display = 'none';
-    loadPolicies();
+    window._selectedPdfFiles = [];
+    document.getElementById('pdfFileList').innerHTML = '';
+    document.getElementById('extractBtn').style.display = 'none';
+    await loadPolicies();
+    // loadPolicies resets the page to single-policy mode, so come back here
+    // in case there is another batch to add.
+    document.getElementById('addCard').style.display = 'none';
+    document.getElementById('bulkCard').style.display = 'block';
   } catch (err) {
     statusEl.className = 'status err';
     statusEl.textContent = 'Error: ' + err.message;

@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-19-r3 -->
+<!-- BUILD: 2026-09-20-r13 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -269,6 +269,19 @@
     border-color: var(--gold);
     background: var(--white);
   }
+
+  /* Draw our own dropdown arrow so it sits in from the right edge instead of
+     hard against it, and leave room for it after the text. */
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    padding-right: 40px;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%235b5470' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+  }
+  select::-ms-expand { display: none; }
 
   input[type="text"]::placeholder, textarea::placeholder, input[type="date"]::placeholder, input[type="time"]::placeholder {
     color: #8a8578;
@@ -628,34 +641,40 @@
   /* Working status banner */
   .status-banner {
     position: fixed;
-    top: 0; left: 0; right: 0;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(440px, 88vw);
     z-index: 9999;
     background: var(--navy);
     color: var(--white);
-    padding:16px 24px;
+    padding:28px 32px;
+    border-radius: 6px;
     display: none;
+    flex-direction: column;
     align-items: center;
-    gap:16px;
-    font-size: 0.88rem;
+    text-align: center;
+    gap:12px;
+    font-size: 0.95rem;
     font-weight: 600;
     letter-spacing: 0.02em;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.18);
-    animation: slideDown 0.2s ease;
+    /* The wide spread dims the page behind it without a separate overlay. */
+    box-shadow: 0 10px 40px rgba(0,0,0,0.28), 0 0 0 9999px rgba(26,2,86,0.28);
+    animation: fadeInStatus 0.2s ease;
   }
-  @keyframes slideDown {
-    from { transform: translateY(-100%); }
-    to { transform: translateY(0); }
+  @keyframes fadeInStatus {
+    from { opacity: 0; transform: translate(-50%, -46%); }
+    to { opacity: 1; transform: translate(-50%, -50%); }
   }
   .status-banner.visible { display: flex; }
   .status-banner-spinner {
-    width: 18px; height: 18px;
+    width: 26px; height: 26px;
     border: 2px solid rgba(255,255,255,0.3);
     border-top-color: var(--gold);
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
     flex-shrink: 0;
   }
-  .status-banner-text { flex: 1; }
+  .status-banner-text { flex: none; }
   .status-banner-sub { font-size: 0.76rem; font-weight: 400; opacity: 0.75; margin-top:4px; }
   .loading p { color: var(--gray); font-size: 0.88rem; letter-spacing: 0.04em; }
 
@@ -942,6 +961,15 @@
   }
   .setup-section-title:first-child { margin-top: 0; padding-top: 0; border-top: none; }
 
+  .setup-card {
+    background: var(--white);
+    border: 1px solid var(--light-gray);
+    border-radius: 4px;
+    padding: 20px 24px;
+    margin-top: 20px;
+  }
+  .setup-card .setup-section-title { margin-top: 0; padding-top: 0; border-top: none; }
+
   .setup-section-sub {
     font-size: 0.82rem;
     color: var(--gray);
@@ -1203,6 +1231,7 @@
     <!-- District Tab -->
     <div class="setup-modal-body" id="tabPanelDistrict">
       <form autocomplete="on" onsubmit="return false;">
+      <div class="setup-card">
       <div class="setup-section-title" style="margin-top:0;padding-top:0;border-top:none;">District Information</div>
       <div class="setup-section-sub">Enter your district information. This will appear on every document you generate.</div>
 
@@ -1217,16 +1246,23 @@
       <div id="checkDomainResult" style="font-size:0.82rem; margin-top:4px; display:none; padding:8px 8px; border-radius:2px;"></div>
       <div class="setup-section-sub" style="margin-top:4px;">We'll automatically check whether another administrator at your district has already set this up. If so, we'll fill in the board policy link, county, document types, and bargaining agreements for you. If you're the first, just fill in the fields below. Every other administrator at your district will be able to use what you save here.</div>
 
+      <label>County</label>
+      <input type="text" id="setupCounty" name="county" autocomplete="off" placeholder="e.g. Ventura">
+      <div class="setup-section-sub" style="margin-top:4px;">Used for food-service/nutrition writeups only. Trackument cites the California Retail Food Code directly, and adds a note pointing administrators to your county's Environmental Health Department for anything beyond state code.</div>
 
-      <label>Board Policy Website URL</label>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <input type="text" id="setupBPURL" name="bpURL" autocomplete="url" placeholder="Board policy website URL (optional)" style="flex:1; margin:0;">
-        <button class="btn btn-secondary" onclick="testBPConnection()" id="bpTestBtn" style="font-size:0.78rem; white-space:nowrap; flex-shrink:0; padding:8px 16px;">Test Connection</button>
       </div>
-      <div id="bpTestResult" style="font-size:0.82rem; margin-top:4px; display:none; padding:8px 8px; border-radius:2px;"></div>
 
-      <label style="margin-top:24px;">Board Policy Documents</label>
-      <div class="setup-section-sub" style="margin-top:0; margin-bottom:8px;">Upload your board policies and administrative regulations as PDFs, downloaded from your board policy website. Trackument reads each policy so your writeups can cite and quote your district's actual policy language. You can upload several files at once, and everyone at your district will share them.</div>
+      <div class="setup-card">
+        <div class="setup-section-title" style="margin-top:0; padding-top:0; border-top:none;">Board Policies</div>
+        <div class="setup-section-sub">Trackument quotes your district's actual policy language in every writeup, so we need your adopted policies. The easiest way is to share the link to your board policy site, and we will load them for you.</div>
+
+        <label style="margin-top:0;">Board Policy Website Link</label>
+        <input type="text" id="setupBPURL" name="bpURL" autocomplete="url" placeholder="https://your-district.org/board-policies">
+        <div class="setup-section-sub" style="margin-top:4px; margin-bottom:24px;">Paste the link to your district's board policy site, and we will load your policies from it. You can email the link to help@trackument.com instead if you prefer.</div>
+
+        <label style="margin-top:0;">Or upload the policy PDFs yourself</label>
+
+      <div class="setup-section-sub" style="margin-top:0; margin-bottom:8px;">If your policies are not posted online, upload the PDFs here. You can add several files at once, and everyone at your district shares them.</div>
       <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="bpDropZone" onclick="document.getElementById('bpFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleBPDrop(event)">
         <div style="font-size:0.85rem;color:var(--gray);margin-bottom:8px;">Drag and drop, or</div>
         <button type="button" onclick="event.stopPropagation(); document.getElementById('bpFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:8px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
@@ -1235,37 +1271,12 @@
       </div>
       <div id="bpUploadStatus" style="display:none;font-size:0.82rem;margin-top:8px;padding:8px;border-radius:2px;"></div>
       <div id="bpPolicyList" style="margin-top:8px;"></div>
-
-      <label>County</label>
-      <input type="text" id="setupCounty" name="county" autocomplete="off" placeholder="e.g. Ventura">
-      <div class="setup-section-sub" style="margin-top:4px;">Used for food-service/nutrition writeups only. Trackument cites the California Retail Food Code directly, and adds a note pointing administrators to your county's Environmental Health Department for anything beyond state code.</div>
-
-      <!-- Configurable document types -->
-      <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--light-gray);">
-        <div class="setup-section-title" style="margin-top:0; padding-top:0; border-top:none;">Document Types</div>
-        <div class="setup-section-sub">Choose which documentation types appear in the dropdown. Drag to reorder by severity. They'll appear in this order.</div>
-        <div id="docTypeCheckList" style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;" ondragover="event.preventDefault()">
-          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem; cursor:grab;">⠿</span><input type="checkbox" class="doctype-chk" value="Conference Summary" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Conference Summary" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
-          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Written Warning" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Written Warning" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
-          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Letter of Reprimand" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Letter of Reprimand" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
-          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Notice of Unsatisfactory Performance" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Notice of Unsatisfactory Performance" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
-          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Final Written Warning" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Final Written Warning" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
-          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Notice of Unprofessional Conduct" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Notice of Unprofessional Conduct" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
-        </div>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <input type="text" id="customDocTypeInput" placeholder="Add a custom document type..." style="flex:1; margin:0;">
-          <button class="btn btn-secondary" onclick="addCustomDocType()" style="font-size:0.78rem; white-space:nowrap;">+ Add</button>
-        </div>
       </div>
 
+
+
       <!-- Collective Bargaining Agreements -->
-      <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray);">
+      <div class="setup-card">
         <div class="setup-section-title" style="margin-top:0; padding-top:0; border-top:none;">Collective Bargaining Agreements</div>
         <div class="setup-section-sub">Store contract documents here. When you select an employee classification on a memo, the matching agreement will be applied automatically. Set the bargaining unit on each agreement so the system knows which classification it covers.</div>
 
@@ -1321,8 +1332,32 @@
         </div>
       </div>
 
+      <!-- Configurable document types -->
+      <div class="setup-card">
+        <div class="setup-section-title" style="margin-top:0; padding-top:0; border-top:none;">Document Types</div>
+        <div class="setup-section-sub">Choose which documentation types appear in the dropdown. Drag to reorder by severity. They'll appear in this order.</div>
+        <div id="docTypeCheckList" style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;" ondragover="event.preventDefault()">
+          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
+            <span style="color:var(--gray); font-size:1rem; cursor:grab;">⠿</span><input type="checkbox" class="doctype-chk" value="Conference Summary" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Conference Summary" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Written Warning" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Written Warning" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Letter of Reprimand" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Letter of Reprimand" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Notice of Unsatisfactory Performance" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Notice of Unsatisfactory Performance" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Final Written Warning" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Final Written Warning" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+          <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Notice of Unprofessional Conduct" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Notice of Unprofessional Conduct" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="text" id="customDocTypeInput" placeholder="Add a custom document type..." style="flex:1; margin:0;">
+          <button class="btn btn-secondary" onclick="addCustomDocType()" style="font-size:0.78rem; white-space:nowrap;">+ Add</button>
+        </div>
+      </div>
+
       <!-- Employee Handbooks -->
-      <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray);">
+      <div class="setup-card">
         <div class="setup-section-title" style="margin-top:0; padding-top:0; border-top:none;">Employee Handbooks</div>
         <div class="setup-section-sub">Store employee handbooks here. Saved handbooks are read alongside your Board Policy and CBA when Trackument identifies applicable citations, and are shared across every site in your district.</div>
 
@@ -1380,7 +1415,7 @@
       </div>
 
       <!-- Merit District / Personnel Commission -->
-      <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray);">
+      <div class="setup-card">
         <div class="setup-section-title" style="margin-top:0; padding-top:0; border-top:none;">Personnel Commission Rules</div>
         <div class="setup-section-sub">Merit system districts operating under a Personnel Commission (Ed Code §45240 et seq.) may upload their Personnel Commission Rules here. These will be available for reference when documenting classified employee matters.</div>
         <div id="meritRulesList" style="margin-bottom:8px;"></div>
@@ -1786,14 +1821,14 @@ document.addEventListener('click', function(e){
         <div>
           <label>Date(s) of Incident(s)</label>
           <div style="display:flex; gap:8px; align-items:center; margin-bottom:4px;">
-            <select id="dateEntryMode" onchange="updateDateEntryMode()" style="flex:0 0 auto; width:180px; margin:0;">
+            <select id="dateEntryMode" onchange="updateDateEntryMode()" style="flex:1; width:100%; margin:0;">
               <option value="single">Single date</option>
               <option value="multiple">Multiple dates</option>
               <option value="range">Date range</option>
             </select>
           </div>
           <div id="dateEntrySingle">
-            <input type="date" id="incidentDateSingle" oninput="syncIncidentDates()" style="width:180px; font-family:'Source Sans 3', sans-serif; font-size:0.92rem;">
+            <input type="date" id="incidentDateSingle" oninput="syncIncidentDates()" style="width:100%; font-family:'Source Sans 3', sans-serif; font-size:0.92rem;">
           </div>
           <div id="dateEntryMultiple" style="display:none;">
             <div id="multiDateList" style="display:flex; flex-direction:column; gap:4px; margin-bottom:4px;"></div>
@@ -1802,11 +1837,11 @@ document.addEventListener('click', function(e){
           <div id="dateEntryRange" style="display:none; display:flex; gap:8px; align-items:center;">
             <div style="flex:1;">
               <div style="font-size:0.78rem; color:var(--gray); margin-bottom:4px;">From</div>
-              <input type="date" id="dateRangeFrom" oninput="syncIncidentDates()" style="width:180px; font-family:'Source Sans 3', sans-serif; font-size:0.92rem;">
+              <input type="date" id="dateRangeFrom" oninput="syncIncidentDates()" style="width:100%; font-family:'Source Sans 3', sans-serif; font-size:0.92rem;">
             </div>
             <div style="flex:1;">
               <div style="font-size:0.78rem; color:var(--gray); margin-bottom:4px;">To</div>
-              <input type="date" id="dateRangeTo" oninput="syncIncidentDates()" style="width:180px; font-family:'Source Sans 3', sans-serif; font-size:0.92rem;">
+              <input type="date" id="dateRangeTo" oninput="syncIncidentDates()" style="width:100%; font-family:'Source Sans 3', sans-serif; font-size:0.92rem;">
             </div>
           </div>
           <!-- Hidden field that stores the formatted date string for the document -->
@@ -1815,7 +1850,7 @@ document.addEventListener('click', function(e){
         <div>
           <label>Time(s) of Incident(s) <span style="font-weight:400; font-size:0.78rem; color:var(--gray);">(optional)</span></label>
           <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
-            <select id="timeEntryMode" onchange="updateTimeEntryMode()" style="flex:0 0 auto; width:180px; margin:0;">
+            <select id="timeEntryMode" onchange="updateTimeEntryMode()" style="flex:1; width:100%; margin:0;">
               <option value="none">No specific time</option>
               <option value="single">Single time</option>
               <option value="multiple">Multiple times</option>
@@ -1823,7 +1858,7 @@ document.addEventListener('click', function(e){
             </select>
           </div>
           <div id="timeEntrySingle" style="display:none;">
-            <input type="time" id="incidentTimeSingle" oninput="syncIncidentTimes()" style="width:200px; font-family:'Source Sans 3', sans-serif; font-size:0.92rem;">
+            <input type="time" id="incidentTimeSingle" oninput="syncIncidentTimes()" style="width:100%; font-family:'Source Sans 3', sans-serif; font-size:0.92rem;">
           </div>
           <div id="timeEntryMultiple" style="display:none;">
             <div id="multiTimeList" style="display:flex; flex-direction:column; gap:4px; margin-bottom:4px;"></div>
@@ -1941,7 +1976,6 @@ document.addEventListener('click', function(e){
         <div class="prepop-group" id="bpGroup" style="margin-top:24px; margin-bottom:16px;">
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
             <div style="font-size:0.88rem; font-weight:700; color:var(--navy);">Board Policy &amp; Administrative Regulations</div>
-            <span id="bpSiteLink" style="display:none;"><a id="bpSiteLinkAnchor" href="#" target="_blank" style="font-size:0.78rem; color:var(--gold); font-weight:700;">Open your board policy site →</a></span>
           </div>
           <div id="bpModelFlag" style="display:none; background:var(--cream); border:1px solid var(--light-gray); border-left:3px solid var(--navy); border-radius:2px; padding:8px 8px; font-size:0.82rem; color:var(--gray); margin-bottom:8px;"></div>
           <div class="citation-list" id="bpList"></div>
@@ -2166,7 +2200,7 @@ document.addEventListener('click', function(e){
           Personnel File Notice
           <span class="auto-tag" style="margin-left:4px;">Based on document type</span>
         </label>
-        <div id="fileNoticeDisplay" contenteditable="true" spellcheck="true" style="padding:16px; font-size:0.88rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:80px; white-space:pre-wrap; word-wrap:break-word;"></div>
+        <div id="fileNoticeDisplay" contenteditable="true" spellcheck="true" style="padding:16px; font-size:0.88rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:44px; white-space:pre-wrap; word-wrap:break-word;"></div>
         <select id="fileNotice" style="display:none;" onchange="document.getElementById('fileNoticeDisplay').innerText = this.options[this.selectedIndex].text;">
           <option value="conference-summary">A copy of this conference summary memo will not be placed in your official personnel file. It will be retained in the administrator's working file only. Should the concerns continue, this memo may be referenced in any subsequent formal disciplinary action.</option>
           <option value="supervisor-file">This document will be maintained in the administrator's working file and may be placed in your official personnel file if the conduct described herein recurs or escalates.</option>
@@ -2516,25 +2550,9 @@ function updateCitations() {
     (CITATIONS.edcode[key] || []).forEach(c => { if (!edcodeSet.has(c.code)) edcodeSet.set(c.code, c); });
   });
 
-  // Board Policy -- use classification prefix to get correct series
-  const bpSet = new Map();
-  selectedSituations.forEach(sit => {
-    const bpKey = `${prefix}-${sit}`;
-    (CITATIONS.boardpolicy[bpKey] || []).forEach(c => { if (!bpSet.has(c.code)) bpSet.set(c.code, c); });
-    (CITATIONS.adminreg[sit] || []).forEach(c => { if (!bpSet.has(c.code)) bpSet.set(c.code, c); });
-  });
-
+  // Board policy citations come only from the district's own uploaded policy
+  // text, so the built-in model-policy list is never used as a suggestion.
   renderCitations('edcodeList', Array.from(edcodeSet.values()));
-  renderCitations('bpList', Array.from(bpSet.values()));
-
-  // Show BP site link if district has one saved
-  const bpURL = window._districtProfile?.bpURL;
-  const bpSiteLink = document.getElementById('bpSiteLink');
-  const bpSiteLinkAnchor = document.getElementById('bpSiteLinkAnchor');
-  if (bpURL && bpSiteLink && bpSiteLinkAnchor) {
-    bpSiteLinkAnchor.href = bpURL;
-    bpSiteLink.style.display = 'inline';
-  }
 
   // Auto-populate CBA reference from active agreement
   updateCBARef();
@@ -2762,20 +2780,16 @@ async function generateMemo() {
 
   let messageContent = [];
   const cba = window._activeCBAEntry;
-  if (cba && cba.sourceType === 'file' && cba.sourceData) {
-    if (isPDFData(cba.sourceData)) {
-      const [, b64] = cba.sourceData.split(',');
-      messageContent.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 }, title: cba.name });
-    } else {
-      console.warn('CBA file is not a PDF -- skipping document attachment. CBA name will still be referenced in the prompt.');
-    }
+  if (cba && cba.sourceType === 'file') {
+    const cbaB64 = await loadEntryPdfBase64(cba);
+    if (cbaB64) messageContent.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: cbaB64 }, title: cba.name });
+    else console.warn('Could not attach the saved agreement; its name is still referenced in the prompt.');
   }
-  (await getHandbookLibrary()).forEach(h => {
-    if (h.sourceType === 'file' && isPDFData(h.sourceData)) {
-      const [, b64] = h.sourceData.split(',');
-      messageContent.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 }, title: h.name });
-    }
-  });
+  for (const h of await getHandbookLibrary()) {
+    if (h.sourceType !== 'file') continue;
+    const b64 = await loadEntryPdfBase64(h);
+    if (b64) messageContent.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 }, title: h.name });
+  }
   (window._priorDocFiles || []).forEach(f => {
     if (isPDFData(f.data)) {
       const [, b64] = f.data.split(',');
@@ -3100,6 +3114,11 @@ function renderMemo(text, data) {
     return p1 + '______________________';
   });
 
+  // Signature and date lines get a consistent, generous length to write on.
+  cleanText = cleanText
+    .replace(/(Signature:\s*)_{3,}/g, (m, p1) => p1 + '_'.repeat(38))
+    .replace(/(Date:\s*)_{3,}/g, (m, p1) => p1 + '_'.repeat(26));
+
   // Convert clean text to HTML with proper formatting
   // Pre-process: collapse multiple consecutive blank lines into one
   const collapsed = cleanText.replace(/\n{3,}/g, '\n\n');
@@ -3129,6 +3148,11 @@ function renderMemo(text, data) {
       return blankCount === 1 ? prefix + '<div style="height:0.6em;"></div>' : prefix;
     }
     blankCount = 0;
+    // Signature lines need writing room above them and clear separation from
+    // whoever signs next, which plain blank lines do not reliably give.
+    if (/^Signature:\s*_/.test(line.trim())) {
+      return prefix + '<div style="margin-top:2.6em; margin-bottom:2.2em;">' + escaped + '</div>';
+    }
     return prefix + '<span>' + escaped + '</span><br>';
   });
   if (inList) htmlLines.push('</ul>');
@@ -3261,7 +3285,11 @@ async function saveToGoogleDrive() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ filename, content: html, mimeType: 'text/html' })
     });
-    const data = await res.json();
+    // Keep whatever the server said, so a failure names its own cause instead
+    // of showing a generic message.
+    const rawBody = await res.text();
+    let data = {};
+    try { data = JSON.parse(rawBody); } catch (parseErr) { data = { error: rawBody.slice(0, 200) }; }
 
     if (res.status === 409 && data.error === 'not_connected') {
       // Not connected yet. The generated document text doesn't survive a full
@@ -3276,7 +3304,13 @@ async function saveToGoogleDrive() {
       return;
     }
 
-    if (!res.ok) throw new Error(data.error || 'Save failed.');
+    if (!res.ok) {
+      // Administrators get a plain message. The technical detail is emailed to
+      // the Trackument team by the server instead of shown here.
+      throw new Error(data.error === 'drive_unavailable'
+        ? 'Google Drive is not available right now. Your document is safe, so please use Copy to Clipboard or Download in the meantime. Our team has been notified and will follow up.'
+        : 'Something went wrong while saving. Your document is safe, so please use Copy to Clipboard or Download in the meantime.');
+    }
 
     btn.disabled = false;
     btn.textContent = originalLabel;
@@ -3350,6 +3384,7 @@ function startOver() {
   // Clear BP flag
   const bpFlag = document.getElementById('bpModelFlag');
   if (bpFlag) { bpFlag.style.display = 'none'; bpFlag.innerHTML = ''; }
+  window._citationsAnalyzed = false;
   // Clear citation notes
   const ruleNotes = document.getElementById('ruleNotes');
   if (ruleNotes) ruleNotes.value = '';
@@ -3704,76 +3739,15 @@ function autoSetFileNotice() {
   const text = select.options[select.selectedIndex]?.text || '';
   if (display) {
     display.innerText = text;
-    // Force minimum height to show full text
-    display.style.minHeight = Math.max(80, Math.ceil(text.length / 60) * 22) + 'px';
+    // The box grows with its own content, so no height is forced here. The old
+    // guess assumed 60 characters per line and left a gap on wide screens.
+    display.style.minHeight = '';
   }
   // Ensure change handler updates display
   select.onchange = () => {
     const t = select.options[select.selectedIndex]?.text || '';
-    if (display) { display.innerText = t; display.style.minHeight = Math.max(80, Math.ceil(t.length / 60) * 22) + 'px'; }
+    if (display) { display.innerText = t; display.style.minHeight = ''; }
   };
-}
-
-// ─── BP URL test and fetch ───────────────────────────────────────────────────
-
-async function testBPConnection() {
-  const url = document.getElementById('setupBPURL')?.value.trim();
-  const btn = document.getElementById('bpTestBtn');
-  const result = document.getElementById('bpTestResult');
-  if (!url) { showToast('Enter a URL first'); return; }
-
-  btn.disabled = true;
-  btn.textContent = 'Testing...';
-  result.style.display = 'none';
-
-  const showSuccess = () => {
-    result.style.display = 'block';
-    result.style.background = '#f0fdf4';
-    result.style.border = '1px solid #86efac';
-    result.style.color = '#166534';
-    result.textContent = '✓ URL is reachable — saved. The board policy link will appear in the Citations section for one-click verification when analyzing citations.';
-  };
-
-  const showFail = (msg) => {
-    result.style.display = 'block';
-    result.style.background = '#fef2f2';
-    result.style.border = '1px solid #fca5a5';
-    result.style.color = '#7f1d1d';
-    result.textContent = msg;
-  };
-
-  try {
-    // Try a regular fetch first. If the server responds at all (even with a CORS block or
-    // redirect), it's reachable. A CORS error IS a server response — it means the URL works.
-    await fetch(url, { method: 'GET', mode: 'cors', signal: AbortSignal.timeout(8000) });
-    showSuccess();
-  } catch (err) {
-    const msg = err?.message || '';
-    // CORS errors, opaque responses, and redirect loops all mean the server IS reachable
-    // Only treat it as unreachable if it's a genuine network failure (Failed to fetch, DNS, timeout)
-    if (msg.includes('CORS') || msg.includes('NetworkError') === false || msg.includes('cross-origin') || msg.includes('blocked')) {
-      showSuccess();
-    } else if (msg.includes('timeout') || msg.includes('abort') || msg.toLowerCase().includes('timed out')) {
-      showFail('⚠ Request timed out. The URL may be correct but slow to respond. Try saving it anyway and testing in your browser.');
-    } else {
-      // For sites like Simbli/eBoard that use bot protection, a fetch failure from a
-      // web app is expected even when the URL works in a browser. Show a soft warning.
-      showSuccess();
-      result.textContent = '✓ URL saved. Note: some board policy sites (like Simbli/eBoard) block automated requests by design — this is normal and does not affect the verification link in the Citations section.';
-    }
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Test Connection';
-  }
-}
-
-async function fetchBPSiteContent(url) {
-  // Browser security (CORS) prevents direct fetching of third-party sites like
-  // BoardDocs, Gamut, and CSBA-hosted BP systems from a client-side app.
-  // Most district BP sites require authentication or block cross-origin requests.
-  // We pass the URL to the AI as a reference so it can instruct the administrator
-  // to verify, and we show the link for one-click verification.
-  return null;
 }
 
 async function analyzeAndSuggestCitations() {
@@ -3797,11 +3771,10 @@ async function analyzeAndSuggestCitations() {
     'class-prob': 'Classified Probationary', 'class-perm': 'Classified Permanent', 'mgmt': 'Management/Confidential'
   };
 
-  const bpURL = window._districtProfile?.bpURL || null;
   const county = window._districtProfile?.county || null;
 
-  // Check whether real, staff-verified policy text exists for this district
-  // before falling back to generic CSBA model numbers.
+  // Board policy citations come only from the district's own uploaded policy
+  // text. When none is on file, no policy numbers are cited at all.
   window._realBoardPolicies = [];
   const districtDomain = window._districtProfile?.domain;
   if (districtDomain) {
@@ -3812,7 +3785,7 @@ async function analyzeAndSuggestCitations() {
         window._realBoardPolicies = bpData.policies || [];
       }
     } catch (e) {
-      // Non-fatal -- falls through to the generic CSBA fallback below.
+      // Non-fatal -- the prompt below then cites no board policies at all.
     }
   }
 
@@ -3827,7 +3800,7 @@ async function analyzeAndSuggestCitations() {
     autoSelectCBAForClassification(classification);
   }
   const cbaEntry = window._activeCBAEntry;
-  const hasCBAFile = cbaEntry && cbaEntry.sourceType === 'file' && cbaEntry.sourceData;
+  const hasCBAFile = cbaEntry && cbaEntry.sourceType === 'file' && (cbaEntry.sourceData || cbaEntry.documentId);
   const hasCBALink = cbaEntry && cbaEntry.sourceType === 'link' && cbaEntry.sourceData;
 
   const isPDFSource = (dataStr) => dataStr && (
@@ -3835,7 +3808,7 @@ async function analyzeAndSuggestCitations() {
     (dataStr.includes(';base64,') && !dataStr.includes('word') && !dataStr.includes('docx') && !dataStr.includes('msword'))
   );
   const handbookLibrary = await getHandbookLibrary();
-  const handbookFiles = handbookLibrary.filter(h => h.sourceType === 'file' && isPDFSource(h.sourceData));
+  const handbookFiles = handbookLibrary.filter(h => h.sourceType === 'file' && (h.sourceData || h.documentId));
   const handbookLinks = handbookLibrary.filter(h => h.sourceType === 'link' && h.sourceData);
   const handbookInstruction = handbookLibrary.length === 0
     ? 'No employee handbook saved.'
@@ -3844,12 +3817,9 @@ async function analyzeAndSuggestCitations() {
         : 'Employee handbook(s) on file: ' + handbookLibrary.map(h => h.name + (h.sourceType === 'link' ? ' (available at ' + h.sourceData + ' — no document uploaded, so cite section types typically applicable)' : '')).join('; '));
 
   const bpInstruction = window._realBoardPolicies && window._realBoardPolicies.length > 0
-    ? `DISTRICT BOARD POLICY — REAL, VERIFIED TEXT (use these exact policies and quote them verbatim, do not invent or substitute any other policy numbers):
+    ? `DISTRICT BOARD POLICY — REAL, ADOPTED TEXT. Cite only these policy numbers, and for each one copy the applicable language word for word from the text below. Never paraphrase, summarize, or describe a policy in your own words. If no sentence in a policy applies to these facts, leave that policy out.
 ${window._realBoardPolicies.map(p => `${p.policy_number}${p.title ? ' — ' + p.title : ''}:\n${p.policy_text}`).join('\n\n')}`
-    : bpURL
-      ? `DISTRICT BOARD POLICY SITE: ${bpURL}
-Suggest the standard California (CSBA) board policy numbers most applicable to this conduct. The administrator will verify against their district's adopted policy site using the link provided.`
-      : `No district board policy URL saved. Suggest standard California (CSBA) board policy numbers most applicable to this conduct.`;
+    : `NO DISTRICT BOARD POLICY TEXT IS ON FILE for this district. Do not cite, suggest, or invent any board policy or administrative regulation numbers. Return an empty "boardpolicy" array.`;
 
   const prompt = `You are a California school district HR attorney. Analyze the following facts and return citations for a ${docType || 'disciplinary document'} for a ${classLabels[classification] || 'California school district employee'} at a California K-12 school district.
 
@@ -3869,7 +3839,7 @@ Return ONLY a JSON object — no preamble, no markdown backticks, no explanation
   "edcode": [{"code": "Ed Code § XXXXX", "desc": "Direct verbatim quote of the most relevant 1-sentence clause"}],
   "cvc": [{"code": "CVC § XXXXX", "desc": "Direct verbatim quote — only populate if employee drives a district vehicle"}],
   "other": [{"code": "Citation name § number", "desc": "Direct verbatim quote — only for health code, DMV, or non-Ed Code regulatory citations when directly relevant. County health department entries are the one exception: use a plain-language verification note instead of a quote, as instructed above."}],
-  "boardpolicy": [{"code": "BP XXXX", "desc": "Direct verbatim quote of the most relevant 1-sentence clause"}],
+  "boardpolicy": [{"code": "BP XXXX", "desc": "The applicable sentence copied word for word from the district policy text provided above, with no paraphrasing"}],
   "cba": [{"code": "Article X.X — Title", "desc": "Direct verbatim quote of the single most relevant sentence only"}],
   "handbook": [{"code": "Handbook Section X.X — Title", "desc": "Direct verbatim quote of the single most relevant sentence only"}],
   "notes": "One sentence summarizing the primary rules violated"
@@ -3971,21 +3941,16 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
 
   // Build message content -- include CBA and handbook files only if they're actually PDFs
   let messageContent;
-  const cbaIsPDF = hasCBAFile && (
-    cbaEntry.sourceData.startsWith('data:application/pdf') ||
-    !cbaEntry.sourceData.includes('word') && !cbaEntry.sourceData.includes('docx') && !cbaEntry.sourceData.includes('msword')
-  );
   const documentBlocks = [];
-  if (cbaIsPDF) {
-    const [, b64] = cbaEntry.sourceData.split(',');
-    documentBlocks.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 }, title: cbaEntry.name });
-  } else if (hasCBAFile) {
-    console.warn('CBA is not a PDF -- analyzing without document attachment.');
+  if (hasCBAFile) {
+    const cbaB64 = await loadEntryPdfBase64(cbaEntry);
+    if (cbaB64) documentBlocks.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: cbaB64 }, title: cbaEntry.name });
+    else console.warn('Could not attach the saved agreement, so articles cannot be extracted from it.');
   }
-  handbookFiles.forEach(h => {
-    const [, b64] = h.sourceData.split(',');
-    documentBlocks.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 }, title: h.name });
-  });
+  for (const h of handbookFiles) {
+    const b64 = await loadEntryPdfBase64(h);
+    if (b64) documentBlocks.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 }, title: h.name });
+  }
 
   if (documentBlocks.length > 0) {
     messageContent = [...documentBlocks, { type: 'text', text: prompt }];
@@ -4028,9 +3993,10 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
       }
     }
 
-    // Render Ed Code and BP citations
+    // Render Ed Code and BP citations. Board policy entries are checked against
+    // the district's own policy text, so what appears is the district's wording.
     renderCitations('edcodeList', data.edcode || []);
-    renderCitations('bpList', data.boardpolicy || []);
+    renderCitations('bpList', verifyBoardPolicyCitations(data.boardpolicy || []));
 
     // Render CVC citations in separate section if present
     const cvcCitations = data.cvc || [];
@@ -4052,16 +4018,15 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
       bpFlagEl.style.display = 'block';
       if (window._realBoardPolicies && window._realBoardPolicies.length > 0) {
         bpFlagEl.style.borderLeftColor = 'var(--teal)';
-        bpFlagEl.innerHTML = `<strong>✓ Verified:</strong> These citations are quoted directly from your district's actual adopted board policies, not generic model numbers.`;
+        bpFlagEl.innerHTML = `<strong>✓ Verified:</strong> These citations are quoted directly from your district's adopted board policies.`;
       } else {
         bpFlagEl.style.borderLeftColor = 'var(--navy)';
-        bpFlagEl.innerHTML = bpURL
-          ? `<strong>Important:</strong> These are standard CSBA model policy numbers. Your district's board policy site is saved, but we encountered a security restriction from Simbli/eBoard that prevented automated retrieval. <a href="${bpURL}" target="_blank" style="color:var(--navy); font-weight:700;">Open your policy site →</a> to verify adopted numbers (takes 1–3 minutes).`
-          : `<strong>Note:</strong> These are standard CSBA model policy numbers. Add your district's board policy URL in District Settings to get a direct verification link.`;
+        bpFlagEl.innerHTML = `<strong>Note:</strong> No board policies are on file for your district yet, so no board policy citations were added. Add the link to your board policy site in District Settings, upload your policy PDFs there, or contact help@trackument.com and we will load them for you.`;
       }
     }
 
     // Render CBA citations directly into cbaRefList (replaces the "will be extracted" message)
+    window._citationsAnalyzed = true;
     if (data.cba && data.cba.length > 0) {
       renderCitations('cbaRefList', data.cba);
       const notice = document.getElementById('cbaRefNotice');
@@ -4069,7 +4034,8 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
       const list = document.getElementById('cbaRefList');
       if (list) list.style.display = 'block';
     } else {
-      // Fall back to showing the agreement entry
+      // Nothing matched in the agreement; show the agreement itself instead.
+      window._citationsAnalyzed = true;
       autoSelectCBAForClassification(classification);
       updateCBARef();
     }
@@ -4091,18 +4057,6 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
           hNotice.style.display = 'block';
           hNotice.textContent = 'No applicable handbook section identified for this conduct.';
         }
-      }
-    }
-
-    // Show BP site link
-    const bpSiteLink = document.getElementById('bpSiteLink');
-    const bpSiteLinkAnchor = document.getElementById('bpSiteLinkAnchor');
-    if (bpSiteLink) {
-      if (bpURL) {
-        if (bpSiteLinkAnchor) bpSiteLinkAnchor.href = bpURL;
-        bpSiteLink.style.display = 'inline';
-      } else {
-        bpSiteLink.style.display = 'none';
       }
     }
 
@@ -4769,7 +4723,7 @@ function addTimeEntry() {
   const list = document.getElementById('multiTimeList');
   const row = document.createElement('div');
   row.style.cssText = 'display:flex; gap:8px; align-items:center;';
-  row.innerHTML = '<input type="time" style="flex:1; margin:0;" oninput="syncIncidentTimes()">'
+  row.innerHTML = '<input type="time" style="flex:1; width:100%; margin:0;" oninput="syncIncidentTimes()">'
     + '<button type="button" onclick="this.parentElement.remove(); syncIncidentTimes();" style="background:none; border:none; color:var(--gray); cursor:pointer; font-size:1rem; padding:0 4px;">&#x2715;</button>';
   list.appendChild(row);
   row.querySelector('input').focus();
@@ -4817,7 +4771,7 @@ function addDateEntry() {
   const list = document.getElementById('multiDateList');
   const row = document.createElement('div');
   row.style.cssText = 'display:flex; gap:8px; align-items:center;';
-  row.innerHTML = '<input type="date" style="flex:1; margin:0;" oninput="syncIncidentDates()">'
+  row.innerHTML = '<input type="date" style="flex:1; width:100%; margin:0;" oninput="syncIncidentDates()">'
     + '<button type="button" onclick="this.parentElement.remove(); syncIncidentDates();" style="background:none; border:none; color:var(--gray); cursor:pointer; font-size:1rem; padding:0 4px; line-height:1;">&#x2715;</button>';
   list.appendChild(row);
   row.querySelector('input').focus();
@@ -5272,6 +5226,70 @@ function bpEscape(str) {
   return div.innerHTML;
 }
 
+// Saved agreements, handbooks, and rules are stored on the server, with only a
+// documentId kept in the browser. This fetches the actual PDF so it can be
+// attached when citations are analyzed and when the document is drafted.
+// Keeps board policy citations honest: drops any policy number the district
+// has not uploaded, and replaces any paraphrased description with the closest
+// matching sentence from the district's actual policy text.
+function verifyBoardPolicyCitations(citations) {
+  const policies = window._realBoardPolicies || [];
+  if (policies.length === 0) return [];
+  const normalize = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const byNumber = new Map(policies.map(p => [normalize(p.policy_number), p]));
+
+  const verified = [];
+  (citations || []).forEach(c => {
+    const policy = byNumber.get(normalize(c.code));
+    if (!policy) return;
+    const fullText = policy.policy_text || '';
+    if (normalize(fullText).includes(normalize(c.desc)) && normalize(c.desc).length > 25) {
+      verified.push(c);
+      return;
+    }
+    // Find the sentence in the real policy that best matches what came back.
+    const sentences = fullText.split(/(?<=[.;:])\s+/).filter(x => x.trim().length > 40);
+    const wanted = new Set(normalize(c.desc).split(' ').filter(w => w.length > 4));
+    let best = null, bestScore = 0;
+    sentences.forEach(sentence => {
+      const words = new Set(normalize(sentence).split(' ').filter(w => w.length > 4));
+      let score = 0;
+      wanted.forEach(w => { if (words.has(w)) score++; });
+      if (score > bestScore) { bestScore = score; best = sentence.trim(); }
+    });
+    if (!best && sentences.length > 0) best = sentences[0].trim();
+    if (best) verified.push({ code: c.code, desc: best });
+  });
+  return verified;
+}
+
+async function loadEntryPdfBase64(entry) {
+  if (!entry || entry.sourceType !== 'file') return null;
+  const looksLikePdf = (name) => !name || /\.pdf$/i.test(name);
+  if (entry.sourceData && entry.sourceData.startsWith('data:')) {
+    if (!entry.sourceData.startsWith('data:application/pdf') && !looksLikePdf(entry.sourceLabel)) return null;
+    return entry.sourceData.split(',')[1] || null;
+  }
+  if (!entry.documentId) return null;
+  if (!looksLikePdf(entry.sourceLabel)) return null;
+  try {
+    const res = await fetch('/api/documents/' + encodeURIComponent(entry.documentId));
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    if (blob.type && blob.type.indexOf('pdf') === -1) return null;
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    let binary = '';
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  } catch (err) {
+    console.warn('Could not load saved document', entry.name, err);
+    return null;
+  }
+}
+
 async function loadBoardPolicyList() {
   const list = document.getElementById('bpPolicyList');
   if (!list) return;
@@ -5448,7 +5466,7 @@ function addAdminRow() {
   row.className = 'author-input-row';
   row.style.cssText = 'display:grid;grid-template-columns:90px 1fr 1fr 32px;gap:8px;margin-bottom:8px;align-items:center;';
   row.innerHTML = `
-    <select class="author-sal" style="padding:8px 8px;border:1px solid var(--light-gray);background:var(--cream);border-radius:2px;font-size:0.88rem;">
+    <select class="author-sal" style="padding:8px 32px 8px 8px;border:1px solid var(--light-gray);background-color:var(--cream);border-radius:2px;font-size:0.88rem;background-position:right 10px center;">
       <option>Mr.</option><option>Ms.</option><option>Mrs.</option><option>Dr.</option><option>Prof.</option><option value="">(None)</option>
     </select>
     <input type="text" class="author-name-input" name="adminName" autocomplete="name" placeholder="Full name" style="padding:8px 8px;border:1px solid var(--light-gray);background:var(--cream);border-radius:2px;font-size:0.88rem;">
@@ -5794,7 +5812,7 @@ function openSetup() {
   document.getElementById('tabSchools').style.display = 'none';
   document.getElementById('tabNewMemo').style.display = 'none';
   document.getElementById('setupModalTitle').textContent = 'District and Site Settings';
-  document.getElementById('setupModalSub').textContent = "Let's set up your district profile — you'll only need to do this once";
+  document.getElementById('setupModalSub').textContent = "Let's set up your district profile, and you will only need to do this once";
   document.getElementById('setupCloseBtn').style.display = 'none';
   document.getElementById('setupOverlay').classList.add('visible');
   document.body.style.overflow = 'hidden';
@@ -6425,7 +6443,7 @@ function updateCBARef() {
     <input type="checkbox" checked>
     <div class="citation-text">
       <div class="citation-code">${entry.name}</div>
-      <div class="citation-desc">${entry.unit ? entry.unit.charAt(0).toUpperCase() + entry.unit.slice(1) + ' bargaining agreement' : 'Bargaining agreement'} — ${entry.sourceType === 'file' ? '📄 ' + entry.sourceLabel : '🔗 ' + entry.sourceLabel}. Click "Analyze Facts" to extract specific article references.</div>
+      <div class="citation-desc">${entry.unit ? entry.unit.charAt(0).toUpperCase() + entry.unit.slice(1) + ' bargaining agreement' : 'Bargaining agreement'} — ${entry.sourceType === 'file' ? '📄 ' + entry.sourceLabel : '🔗 ' + entry.sourceLabel}. ${window._citationsAnalyzed ? 'No specific article matched these facts, so the agreement is cited as a whole. Add an article reference below if you know one.' : 'Click "Analyze Facts" to extract specific article references.'}</div>
     </div>
   `;
   list.appendChild(item);
