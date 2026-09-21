@@ -1,4 +1,4 @@
-// BUILD: 2026-09-19-r11
+// BUILD: 2026-09-20-r4
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -473,9 +473,43 @@ async function getDriveAccessToken(email) {
   return data.access_token;
 }
 
+// Administrators see a plain apology when a Drive save fails. The technical
+// reason goes to Trackument by email instead, at most once every ten minutes
+// per person so a repeated click does not flood the inbox.
+const driveErrorSentAt = new Map();
+async function reportDriveFailure({ email, districtDomain, filename, detail, status }) {
+  console.error('Drive save failed for', email, '-', status, detail);
+  const last = driveErrorSentAt.get(email) || 0;
+  if (Date.now() - last < 10 * 60 * 1000) return;
+  driveErrorSentAt.set(email, Date.now());
+  let hint = 'No known fix matched this message. Check the Railway logs for the full response.';
+  if (/has not been used|is disabled|accessNotConfigured/i.test(detail)) hint = 'Turn on the Google Drive API in the Google Cloud project.';
+  else if (/insufficient|scope|permission/i.test(detail)) hint = 'Add the drive.file scope to the OAuth consent screen, then have them reconnect Google Drive.';
+  else if (/invalid_grant|unauthorized/i.test(detail)) hint = 'Their Google Drive connection is no longer valid, so they need to reconnect it.';
+  await sendNotificationEmail({
+    to: SALES_NOTIFY_EMAIL,
+    subject: 'Google Drive save failed: ' + (districtDomain || email),
+    text: [
+      'A Save to Google Drive attempt failed, and the administrator saw only a short apology.',
+      '',
+      'Administrator: ' + email,
+      'District: ' + (districtDomain || 'unknown'),
+      'File: ' + (filename || 'unknown'),
+      'Status: ' + status,
+      '',
+      'What Google said:',
+      detail,
+      '',
+      'Likely fix: ' + hint,
+    ].join('\n'),
+  }).catch(err => console.error('Could not send Drive failure notice:', err.message));
+}
+
 // Uploads a generated document directly into the logged-in administrator's
 // own Google Drive. Only ever touches files this app itself creates.
-app.post('/api/drive/save', async (req, res) => {
+// This route is defined before the global JSON parser, so it parses its own
+// body. Without this, req.body is undefined and every save fails.
+app.post('/api/drive/save', express.json({ limit: '10mb' }), async (req, res) => {
   const cookies = parseCookies(req.headers.cookie);
   const session = await getValidSession(cookies[SESSION_COOKIE_NAME]);
   if (!session) return res.status(401).json({ error: 'Not logged in.' });
@@ -502,15 +536,18 @@ app.post('/api/drive/save', async (req, res) => {
       },
       body,
     });
-    const uploadData = await uploadRes.json();
+    const uploadText = await uploadRes.text();
+    let uploadData = {};
+    try { uploadData = JSON.parse(uploadText); } catch (parseErr) { uploadData = {}; }
     if (!uploadRes.ok) {
-      console.error('Drive upload failed:', JSON.stringify(uploadData));
-      return res.status(500).json({ error: uploadData.error?.message || 'Upload failed.' });
+      const googleMessage = (uploadData.error && (uploadData.error.message || uploadData.error_description)) || uploadText.slice(0, 400) || 'Google did not explain the failure.';
+      await reportDriveFailure({ email: session.email, districtDomain: session.district_domain, filename, detail: googleMessage, status: uploadRes.status });
+      return res.status(502).json({ error: 'drive_unavailable' });
     }
     res.json({ ok: true, fileId: uploadData.id, webViewLink: `https://drive.google.com/file/d/${uploadData.id}/view` });
   } catch (err) {
-    console.error('Drive save failed:', err.message);
-    res.status(500).json({ error: err.message });
+    await reportDriveFailure({ email: session.email, districtDomain: session.district_domain, filename, detail: err.message, status: 'no response' });
+    res.status(502).json({ error: 'drive_unavailable' });
   }
 });
 
@@ -582,7 +619,7 @@ async function initDb() {
   // copying it from the district's own policy site (Simbli/eBoard pages are
   // individual HTML pages per policy, not downloadable files, and are usually
   // bot-blocked -- see the /api/board-policies endpoints below). Districts
-  // with no rows here fall back to generic CSBA model policy numbers.
+  // with no rows here get no board policy citations at all.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS board_policies (
       id SERIAL PRIMARY KEY,
@@ -1484,6 +1521,15 @@ app.post('/api/district-settings', requireAppAccess, async (req, res) => {
   if (!domain) return res.status(400).json({ error: 'Missing domain.' });
   if (!canAccessDistrict(req, domain)) return res.status(403).json({ error: 'Not allowed for this district.' });
   const { districtName, bpURL, county, docTypes, cbaLibrary, handbookLibrary, schoolSites } = req.body;
+
+  // A district sharing its board policy link is a to-do for Trackument staff:
+  // the policies still have to be loaded from that site by hand.
+  let previousBpUrl = '';
+  try {
+    const { rows } = await pool.query('SELECT bp_url FROM district_settings WHERE domain = $1', [domain]);
+    previousBpUrl = (rows[0] && rows[0].bp_url) || '';
+  } catch (err) { /* first save for this district */ }
+
   try {
     await pool.query(`
       INSERT INTO district_settings (domain, district_name, bp_url, county, doc_types, cba_library, handbook_library, school_sites, updated_at)
@@ -1498,6 +1544,28 @@ app.post('/api/district-settings', requireAppAccess, async (req, res) => {
         school_sites = EXCLUDED.school_sites,
         updated_at = now()
     `, [domain, districtName || '', bpURL || '', county || '', JSON.stringify(docTypes || []), JSON.stringify(cbaLibrary || []), JSON.stringify(handbookLibrary || []), JSON.stringify(schoolSites || [])]);
+
+    const newBpUrl = (bpURL || '').trim();
+    if (newBpUrl && newBpUrl !== previousBpUrl) {
+      const { rows } = await pool.query('SELECT district_name, contact_name, contact_email FROM districts WHERE domain = $1 LIMIT 1', [domain]);
+      const d = rows[0] || {};
+      const policyCount = await pool.query('SELECT COUNT(*)::int AS n FROM board_policies WHERE domain = $1', [domain]);
+      sendNotificationEmail({
+        to: SALES_NOTIFY_EMAIL,
+        subject: 'Board policy link added: ' + (d.district_name || domain),
+        text: [
+          (d.district_name || domain) + ' saved a board policy link in District Settings, so their policies need to be loaded.',
+          '',
+          'Domain: ' + domain,
+          'Policy site: ' + newBpUrl,
+          'Policies already on file: ' + policyCount.rows[0].n,
+          'Contact: ' + (d.contact_name || 'unknown') + ' <' + (d.contact_email || 'unknown') + '>',
+          '',
+          'Load them here: ' + BASE_URL + '/admin-policies',
+        ].join('\n'),
+      }).catch(err => console.error('Could not send board policy link notice:', err.message));
+    }
+
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Server error: ' + err.message });
@@ -1758,7 +1826,7 @@ app.delete('/api/district/board-policies/:id', requireAppAccess, async (req, res
 
 // Public (no admin key) -- read-only, used by the app itself during citation
 // generation to check whether real policy text exists for the logged-in
-// district's domain before falling back to generic CSBA model numbers.
+// district's domain. Districts with none on file get no policy citations.
 app.get('/api/board-policies', async (req, res) => {
   const domain = (req.query.domain || '').trim().toLowerCase();
   if (!domain) return res.status(400).json({ error: 'Missing domain.' });
