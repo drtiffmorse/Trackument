@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-22-r16 -->
+<!-- BUILD: 2026-09-22-r21 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2076,7 +2076,7 @@ document.addEventListener('keydown', function(e){
 
       <!-- Impact Draft Generator -->
       <div style="background:var(--cream); border:1px solid var(--light-gray); border-radius:3px; padding:24px; margin-bottom:24px;">
-        <div style="font-family:'Playfair Display',serif; font-size:1rem; color:var(--navy); font-weight:700; margin-bottom:4px;">Impact Draft Generator</div>
+        <div style="font-family:'Source Sans 3',sans-serif; font-size:1.05rem; color:var(--navy); font-weight:700; margin-bottom:4px;">Impact Draft Generator</div>
         <div style="font-size:0.83rem; color:var(--gray); margin-bottom:16px;">Uses the facts from Step 2 to generate the impact section. Add any additional context below if helpful — both fields are optional.</div>
 
         <label style="margin-top:0;">How Were Students Actually or Potentially Affected? <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:0.78rem; color:var(--gray);">(optional)</span></label>
@@ -2167,10 +2167,10 @@ document.addEventListener('keydown', function(e){
 
       <!-- Suggested directives by situation -->
       <div id="suggestedDirectivesWrap" style="display:none; margin-bottom:40px;">
-        <div style="display:flex; align-items:center; gap:8px; font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px;">Suggested Directives <span class="auto-tag">Based on situation</span></div>
+        <div style="display:flex; align-items:center; gap:8px; font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px;">Suggested Directives <span class="auto-tag" id="directivesBadge">Based on the type of concern</span></div>
         <div style="font-size:0.83rem; color:var(--navy); margin-bottom:8px; font-weight:600; padding:8px 8px; background:#faf7f0; border-left:3px solid var(--gold); border-radius:2px;">All applicable directives are pre-checked. Uncheck any that don't apply, and click the text to edit.</div>
         <div id="suggestedDirectivesList" style="display:flex; flex-direction:column; gap:8px;"></div>
-        <button type="button" onclick="suggestDirectivesFromFacts()" style="margin-top:8px; background:transparent; border:1px solid var(--light-gray); border-radius:3px; padding:6px 14px; font-size:0.78rem; font-weight:700; color:var(--navy); cursor:pointer;">Rewrite directives for these facts</button>
+        <button type="button" onclick="window._directivesWrittenFor=''; suggestDirectivesFromFacts()" style="margin-top:8px; background:transparent; border:1px solid var(--light-gray); border-radius:3px; padding:6px 14px; font-size:0.78rem; font-weight:700; color:var(--navy); cursor:pointer;">Rewrite directives for these facts</button>
       </div>
 
       <label>Additional Directives</label>
@@ -2330,7 +2330,7 @@ document.addEventListener('keydown', function(e){
     <div class="card" style="border-top-color:var(--navy);">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:16px;">
         <div>
-          <div style="font-family:'Playfair Display',serif; font-size:1.05rem; color:var(--navy); font-weight:700;">Review &amp; Edit</div>
+          <div style="font-family:'Source Sans 3',sans-serif; font-size:1.3rem; color:var(--navy); font-weight:700;">Review &amp; Edit</div>
           <div style="font-size:0.83rem; color:var(--gray); margin-top:4px;">Click anywhere in the document to edit. Review carefully before issuing.</div>
         </div>
         <button class="btn btn-secondary" onclick="startOver()">Start New Document</button>
@@ -2564,7 +2564,7 @@ function toggleSit(el, val) {
     selectedSituations.add(val);
   }
   updateCitations();
-  updateSuggestedDirectives();
+  refreshDirectives();
 }
 
 function toggleSitOther(el) {
@@ -3064,7 +3064,7 @@ Ed Code (USE ONLY THESE — never add your own): ${d.edCodeCitations || 'None �
 ${d.cvcCitations ? 'California Vehicle Code: ' + d.cvcCitations : ''}
 ${d.otherCitations ? 'Other applicable citations: ' + d.otherCitations : ''}
 Board Policy/AR (USE ONLY THESE — never add your own): ${d.bpCitations || 'None — omit board policy citations entirely'}
-${d.cbaRef ? 'CBA citations selected by administrator (USE THESE VERBATIM in the citations section):\n' + d.cbaRef : 'No CBA citations selected — do not include any CBA citations.'}
+${d.cbaRef ? 'CBA citations selected by administrator (USE THESE VERBATIM in the citations section):\n' + d.cbaRef : 'No CBA citations selected. Do not mention the bargaining agreement anywhere in this document, not even by name.'}
 ${window._activeCBAEntry ? '(CBA document: ' + window._activeCBAEntry.name + ')' : ''}
 ${d.handbookRef ? 'Employee Handbook citations selected by administrator (USE THESE VERBATIM in the citations section):\n' + d.handbookRef : 'No Employee Handbook citations selected — do not include any handbook citations.'}
 ${d.ruleNotes ? 'Additional context: ' + d.ruleNotes : ''}
@@ -3084,16 +3084,17 @@ WRITING RULES — follow every one:
 
 2. OPENING PARAGRAPH: For conference summaries only: "This is to summarize our meeting on [date]. Present at this meeting were [list people]. This document will serve as a Conference Summary regarding your conduct." For all other document types (Written Warning, Letter of Reprimand, Notice of Unsatisfactory Performance): do NOT reference a meeting. Open with "This [document type] is to address concerns regarding your conduct and performance." Never add "of a Written Warning" or sub-classifications to a conference summary title.
 
-3. FACTS: Narrate in chronological paragraphs from ${authorName}'s perspective using "I" and addressing the employee as "you." Mention the date once. Reference prior documentation naturally if it exists.
+3. FACTS: Narrate in chronological paragraphs from ${authorName}'s perspective using "I" and addressing the employee as "you." Mention the date once. Reference prior documentation naturally if it exists. If there is none, say nothing about it at all: never write that there is no prior documentation, no record of similar conduct, or anything else describing what is absent from the file.
 
 4. CITATIONS: Begin with an introductory sentence such as "Your conduct violates the following policies and provisions:" Then format each citation as a bullet point (•):
    • **[Bold policy name and number]** [verb like "lays out" or "states, in part,"] "[ONLY the most directly relevant short clause — trimmed to the core obligation]"
    
    Do NOT add an explanatory sentence after each citation. The quote speaks for itself. Never paraphrase. Never quote more than 1-2 sentences from any single source.
+   Every bullet must name a specific provision and quote it. Never list a document by name alone. A line such as "BLTA Collective Bargaining Agreement (2025-2027)" with no article and no quote is not a citation, and must never appear. If no article of the agreement applies, leave the agreement out of the document entirely.
 
 5. IMPACT: The employee's job title is "${d.employeeTitle || 'not specified'}". Every sentence in the impact section must reflect the specific duties and responsibilities of a ${d.employeeTitle || 'employee in this role'}. If the employee is a custodian, describe how the absence/conduct affects building cleanliness, safety, and the custodial team. If a bus driver, describe student safety and transportation. If a teacher, describe classroom impact. Never use generic language like "classified employee" or language from a different job title. The impact must make sense for the actual role.
 
-6. DIRECTIVES: Always introduce directives with exactly this sentence: "Effective immediately, I am directing you to comply with the following:" Then bullet points (•) for each directive. Each must be specific and actionable.
+6. DIRECTIVES: Always introduce directives with exactly this sentence: "Effective immediately, the following directives are in effect:" Never write "I am directing you" in that sentence, because every bullet already begins with "You are directed to." Then bullet points (•) for each directive. Each must be specific and actionable.
 
 7. GOALS (conference summaries only): ${includeGoalsSection ? 'Include the goals paragraph shown above, word for word.' : 'DO NOT include any goals section.'}
 
@@ -3745,7 +3746,7 @@ Sincerely,
 ${authorName}${authorTitle ? '\n' + authorTitle : ''}`;
   }
 
-  suggestDirectivesFromFacts();
+  refreshDirectives();
 }
 
 function populateDraftPreview() {
@@ -3900,6 +3901,7 @@ async function analyzeAndSuggestCitations() {
   // Keywords from the facts pick which parts of the saved documents are sent.
   const earlyKeywords = relevanceKeywords([citeData.factDescription, citeData.employeeTitle, docType, [...selectedSituations].join(' ')].join(' '));
   const cbaExcerpt = hasCBAFile ? await loadEntryExcerpts(cbaEntry, earlyKeywords, 25000) : null;
+  window._cbaTextReadable = !hasCBAFile || !!cbaExcerpt;
   const handbookExcerpts = [];
   for (const h of handbookFiles) {
     const text = await loadEntryExcerpts(h, earlyKeywords, 12000);
@@ -4099,7 +4101,14 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
     // Any statute the AI names is looked up once and kept, so its wording can
     // be quoted rather than described.
     await ensureStatuteTextFor([...(data.edcode || []), ...(data.cvc || []), ...(data.other || [])]);
-    renderCitations('edcodeList', verifyStatuteCitations(data.edcode || []));
+    const statuteCitations = verifyStatuteCitations(data.edcode || []);
+    renderCitations('edcodeList', statuteCitations);
+    if (statuteCitations.length === 0) {
+      const edList = document.getElementById('edcodeList');
+      if (edList && !edList.querySelector('[data-custom]')) {
+        edList.innerHTML = '<div style="font-size:0.85rem; color:var(--gray); font-style:italic; padding:8px 0;">No Education Code section applies to these facts. The obligations here come from board policy and the bargaining agreement. Add a section below if you want one cited.</div>';
+      }
+    }
     renderCitations('bpList', verifyBoardPolicyCitations(data.boardpolicy || []));
 
     // Render CVC citations in separate section if present
@@ -4245,6 +4254,15 @@ function getSuggestedSupport() {
 
 // Directives written for these facts, rather than the generic list for a
 // category. The generic list is still the fallback when the request fails.
+// Whenever the directives need refreshing, write them from the facts if there
+// are facts to work with. The category list is only for an empty facts field.
+function refreshDirectives() {
+  const facts = (document.getElementById('factDescription')?.value || '').trim();
+  if (facts.length < 40) { updateSuggestedDirectives(); return; }
+  if (window._directivesWrittenFor === facts) return;
+  suggestDirectivesFromFacts();
+}
+
 async function suggestDirectivesFromFacts() {
   const wrap = document.getElementById('suggestedDirectivesWrap');
   const list = document.getElementById('suggestedDirectivesList');
@@ -4297,9 +4315,12 @@ Return ONLY a JSON object, with no preamble and no markdown:
     const directives = (parsed.directives || []).filter(Boolean);
     const support = (parsed.support || []).filter(Boolean);
     if (directives.length === 0) throw new Error('No directives returned');
+    window._directivesWrittenFor = facts;
+    setDirectivesBadge('Written for these facts');
     renderDirectiveLists(directives, support.length ? support : getSuggestedSupport());
   } catch (err) {
     console.warn('Could not write directives from the facts:', err && err.message);
+    setDirectivesBadge('Based on the type of concern');
     updateSuggestedDirectives();
   }
 }
@@ -4325,6 +4346,11 @@ function renderDirectiveLists(directives, support) {
     `).join('');
   }
   setTimeout(() => { syncDirectivesField(); syncSupportField(); }, 50);
+}
+
+function setDirectivesBadge(text) {
+  const badge = document.getElementById('directivesBadge');
+  if (badge) badge.textContent = text;
 }
 
 function updateSuggestedDirectives() {
@@ -4850,7 +4876,7 @@ async function restoreFormState() {
       });
     });
     updateCitations();
-    updateSuggestedDirectives();
+    refreshDirectives();
   }
 
   if (state._schoolKey && window._allSchools) {
@@ -6656,7 +6682,21 @@ async function uploadDocumentToServer(base64DataUrl, filename, contentType) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error || 'Upload failed');
   }
-  return res.json();
+  const uploaded = await res.json();
+  // Check right now that the text can be read. A scanned PDF has no text to
+  // quote, and the administrator should learn that here rather than during a
+  // writeup weeks later.
+  if (/\.pdf$/i.test(filename || '')) {
+    let readable = false;
+    try {
+      const textRes = await fetch('/api/documents/' + encodeURIComponent(uploaded.id) + '/text');
+      if (textRes.ok) readable = ((await textRes.json()).text || '').trim().length > 200;
+    } catch (e) {}
+    if (!readable) {
+      throw new Error('We could not read any text in ' + filename + '. It looks like a scan rather than a text based PDF. Open it in Word or Google Docs, save it again as a PDF, and upload that copy, or email help@trackument.com for assistance.');
+    }
+  }
+  return uploaded;
 }
 
 async function saveSetupCBA() {
@@ -7061,6 +7101,8 @@ function autoSelectCBAForClassification(classValue) {
 // ─── CBA Reference display in Rule step ──────────────────────────────────────
 
 function updateCBARef() {
+  // After analysis with no matching article, the agreement is listed for
+  // reference but not checked, so nothing vague lands in the document.
   const notice = document.getElementById('cbaRefNotice');
   const list = document.getElementById('cbaRefList');
   if (!list) return;
@@ -7111,10 +7153,16 @@ function updateCBARef() {
   const item = document.createElement('div');
   item.className = 'citation-item';
   item.innerHTML = `
-    <input type="checkbox" checked>
+    <input type="checkbox"${window._citationsAnalyzed ? '' : ' checked'}>
     <div class="citation-text">
       <div class="citation-code">${entry.name}</div>
-      <div class="citation-desc">${entry.unit ? entry.unit.charAt(0).toUpperCase() + entry.unit.slice(1) + ' bargaining agreement' : 'Bargaining agreement'} — ${entry.sourceType === 'file' ? '📄 ' + entry.sourceLabel : '🔗 ' + entry.sourceLabel}. ${window._citationsAnalyzed ? 'No specific article matched these facts, so the agreement is cited as a whole. Add an article reference below if you know one.' : 'Click "Analyze Facts" to extract specific article references.'}</div>
+      <div class="citation-desc">${entry.unit ? entry.unit.charAt(0).toUpperCase() + entry.unit.slice(1) + ' bargaining agreement' : 'Bargaining agreement'} &middot; ${entry.sourceLabel}. ${
+        !window._citationsAnalyzed
+          ? 'Click "Analyze Facts" to find the articles that apply.'
+          : (window._cbaTextReadable === false
+              ? 'We could not read the text of this agreement, so no article was checked. Add an article reference below, or re-upload the agreement as a text based PDF.'
+              : 'No article in this agreement addresses these facts, so none is cited. Add an article reference below if you know one.')
+      }</div>
     </div>
   `;
   list.appendChild(item);
