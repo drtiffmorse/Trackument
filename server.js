@@ -1,4 +1,4 @@
-// BUILD: 2026-09-22-r5
+// BUILD: 2026-09-22-r7
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -112,7 +112,7 @@ async function checkBeta(req, res, next) {
   const openApiPrefixes = [
     '/api/auth/', '/api/admin/', '/api/agreement/download', '/api/billing-portal', '/api/contact',
     // Which build is running; no district information in it.
-    '/api/version',
+    '/api/version', '/api/statutes',
     // Manager setup right after purchase; each request carries its own proof.
     '/api/setup/',
   ];
@@ -727,6 +727,17 @@ async function initDb() {
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS renewal_reminder_sent_for TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS contact_title TEXT;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS contact_phone TEXT;`);
+  // The actual text of the statutes Trackument cites, loaded by Trackument
+  // staff and shared by every district, so citations can be quoted word for
+  // word instead of described.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS statutes (
+      code TEXT PRIMARY KEY,
+      title TEXT,
+      statute_text TEXT NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
   // Who may change district-wide settings (district information, board
   // policies, agreements, document types, handbooks).
   await pool.query(`ALTER TABLE district_settings ADD COLUMN IF NOT EXISTS managers JSONB DEFAULT '[]'::jsonb;`);
@@ -2458,6 +2469,185 @@ async function districtSummary(domain) {
     signedInNow: sessions.rows[0].n,
   };
 }
+
+// ─── Statute library ────────────────────────────────────────────────────────
+// Every district uses the same Education Code, so its text lives here once.
+// The app quotes from this text, and drops any citation it cannot verify.
+// Statute text comes from California Legislative Information, the state's own
+// site, and is cached here after the first lookup. Nothing is ever invented: a
+// section that cannot be fetched simply has no text, and the app then cites the
+// section number without quoting it.
+const LAW_CODE_BY_PREFIX = [
+  [/^(ed\.?\s*code|education\s*code|ec)\b/i, 'EDC'],
+  [/^(gov\.?\s*code|government\s*code)\b/i, 'GOV'],
+  [/^(cvc|veh\.?\s*code|vehicle\s*code)\b/i, 'VEH'],
+  [/^(lab\.?\s*code|labor\s*code)\b/i, 'LAB'],
+  [/^(pen\.?\s*code|penal\s*code)\b/i, 'PEN'],
+  [/^(h&s|health\s*(and|&)\s*safety\s*code)\b/i, 'HSC'],
+];
+function parseCitation(citation) {
+  const raw = String(citation || '').trim();
+  const numberMatch = raw.match(/(\d{3,6}(?:\.\d+)?)/);
+  if (!numberMatch) return null;
+  const prefix = raw.slice(0, numberMatch.index);
+  const entry = LAW_CODE_BY_PREFIX.find(([pattern]) => pattern.test(prefix.trim())) || [null, 'EDC'];
+  return { lawCode: entry[1], sectionNum: numberMatch[1] };
+}
+async function fetchStatuteText(citation) {
+  const parsed = parseCitation(citation);
+  if (!parsed) return null;
+  const url = 'https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode='
+    + parsed.lawCode + '&sectionNum=' + encodeURIComponent(parsed.sectionNum);
+  try {
+    const response = await fetch(url, { headers: { 'User-Agent': 'Trackument/1.0 (+https://www.trackument.com)' } });
+    if (!response.ok) { console.error('Statute fetch failed:', citation, response.status); return null; }
+    const html = await response.text();
+    // The section body sits in a container the site has used for years. If the
+    // page changes, this returns nothing rather than guessing.
+    const block = html.match(/<div[^>]*id="codeLawSectionNoHead"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i)
+      || html.match(/<div[^>]*id="codeLawSectionNoHead"[^>]*>([\s\S]*?)<\/div>/i);
+    if (!block) { console.error('Statute fetch: unfamiliar page layout for', citation); return null; }
+    const text = block[1]
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#(\d+);/g, (m, d) => String.fromCharCode(d))
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\n\s*\n+/g, '\n')
+      .trim();
+    if (text.length < 40) return null;
+    return { text, url, lawCode: parsed.lawCode, sectionNum: parsed.sectionNum };
+  } catch (err) {
+    console.error('Statute fetch error for', citation, err.message);
+    return null;
+  }
+}
+async function ensureStatutes(citations) {
+  const wanted = [...new Set((citations || []).map(c => String(c || '').trim()).filter(Boolean))].slice(0, 12);
+  const out = [];
+  for (const citation of wanted) {
+    const parsed = parseCitation(citation);
+    if (!parsed) continue;
+    const key = parsed.lawCode + ' ' + parsed.sectionNum;
+    const existing = await pool.query('SELECT code, title, statute_text FROM statutes WHERE code = $1', [key]);
+    if (existing.rows[0]) { out.push(existing.rows[0]); continue; }
+    const fetched = await fetchStatuteText(citation);
+    if (!fetched) continue;
+    await pool.query(`
+      INSERT INTO statutes (code, title, statute_text, updated_at) VALUES ($1, $2, $3, now())
+      ON CONFLICT (code) DO UPDATE SET statute_text = EXCLUDED.statute_text, updated_at = now()
+    `, [key, fetched.url, fetched.text]);
+    out.push({ code: key, title: fetched.url, statute_text: fetched.text });
+  }
+  return out;
+}
+
+// The app asks for the sections a writeup is about to cite. Anything already
+// stored comes straight back; anything new is fetched once and kept.
+app.post('/api/statutes/lookup', requireAppAccess, async (req, res) => {
+  try {
+    res.json({ statutes: await ensureStatutes(req.body.codes || []) });
+  } catch (err) {
+    console.error('Statute lookup failed:', err.message);
+    res.json({ statutes: [] });
+  }
+});
+
+app.get('/api/statutes', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT code, title, statute_text FROM statutes ORDER BY code');
+    res.json({ statutes: rows });
+  } catch (err) {
+    res.json({ statutes: [] });
+  }
+});
+
+app.get('/api/admin/statutes', async (req, res) => {
+  res.send(adminPageShell('Statute library', `
+    <h1>Statute library</h1>
+    <p>Trackument quotes statutes word for word, and cites only what is loaded here. Paste the real text of each section from the California Legislative Information site. Every district shares this library.</p>
+    <label for="key">Admin key</label>
+    <input type="password" id="key" autocomplete="off">
+    <button type="button" id="look">Show what is loaded</button>
+    <div id="list" style="margin-top:20px;"></div>
+    <label for="fetchList">Fetch sections automatically</label>
+    <input type="text" id="fetchList" placeholder="e.g. Ed Code 44932, 44939, 45113">
+    <button type="button" id="fetch">Fetch from California Legislative Information</button>
+    <p style="font-size:0.85rem;color:#605d54;">Trackument pulls the text from the state's own site and stores it. Check one against the website the first time, then it is reused for every district.</p>
+
+    <label for="code">Or paste a section by hand</label>
+    <input type="text" id="code" placeholder="e.g. Ed Code § 44932(a)(2)">
+    <label for="title">Short title</label>
+    <input type="text" id="title" placeholder="e.g. Grounds for dismissal, unprofessional conduct">
+    <label for="text">Statute text, exactly as written</label>
+    <textarea id="text" rows="8" style="width:100%;box-sizing:border-box;font:inherit;padding:12px;border:1px solid #d9d4e8;border-radius:8px;"></textarea>
+    <button type="button" id="save">Save this statute</button>
+    <p id="msg"></p>
+    <script>
+      const el = (id) => document.getElementById(id);
+      const post = (path, body) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ key: el('key').value }, body || {})) }).then(async r => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
+      const refresh = async () => {
+        const { ok, data } = await post('/api/admin/statutes/list');
+        if (!ok) { el('msg').textContent = data.error || 'Could not load.'; return; }
+        const rows = data.statutes || [];
+        el('list').innerHTML = rows.length
+          ? '<p><strong>' + rows.length + ' loaded:</strong><br>' + rows.map(r => r.code + (r.title ? ' — ' + r.title : '') + ' <button type="button" class="rm" data-c="' + encodeURIComponent(r.code) + '" style="background:none;border:none;color:#c80204;text-decoration:underline;cursor:pointer;padding:0 0 0 8px;font-size:0.85rem;margin:0;">Remove</button>').join('<br>') + '</p>'
+          : '<p>No statutes loaded yet, so writeups will cite no Ed Code sections.</p>';
+        document.querySelectorAll('.rm').forEach(b => b.onclick = async () => {
+          await post('/api/admin/statutes/remove', { code: decodeURIComponent(b.dataset.c) });
+          refresh();
+        });
+      };
+      el('look').onclick = refresh;
+      el('fetch').onclick = async () => {
+        el('msg').textContent = 'Fetching...';
+        const { ok, data } = await post('/api/admin/statutes/fetch', { codes: el('fetchList').value });
+        if (!ok) { el('msg').textContent = data.error || 'Could not fetch.'; return; }
+        el('msg').innerHTML = 'Loaded ' + (data.loaded || []).join(', ') + '.' +
+          ((data.failed || []).length ? '<br>Could not fetch: ' + data.failed.join(', ') + '. Paste those by hand below.' : '');
+        refresh();
+      };
+      el('save').onclick = async () => {
+        const { ok, data } = await post('/api/admin/statutes/save', { code: el('code').value, title: el('title').value, text: el('text').value });
+        el('msg').textContent = ok ? 'Saved ' + data.code + '.' : (data.error || 'Could not save.');
+        if (ok) { el('code').value = ''; el('title').value = ''; el('text').value = ''; refresh(); }
+      };
+    </script>
+  `));
+});
+app.post('/api/admin/statutes/list', async (req, res) => {
+  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  const { rows } = await pool.query('SELECT code, title FROM statutes ORDER BY code');
+  res.json({ statutes: rows });
+});
+app.post('/api/admin/statutes/fetch', async (req, res) => {
+  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  const requested = String(req.body.codes || '').split(/[,;\n]/).map(x => x.trim()).filter(Boolean);
+  if (requested.length === 0) return res.status(400).json({ error: 'List the sections to fetch.' });
+  const loaded = [], failed = [];
+  for (const citation of requested.slice(0, 25)) {
+    const found = await ensureStatutes([citation]);
+    if (found.length) loaded.push(found[0].code); else failed.push(citation);
+  }
+  res.json({ ok: true, loaded, failed });
+});
+
+app.post('/api/admin/statutes/save', async (req, res) => {
+  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  const code = String(req.body.code || '').trim();
+  const text = String(req.body.text || '').trim();
+  if (!code || !text) return res.status(400).json({ error: 'A citation and its text are both required.' });
+  await pool.query(`
+    INSERT INTO statutes (code, title, statute_text, updated_at) VALUES ($1, $2, $3, now())
+    ON CONFLICT (code) DO UPDATE SET title = EXCLUDED.title, statute_text = EXCLUDED.statute_text, updated_at = now()
+  `, [code, String(req.body.title || '').trim(), text]);
+  res.json({ ok: true, code });
+});
+app.post('/api/admin/statutes/remove', async (req, res) => {
+  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  await pool.query('DELETE FROM statutes WHERE code = $1', [String(req.body.code || '')]);
+  res.json({ ok: true });
+});
 
 // ─── Loading a district's agreements and handbooks ──────────────────────────
 // Districts can upload these themselves in District Settings. This does the
