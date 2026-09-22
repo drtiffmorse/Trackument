@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-22-r4 -->
+<!-- BUILD: 2026-09-22-r12 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -969,7 +969,7 @@
     margin-top: 20px;
   }
   .setup-card .setup-section-title { margin-top: 0; padding-top: 0; border-top: none; }
-  /* District information is view-only for anyone who is not a settings manager. */
+  /* District information is view-only for anyone who is not a District Settings Manager. */
   #tabPanelDistrict.district-locked .setup-card:not(.managers-card) { pointer-events: none; opacity: 0.72; }
   .readonly-note {
     background: var(--cream); border: 1px solid var(--light-gray); border-left: 4px solid var(--teal);
@@ -1230,9 +1230,9 @@
     </div>
     <!-- Tabs -->
     <div style="display:flex; border-bottom:2px solid var(--light-gray); background:var(--cream);">
-      <button id="tabNewMemo" onclick="closeSettings()" style="padding:16px 24px; font-size:0.8rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; border:none; cursor:pointer; background:transparent; color:var(--gold); border-bottom:2px solid var(--gold); margin-bottom:-4px;">New Writeup →</button>
-      <button id="tabDistrict" onclick="switchTab('district')" style="padding:16px 24px; font-size:0.8rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; border:none; cursor:pointer; background:transparent; color:var(--gray); border-bottom:2px solid transparent; margin-bottom:-4px; display:none;">District</button>
+      <button id="tabNewMemo" onclick="closeSettings()" style="padding:16px 24px; font-size:0.8rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; border:none; cursor:pointer; background:transparent; color:var(--gold); border-bottom:2px solid var(--gold); margin-bottom:-4px;">New Writeup</button>
       <button id="tabSchools" onclick="switchTab('schools')" style="padding:16px 24px; font-size:0.8rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; border:none; cursor:pointer; background:transparent; color:var(--gray); border-bottom:2px solid transparent; margin-bottom:-4px; display:none;">Sites &amp; Departments</button>
+      <button id="tabDistrict" onclick="switchTab('district')" style="padding:16px 24px; font-size:0.8rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; border:none; cursor:pointer; background:transparent; color:var(--gray); border-bottom:2px solid transparent; margin-bottom:-4px; display:none;">District</button>
     </div>
 
     <!-- District Tab -->
@@ -1457,8 +1457,8 @@
       </div>
 
       <div class="setup-card managers-card">
-        <div class="setup-section-title">Settings Managers</div>
-        <div class="setup-section-sub">Settings managers can change district information, board policies, bargaining agreements, document types, and handbooks. Everyone else at your district can use these settings but cannot change them.</div>
+        <div class="setup-section-title">District Settings Managers</div>
+        <div class="setup-section-sub">District Settings Managers can change district information, board policies, bargaining agreements, document types, and handbooks. Everyone else at your district can use these settings but cannot change them.</div>
         <div id="managersList" style="margin-bottom:8px;"></div>
         <div id="managersAddRow" style="display:none; gap:8px; align-items:center;">
           <input type="email" id="newManagerEmail" placeholder="name@yourdistrict.org" style="flex:1; margin:0;">
@@ -1474,6 +1474,7 @@
       </div>
 
       <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray);">
+        <div id="buildVersionLine" style="font-size:0.75rem; color:var(--gray); margin-bottom:12px;"></div>
         <button onclick="confirmResetAllData()" style="background:none; border:none; color:#dc2626; font-size:0.78rem; cursor:pointer; text-decoration:underline; padding:0;">Reset all saved data…</button>
       </div>
       </form>
@@ -1637,7 +1638,6 @@ if (window.location.protocol === 'file:') {
         </div>
         <a href="/api/auth/logout" onclick="event.preventDefault(); clearSavedWriteup().finally(() => { window.location.href = '/api/auth/logout'; });" style="display:block; padding:8px 16px; font-size:0.82rem; color:var(--navy); font-weight:700; text-decoration:none; border-bottom:1px solid var(--light-gray);">Log out</a>
         <a href="/privacy" target="_blank" style="display:block; padding:8px 16px; font-size:0.82rem; color:var(--navy); text-decoration:none; border-bottom:1px solid var(--light-gray);">Privacy Policy</a>
-        <div style="padding:8px 16px; font-size:0.75rem; color:var(--gray);">Version v50</div>
       </div>
     </div>
   </div>
@@ -3403,6 +3403,12 @@ async function clearSavedWriteup() {
 function startOver() {
   if (!confirm('Start a new writeup? All current information will be cleared.')) return;
   try { store.delete('form:draft'); } catch(e) {}
+  clearWriteupFields();
+}
+
+// Empties the writeup on screen. Used when starting a new one, and when a
+// different district signs in, so nothing from the last one is left in view.
+function clearWriteupFields() {
   // Clear all form fields without reloading the page
   FORM_FIELDS.forEach(id => {
     const el = document.getElementById(id);
@@ -3842,7 +3848,10 @@ async function analyzeAndSuggestCitations() {
   // Board policy citations come only from the district's own uploaded policy
   // text. When none is on file, no policy numbers are cited at all.
   window._realBoardPolicies = [];
-  const districtDomain = window._districtProfile?.domain;
+  // Use the domain of whoever is signed in. A district that has loaded board
+  // policies but has not filled in District Settings yet has no saved profile,
+  // and relying on that profile meant their policies were never looked up.
+  const districtDomain = (window._me && window._me.domain) || window._districtProfile?.domain;
   if (districtDomain) {
     try {
       const bpRes = await fetch('/api/board-policies?domain=' + encodeURIComponent(districtDomain));
@@ -5000,6 +5009,9 @@ async function clearStaleDistrictData() {
   try {
     await store.delete('district:profile');
     await store.delete('sync:deleted');
+    // The page may already be showing the previous district's writeup. Clearing
+    // the fields can trigger a save, so the saved copy goes last.
+    try { clearWriteupFields(); } catch (e) {}
     await store.delete('form:draft');
     const prefixes = ['school:', 'cba:', 'handbook:', 'merit:'];
     for (const prefix of prefixes) {
@@ -5044,7 +5056,15 @@ async function loadDistrictProfile() {
         try {
           const lastResult = await store.get('district:lastDomain');
           const lastDomain = (lastResult?.value || '').trim().toLowerCase();
-          if (lastDomain && lastDomain !== sessionDomain) await clearStaleDistrictData();
+          // Browsers that were used before this record existed still hold an
+          // older district's copy, so the saved profile is checked as well.
+          let cachedDomain = '';
+          try {
+            const cached = await store.get('district:profile');
+            if (cached?.value) cachedDomain = String(JSON.parse(cached.value).domain || '').trim().toLowerCase();
+          } catch (e) {}
+          const knownDomain = lastDomain || cachedDomain;
+          if (knownDomain && knownDomain !== sessionDomain) await clearStaleDistrictData();
           if (lastDomain !== sessionDomain) await store.set('district:lastDomain', sessionDomain);
         } catch (e) {}
         const found = await pullDistrictSettings(sessionDomain);
@@ -5274,7 +5294,7 @@ async function pushDistrictSettings() {
       const ignored = merged.ignored || {};
       if (ignored.district || (ignored.sites && ignored.sites.length)) {
         const parts = [];
-        if (ignored.district) parts.push('district information can only be changed by a settings manager');
+        if (ignored.district) parts.push('district information can only be changed by a District Settings Manager');
         if (ignored.sites && ignored.sites.length) parts.push('you do not have permission to change ' + ignored.sites.join(', '));
         showToast('Some changes were not saved because ' + parts.join(', and ') + '.');
         if (typeof loadSchoolProfileList === 'function') loadSchoolProfileList();
@@ -5542,6 +5562,20 @@ async function loadEntryPdfBase64(entry) {
 
 // ─── Who can change what ─────────────────────────────────────────────────────
 // The server enforces these rules; the screen simply reflects them.
+// What is running right now, read from the server rather than typed in by
+// hand, so it is always accurate after a deploy.
+async function showBuildVersion() {
+  const el = document.getElementById('buildVersionLine');
+  if (!el) return;
+  try {
+    const res = await fetch('/api/version');
+    if (!res.ok) return;
+    const v = await res.json();
+    const when = new Date(v.deployedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    el.textContent = 'Version: app ' + v.app + ', server ' + v.server + ', deployed ' + when;
+  } catch (e) {}
+}
+
 async function loadPermissions() {
   try {
     const res = await fetch('/api/district/permissions');
@@ -5570,7 +5604,7 @@ function showWhoIsSignedIn() {
     if (me.support) {
       roleEl.innerHTML = '<span style="color:var(--teal); font-weight:700;">Trackument support visit</span>';
     } else if (perms.isManager) {
-      roleEl.innerHTML = '<span style="color:var(--navy); font-weight:700;">Settings manager</span>, so you can change district settings';
+      roleEl.innerHTML = '<span style="color:var(--navy); font-weight:700;">District Settings Manager</span>, so you can change District Settings';
     } else if (perms.email) {
       roleEl.innerHTML = '<span style="color:var(--navy); font-weight:700;">Site or department user</span>';
     } else {
@@ -5595,7 +5629,7 @@ async function applyDistrictPermissions() {
   if (note) {
     note.style.display = locked ? 'block' : 'none';
     note.innerHTML = locked
-      ? '<strong>You can view these settings, but only your district\'s settings managers can change them.</strong> Your settings managers: ' + bpEscape((p.managers || []).join(', ') || 'none named yet') + '. You can still add sites and departments, and edit the ones you added or are listed on.'
+      ? '<strong>You can view these settings, but only your District Settings Managers can change them.</strong> Your District Settings Manager' + ((p.managers || []).length > 1 ? 's can be reached at: ' : ' can be reached at: ') + bpEscape((p.managers || []).join(', ') || 'no one yet') + '. You can still add sites and departments, and edit the ones you added or are listed on.'
       : '';
   }
   renderManagers();
@@ -5608,7 +5642,7 @@ function renderManagers() {
   const managers = p.managers || [];
   list.innerHTML = managers.length
     ? managers.map(m => '<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:8px 16px;border:1px solid var(--light-gray);border-radius:3px;margin-bottom:8px;font-size:0.85rem;"><span>' + bpEscape(m) + (m === p.email ? ' <span style="color:var(--gray);">(you)</span>' : '') + '</span>' + (p.isManager && managers.length > 1 ? '<button type="button" onclick="removeSettingsManager(\'' + bpEscape(m) + '\')" style="font-size:0.72rem;color:var(--gray);background:transparent;border:none;cursor:pointer;text-decoration:underline;">Remove</button>' : '') + '</div>').join('')
-    : '<div style="font-size:0.85rem;color:var(--gray);font-style:italic;padding:8px 0;">No settings managers named yet, so any administrator can change district settings.</div>';
+    : '<div style="font-size:0.85rem;color:var(--gray);font-style:italic;padding:8px 0;">No District Settings Managers named yet, so any administrator can change District Settings.</div>';
   if (addRow) addRow.style.display = p.isManager ? 'flex' : 'none';
 }
 async function saveManagers(next) {
@@ -5616,7 +5650,7 @@ async function saveManagers(next) {
   try {
     const res = await fetch('/api/district/managers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ managers: next }) });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Could not update settings managers.');
+    if (!res.ok) throw new Error(data.error || 'Could not update District Settings Managers.');
     await applyDistrictPermissions();
     if (msg) { msg.style.display = 'block'; msg.style.color = '#166534'; msg.textContent = 'Settings managers updated.'; }
   } catch (err) {
@@ -5632,7 +5666,7 @@ function addSettingsManager() {
 }
 function removeSettingsManager(email) {
   const current = (window._perms && window._perms.managers) || [];
-  if (!confirm('Remove ' + email + ' as a settings manager?')) return;
+  if (!confirm('Remove ' + email + ' as a District Settings Manager?')) return;
   saveManagers(current.filter(m => m !== email));
 }
 
@@ -5730,7 +5764,7 @@ async function removeBoardPolicy(id) {
 }
 
 function switchTab(tab) {
-  if (tab === 'district') { loadBoardPolicyList(); applyDistrictPermissions(); }
+  if (tab === 'district') { loadBoardPolicyList(); applyDistrictPermissions(); showBuildVersion(); }
   if (tab === 'schools') loadPermissions().then(() => loadSchoolProfileList());
   const tabIds = { district: 'District', schools: 'Schools' };
   Object.keys(tabIds).forEach(t => {
@@ -6176,7 +6210,7 @@ async function loadSchoolProfileList() {
         ${s.url ? '<div class="cba-card-preview">' + s.url + '</div>' : ''}
       </div>
       <div class="cba-card-actions">
-        ${canEditSiteHere(s) ? '' : '<div style="font-size:0.75rem;color:var(--gray);max-width:220px;text-align:right;">Only the person who added this site, its listed administrators, or a settings manager can change it.</div>'}
+        ${canEditSiteHere(s) ? '' : '<div style="font-size:0.75rem;color:var(--gray);max-width:220px;text-align:right;">Only the person who added this site, its listed administrators, or a District Settings Manager can change it.</div>'}
         ${canEditSiteHere(s) ? `<button class="btn-cba-edit" data-key="${s.key}" data-type="school-edit" style="font-size:0.72rem; background:var(--navy); color:var(--white); border:none; border-radius:2px; padding:4px 8px; cursor:pointer; margin-right:4px;">Edit</button>
         <button class="btn-cba-delete" data-key="${s.key}" data-type="school">Remove</button>` : ''}
       </div>

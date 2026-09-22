@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-21-r1 -->
+<!-- BUILD: 2026-09-22-r2 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -24,7 +24,7 @@
     .btn:hover { opacity: 0.88; }
     .manage-link { display:block; margin-top:16px; font-size: 0.88rem; color: #280b5b; text-decoration: underline; }
     .support { margin-top: 20px; font-size: 0.82rem; color: #9ca3af; }
-    /* Naming settings managers, shown right after purchase */
+    /* Naming District Settings Managers, shown right after purchase */
     .managers-step { display:none; background:#fbfaff; border:1px solid #e6e1f2; border-left:4px solid #048784; border-radius:10px; padding:20px; text-align:left; margin-bottom:24px; }
     .managers-step h3 { font-size:1rem; font-weight:800; color:#1a0256; margin-bottom:8px; }
     .managers-step p { font-size:0.9rem; margin-bottom:14px; }
@@ -66,14 +66,14 @@
     </div>
 
     <div class="managers-step" id="managersStep">
-      <h3>Who will manage your district's settings?</h3>
-      <p>Settings managers can change your district information, board policies, bargaining agreements, document types, and handbooks. Everyone else at your district can use these settings but cannot change them. Add the people who will set up and maintain Trackument, such as your HR director. Each person you add gets an email explaining their role.</p>
+      <h3>Who will manage your District Settings?</h3>
+      <p>District Settings Managers can change your district information, board policies, bargaining agreements, document types, and handbooks. Everyone else at your district can use these settings but cannot change them. Add the people who will set up and maintain Trackument, such as your HR director. Each person you add gets an email explaining their role.</p>
       <div id="mgrRows"></div>
       <div class="mgr-actions">
         <button type="button" class="mgr-add" onclick="addManagerRow('')">+ Add another manager</button>
       </div>
       <div class="mgr-actions" style="margin-top:16px;">
-        <button type="button" class="mgr-save" id="mgrSave" onclick="saveManagersFromWelcome()">Save Settings Managers</button>
+        <button type="button" class="mgr-save" id="mgrSave" onclick="saveManagersFromWelcome()">Save District Settings Managers</button>
         <button type="button" class="mgr-skip" onclick="skipManagers()">Skip for now</button>
       </div>
       <div class="mgr-msg" id="mgrMsg"></div>
@@ -117,7 +117,7 @@
     document.getElementById('nextSteps').innerHTML = html;
     if (!active) document.getElementById('openBtn').style.display = 'none';
   }
-  // ── Naming settings managers ─────────────────────────────────────────────
+  // ── Naming District Settings Managers ─────────────────────────────────────────────
   // The purchase itself is the proof: a Stripe checkout session for a card,
   // or a short-lived pass for a purchase order.
   var setupProof = sessionId ? { sessionId: sessionId }
@@ -141,7 +141,7 @@
   }
   function saveManagersFromWelcome() {
     var emails = Array.prototype.map.call(document.querySelectorAll('.mgr-email'), function (i) { return i.value.trim(); }).filter(Boolean);
-    if (emails.length === 0) { showManagerMessage('Please add at least one settings manager, or choose Skip for now.', false); return; }
+    if (emails.length === 0) { showManagerMessage('Please add at least one District Settings Manager, or choose Skip for now.', false); return; }
     var btn = document.getElementById('mgrSave');
     btn.disabled = true;
     var body = Object.assign({ managers: emails }, setupProof);
@@ -151,7 +151,7 @@
         btn.disabled = false;
         if (!res.ok) { showManagerMessage((res.data.error || 'Something went wrong.') + ' For assistance, email help@trackument.com.', false); return; }
         var added = res.data.added || [];
-        showManagerMessage('Saved. ' + (added.length ? 'We emailed ' + added.join(', ') + ' to explain their role.' : 'Your settings managers are set.') + ' You can change them anytime in District Settings.', true);
+        showManagerMessage('Saved. ' + (added.length ? 'We emailed ' + added.join(', ') + ' to explain their role.' : 'Your District Settings Managers are set.') + ' You can change them anytime in District Settings.', true);
       })
       .catch(function () {
         btn.disabled = false;
