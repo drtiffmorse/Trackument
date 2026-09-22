@@ -1,4 +1,4 @@
-// BUILD: 2026-09-22-r7
+// BUILD: 2026-09-22-r11
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -1787,6 +1787,10 @@ app.get('/api/admin/managers', async (req, res) => {
     <label for="domain">District email domain</label>
     <input type="text" id="domain" placeholder="e.g. ouhsd.org">
     <button type="button" id="load">Load District Settings Managers</button>
+    <label for="districtName">District name, shown at the top of every document</label>
+    <input type="text" id="districtName" placeholder="e.g. Bass Lake Joint Union Elementary School District">
+    <button type="button" id="saveName">Save district name</button>
+
     <label for="list">District Settings Managers, one email per line</label>
     <textarea id="list" rows="6" style="width:100%;box-sizing:border-box;font:inherit;padding:12px;border:1px solid #d9d4e8;border-radius:8px;"></textarea>
     <button type="button" id="save">Save District Settings Managers</button>
@@ -1800,7 +1804,12 @@ app.get('/api/admin/managers', async (req, res) => {
         const { ok, data } = await api('GET');
         if (!ok) { msg.textContent = data.error || 'Could not load.'; return; }
         document.getElementById('list').value = (data.managers || []).join('\\n');
+        document.getElementById('districtName').value = data.districtName || '';
         msg.textContent = data.named ? 'These District Settings Managers were named by the district.' : 'None named yet, so the purchasing contact is the manager.';
+      };
+      document.getElementById('saveName').onclick = async () => {
+        const { ok, data } = await api('POST', { key: document.getElementById('key').value, domain: document.getElementById('domain').value, districtName: document.getElementById('districtName').value });
+        msg.textContent = ok ? 'District name saved.' : (data.error || 'Could not save the district name.');
       };
       document.getElementById('save').onclick = async () => {
         const managers = document.getElementById('list').value.split(/\\s+/).filter(Boolean);
@@ -1814,16 +1823,33 @@ app.get('/api/admin/managers/data', async (req, res) => {
   if (!adminKeyValid(req.query.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
   const domain = String(req.query.domain || '').trim().toLowerCase();
   if (!domain) return res.status(400).json({ error: 'Enter a district domain.' });
+  const savedName = await pool.query('SELECT district_name FROM district_settings WHERE domain = $1', [domain]);
+  const purchaseName = await pool.query('SELECT district_name FROM districts WHERE domain = $1 LIMIT 1', [domain]);
+  const districtName = (savedName.rows[0] && savedName.rows[0].district_name)
+    || (purchaseName.rows[0] && purchaseName.rows[0].district_name) || '';
   const { rows } = await pool.query('SELECT managers FROM district_settings WHERE domain = $1', [domain]);
   const named = (rows[0] && rows[0].managers) || [];
-  if (named.length) return res.json({ managers: named, named: true });
+  if (named.length) return res.json({ managers: named, named: true, districtName });
   const d = await pool.query('SELECT contact_email FROM districts WHERE domain = $1 LIMIT 1', [domain]);
-  res.json({ managers: d.rows[0] && d.rows[0].contact_email ? [d.rows[0].contact_email] : [], named: false });
+  res.json({ managers: d.rows[0] && d.rows[0].contact_email ? [d.rows[0].contact_email] : [], named: false, districtName });
 });
 app.post('/api/admin/managers/data', async (req, res) => {
   if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
   const domain = String(req.body.domain || '').trim().toLowerCase();
   if (!domain) return res.status(400).json({ error: 'Enter a district domain.' });
+
+  // Saving just the district name, which is what appears at the top of every
+  // document a district generates.
+  if (req.body.districtName !== undefined) {
+    const districtName = String(req.body.districtName || '').trim();
+    if (!districtName) return res.status(400).json({ error: 'Enter the district name.' });
+    await pool.query(`
+      INSERT INTO district_settings (domain, district_name, updated_at) VALUES ($1, $2, now())
+      ON CONFLICT (domain) DO UPDATE SET district_name = EXCLUDED.district_name, updated_at = now()
+    `, [domain, districtName]);
+    await pool.query('UPDATE districts SET district_name = $1 WHERE domain = $2', [districtName, domain]);
+    return res.json({ ok: true, districtName });
+  }
   const result = await saveDistrictManagers(domain, req.body.managers, 'Trackument');
   if (result.error) return res.status(400).json({ error: result.error });
   res.json(result);
@@ -1851,10 +1877,15 @@ app.get('/api/district-settings', requireAppAccess, async (req, res) => {
     const { rows } = await pool.query('SELECT * FROM district_settings WHERE domain = $1', [domain]);
     if (!rows[0]) return res.json({ found: false });
     const row = rows[0];
+    let districtName = row.district_name || '';
+    if (!districtName) {
+      const purchase = await pool.query('SELECT district_name FROM districts WHERE domain = $1 LIMIT 1', [domain]);
+      districtName = (purchase.rows[0] && purchase.rows[0].district_name) || '';
+    }
     res.json({
       found: true,
       domain: row.domain,
-      districtName: row.district_name,
+      districtName,
       bpURL: row.bp_url,
       county: row.county,
       docTypes: row.doc_types || [],
@@ -2328,10 +2359,14 @@ function buildFooterText() {
 function adminPageShell(title, bodyHtml) {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${title} | Trackument</title><meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  body{font-family:Inter,Arial,sans-serif;background:#fbfaff;color:#1a0256;margin:0;padding:48px 24px;}
+  body{font-family:'Source Sans 3',Arial,sans-serif;background:#fbfaff;color:#1a0256;margin:0;padding:48px 24px;}
+  h1{font-family:'Playfair Display',Georgia,serif;}
   .card{max-width:520px;margin:0 auto;background:#fff;border:1px solid #e4e0ef;border-radius:14px;padding:32px;box-shadow:0 2px 12px rgba(40,11,91,0.06);}
-  h1{font-size:1.4rem;margin:0 0 16px;} p{line-height:1.6;color:#3d3553;margin:0 0 16px;}
+  h1{font-size:1.5rem;margin:0 0 16px;} p{line-height:1.6;color:#3d3553;margin:0 0 16px;}
+  .show-key{display:flex;align-items:center;gap:8px;margin:8px 0 0;font-size:0.85rem;font-weight:400;text-transform:none;color:#3d3553;}
+  .show-key input{width:auto;margin:0;}
   label{display:block;font-size:0.8rem;font-weight:700;text-transform:uppercase;margin:24px 0 8px;}
   label:first-of-type{margin-top:0;}
   input[type=text],input[type=password],input[type=email],input[type=file]{width:100%;box-sizing:border-box;padding:12px;border:1px solid #d9d4e8;border-radius:8px;font-size:1rem;margin-bottom:0;}
@@ -2343,7 +2378,20 @@ function adminPageShell(title, bodyHtml) {
   .ok{background:#e9f6f5;border:1px solid #9fd6d3;color:#035e5c;padding:16px;border-radius:8px;}
   .err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:16px;border-radius:8px;}
   .build-footer{max-width:520px;margin:16px auto 0;font-size:0.75rem;color:#8d86a3;text-align:center;}
-</style></head><body><div class="card">${bodyHtml}</div><div class="build-footer">${buildFooterText()}</div></body></html>`;
+</style></head><body><div class="card">${bodyHtml}</div><div class="build-footer">${buildFooterText()}</div>
+<script>
+  // Show the admin key while typing, so a mistyped key is easy to spot.
+  document.querySelectorAll('input[type=password]').forEach((field) => {
+    const row = document.createElement('label');
+    row.className = 'show-key';
+    row.innerHTML = '<input type="checkbox"> Show key';
+    field.insertAdjacentElement('afterend', row);
+    row.querySelector('input').addEventListener('change', (e) => {
+      field.type = e.target.checked ? 'text' : 'password';
+    });
+  });
+</script>
+</body></html>`;
 }
 function escapeHtml(v) {
   return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -2774,6 +2822,18 @@ app.post('/api/admin/district-documents/upload', async (req, res) => {
   if (!name || !filename || !dataBase64) return res.status(400).json({ error: 'A name and a PDF file are both required.' });
   if (!/\.pdf$/i.test(filename)) return res.status(400).json({ error: 'Please upload a PDF file.' });
   const buffer = Buffer.from(dataBase64, 'base64');
+  // A scanned PDF has no text to quote, so it is refused here rather than
+  // failing quietly inside a district's writeup later.
+  if (pdfParse) {
+    let readableLength = 0;
+    try {
+      const parser = new pdfParse.PDFParse({ data: buffer });
+      readableLength = ((await parser.getText()).text || '').trim().length;
+    } catch (err) { readableLength = 0; }
+    if (readableLength < 200) {
+      return res.status(400).json({ error: 'We could not read any text in ' + filename + '. It looks like a scan rather than a text based PDF, so nothing could be quoted from it. Save it again as a text based PDF and upload that copy, or email help@trackument.com for assistance.' });
+    }
+  }
   const entry = await addDistrictLibraryEntry({ domain, kind: kind === 'handbook' ? 'handbook' : 'cba', name: String(name).trim(), unit, filename, contentType: 'application/pdf', buffer });
   console.log('Admin added a', kind, 'for', domain, '-', filename);
   res.json({ ok: true, entry });
