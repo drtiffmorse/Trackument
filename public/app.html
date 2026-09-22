@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-20-r13 -->
+<!-- BUILD: 2026-09-21-r7 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -925,7 +925,7 @@
 
   .setup-modal-sub {
     font-size: 0.78rem;
-    color: var(--gold-light);
+    color: rgba(255,255,255,0.82);
     margin-top:4px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -969,6 +969,12 @@
     margin-top: 20px;
   }
   .setup-card .setup-section-title { margin-top: 0; padding-top: 0; border-top: none; }
+  /* District information is view-only for anyone who is not a settings manager. */
+  #tabPanelDistrict.district-locked .setup-card:not(.managers-card) { pointer-events: none; opacity: 0.72; }
+  .readonly-note {
+    background: var(--cream); border: 1px solid var(--light-gray); border-left: 4px solid var(--teal);
+    border-radius: 4px; padding: 16px 20px; font-size: 0.88rem; line-height: 1.6; color: var(--text);
+  }
 
   .setup-section-sub {
     font-size: 0.82rem;
@@ -1217,7 +1223,7 @@
     <div class="setup-modal-header">
       <div>
         <div class="setup-modal-title" id="setupModalTitle">Welcome to Trackument</div>
-        <div class="setup-modal-sub" id="setupModalSub">Let's set up your profile — you'll only need to do this once</div>
+        <div class="setup-modal-sub" id="setupModalSub">Let's set up your profile, and you will only need to do this once</div>
       </div>
       <button class="btn-close-modal" id="setupCloseBtn" onclick="closeSettings()" style="display:none;">✕</button>
     </div>
@@ -1225,12 +1231,13 @@
     <div style="display:flex; border-bottom:2px solid var(--light-gray); background:var(--cream);">
       <button id="tabNewMemo" onclick="closeSettings()" style="padding:16px 24px; font-size:0.8rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; border:none; cursor:pointer; background:transparent; color:var(--gold); border-bottom:2px solid var(--gold); margin-bottom:-4px;">New Writeup →</button>
       <button id="tabDistrict" onclick="switchTab('district')" style="padding:16px 24px; font-size:0.8rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; border:none; cursor:pointer; background:transparent; color:var(--gray); border-bottom:2px solid transparent; margin-bottom:-4px; display:none;">District</button>
-      <button id="tabSchools" onclick="switchTab('schools')" style="padding:16px 24px; font-size:0.8rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; border:none; cursor:pointer; background:transparent; color:var(--gray); border-bottom:2px solid transparent; margin-bottom:-4px; display:none;">Sites</button>
+      <button id="tabSchools" onclick="switchTab('schools')" style="padding:16px 24px; font-size:0.8rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; border:none; cursor:pointer; background:transparent; color:var(--gray); border-bottom:2px solid transparent; margin-bottom:-4px; display:none;">Sites &amp; Departments</button>
     </div>
 
     <!-- District Tab -->
     <div class="setup-modal-body" id="tabPanelDistrict">
       <form autocomplete="on" onsubmit="return false;">
+      <div id="districtReadOnlyNote" class="readonly-note" style="display:none; margin-bottom:4px;"></div>
       <div class="setup-card">
       <div class="setup-section-title" style="margin-top:0;padding-top:0;border-top:none;">District Information</div>
       <div class="setup-section-sub">Enter your district information. This will appear on every document you generate.</div>
@@ -1244,25 +1251,23 @@
         <button type="button" class="btn btn-secondary" onclick="checkDistrictDomain(false)" id="checkDomainBtn" style="font-size:0.78rem; white-space:nowrap; flex-shrink:0; padding:8px 16px;">Check Again</button>
       </div>
       <div id="checkDomainResult" style="font-size:0.82rem; margin-top:4px; display:none; padding:8px 8px; border-radius:2px;"></div>
-      <div class="setup-section-sub" style="margin-top:4px;">We'll automatically check whether another administrator at your district has already set this up. If so, we'll fill in the board policy link, county, document types, and bargaining agreements for you. If you're the first, just fill in the fields below. Every other administrator at your district will be able to use what you save here.</div>
+      <div class="setup-section-sub" style="margin-top:4px;">We'll automatically check whether another administrator at your district has already set this up. If so, we'll fill in the board policy link, document types, and bargaining agreements for you. If you're the first, just fill in the fields below. Every other administrator at your district will be able to use what you save here.</div>
 
-      <label>County</label>
-      <input type="text" id="setupCounty" name="county" autocomplete="off" placeholder="e.g. Ventura">
-      <div class="setup-section-sub" style="margin-top:4px;">Used for food-service/nutrition writeups only. Trackument cites the California Retail Food Code directly, and adds a note pointing administrators to your county's Environmental Health Department for anything beyond state code.</div>
+      <input type="hidden" id="setupCounty" name="county">
 
       </div>
 
       <div class="setup-card">
         <div class="setup-section-title" style="margin-top:0; padding-top:0; border-top:none;">Board Policies</div>
-        <div class="setup-section-sub">Trackument quotes your district's actual policy language in every writeup, so we need your adopted policies. The easiest way is to share the link to your board policy site, and we will load them for you.</div>
+        <div class="setup-section-sub">Trackument quotes your district's actual board policy language in every writeup, so we need your adopted board policies. The easiest way is to share the link to your board policy site, and we will load them for you.</div>
 
         <label style="margin-top:0;">Board Policy Website Link</label>
         <input type="text" id="setupBPURL" name="bpURL" autocomplete="url" placeholder="https://your-district.org/board-policies">
-        <div class="setup-section-sub" style="margin-top:4px; margin-bottom:24px;">Paste the link to your district's board policy site, and we will load your policies from it. You can email the link to help@trackument.com instead if you prefer.</div>
+        <div class="setup-section-sub" style="margin-top:4px; margin-bottom:24px;">Paste the link to your district's board policy site, and we will load your board policies from it. You can email the link to help@trackument.com instead if you prefer.</div>
 
-        <label style="margin-top:0;">Or upload the policy PDFs yourself</label>
+        <label style="margin-top:0;">Or upload the board policy PDFs yourself</label>
 
-      <div class="setup-section-sub" style="margin-top:0; margin-bottom:8px;">If your policies are not posted online, upload the PDFs here. You can add several files at once, and everyone at your district shares them.</div>
+      <div class="setup-section-sub" style="margin-top:0; margin-bottom:8px;">If your board policies are not posted online, upload the PDFs here. You can add several files at once, and everyone at your district shares them.</div>
       <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="bpDropZone" onclick="document.getElementById('bpFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleBPDrop(event)">
         <div style="font-size:0.85rem;color:var(--gray);margin-bottom:8px;">Drag and drop, or</div>
         <button type="button" onclick="event.stopPropagation(); document.getElementById('bpFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:8px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
@@ -1303,10 +1308,10 @@
               </select>
             </div>
           </div>
-          <label>Contract Document</label>
+          <label style="margin-top:16px;">Contract Document</label>
           <div style="display:flex;gap:8px;margin-bottom:8px;">
-            <button id="cbaTabUpload" onclick="setCBAInputMode('upload')" style="flex:1;padding:8px;border:2px solid var(--navy);border-radius:3px;background:var(--navy);color:var(--white);font-size:0.8rem;font-weight:700;cursor:pointer;">Upload PDF / Word Doc</button>
-            <button id="cbaTabLink" onclick="setCBAInputMode('link')" style="flex:1;padding:8px;border:2px solid var(--light-gray);border-radius:3px;background:var(--white);color:var(--gray);font-size:0.8rem;font-weight:700;cursor:pointer;">Link to URL</button>
+            <button id="cbaTabUpload" onclick="setCBAInputMode('upload')" type="button" aria-pressed="true" style="flex:1;padding:8px;border-radius:3px;background:rgba(26,2,86,0.07);color:var(--navy);border:2px solid var(--navy);font-size:0.8rem;font-weight:700;cursor:pointer;">✓ Upload PDF / Word Doc</button>
+            <button id="cbaTabLink" onclick="setCBAInputMode('link')" type="button" aria-pressed="false" style="flex:1;padding:8px;border:2px solid var(--light-gray);border-radius:3px;background:var(--white);color:var(--gray);font-size:0.8rem;font-weight:700;cursor:pointer;">Link to URL</button>
           </div>
           <div id="cbaUploadMode">
             <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="cbaDropZone" onclick="document.getElementById('cbaFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleCBADrop(event)">
@@ -1315,7 +1320,7 @@
               <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF or Word document (.pdf, .doc, .docx)</div>
               <input type="file" id="cbaFileInput" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none;" onchange="handleCBAFile(this.files[0])">
             </div>
-            <div id="cbaFilePreview" style="display:none;padding:8px 16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);display:flex;align-items:center;justify-content:space-between;">
+            <div id="cbaFilePreview" style="display:none;padding:8px 16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);align-items:center;justify-content:space-between;">
               <span id="cbaFileName"></span>
               <button onclick="clearCBAFile()" style="font-size:0.72rem;color:var(--gray);background:transparent;border:none;cursor:pointer;text-decoration:underline;">Remove</button>
             </div>
@@ -1338,17 +1343,17 @@
         <div class="setup-section-sub">Choose which documentation types appear in the dropdown. Drag to reorder by severity. They'll appear in this order.</div>
         <div id="docTypeCheckList" style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;" ondragover="event.preventDefault()">
           <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem; cursor:grab;">⠿</span><input type="checkbox" class="doctype-chk" value="Conference Summary" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Conference Summary" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+            <span style="color:var(--gray); font-size:1rem; cursor:grab;">⠿</span><input type="checkbox" class="doctype-chk" value="Conference Summary" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Conference Summary" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
           <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Written Warning" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Written Warning" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Written Warning" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Written Warning" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
           <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Letter of Reprimand" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Letter of Reprimand" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Letter of Reprimand" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Letter of Reprimand" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
           <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Notice of Unsatisfactory Performance" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Notice of Unsatisfactory Performance" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Notice of Unsatisfactory Performance" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Notice of Unsatisfactory Performance" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
           <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Final Written Warning" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Final Written Warning" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Final Written Warning" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Final Written Warning" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
           <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Notice of Unprofessional Conduct" style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Notice of Unprofessional Conduct" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Notice of Unprofessional Conduct" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Notice of Unprofessional Conduct" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
           <input type="text" id="customDocTypeInput" placeholder="Add a custom document type..." style="flex:1; margin:0;">
@@ -1385,10 +1390,10 @@
               </select>
             </div>
           </div>
-          <label>Handbook Document</label>
+          <label style="margin-top:16px;">Handbook Document</label>
           <div style="display:flex;gap:8px;margin-bottom:8px;">
-            <button id="handbookTabUpload" onclick="setHandbookInputMode('upload')" style="flex:1;padding:8px;border:2px solid var(--navy);border-radius:3px;background:var(--navy);color:var(--white);font-size:0.8rem;font-weight:700;cursor:pointer;">Upload PDF / Word Doc</button>
-            <button id="handbookTabLink" onclick="setHandbookInputMode('link')" style="flex:1;padding:8px;border:2px solid var(--light-gray);border-radius:3px;background:var(--white);color:var(--gray);font-size:0.8rem;font-weight:700;cursor:pointer;">Link to URL</button>
+            <button id="handbookTabUpload" onclick="setHandbookInputMode('upload')" type="button" aria-pressed="true" style="flex:1;padding:8px;border-radius:3px;background:rgba(26,2,86,0.07);color:var(--navy);border:2px solid var(--navy);font-size:0.8rem;font-weight:700;cursor:pointer;">✓ Upload PDF / Word Doc</button>
+            <button id="handbookTabLink" onclick="setHandbookInputMode('link')" type="button" aria-pressed="false" style="flex:1;padding:8px;border:2px solid var(--light-gray);border-radius:3px;background:var(--white);color:var(--gray);font-size:0.8rem;font-weight:700;cursor:pointer;">Link to URL</button>
           </div>
           <div id="handbookUploadMode">
             <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="handbookDropZone" onclick="document.getElementById('handbookFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleHandbookDrop(event)">
@@ -1397,7 +1402,7 @@
               <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF or Word document (.pdf, .doc, .docx)</div>
               <input type="file" id="handbookFileInput" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none;" onchange="handleHandbookFile(this.files[0])">
             </div>
-            <div id="handbookFilePreview" style="display:none;padding:8px 16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);display:flex;align-items:center;justify-content:space-between;">
+            <div id="handbookFilePreview" style="display:none;padding:8px 16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);align-items:center;justify-content:space-between;">
               <span id="handbookFileName"></span>
               <button onclick="clearHandbookFile()" style="font-size:0.72rem;color:var(--gray);background:transparent;border:none;cursor:pointer;text-decoration:underline;">Remove</button>
             </div>
@@ -1423,10 +1428,10 @@
         <div id="meritRulesForm" style="display:none; margin-top:16px; padding:16px; background:var(--cream); border:1px solid var(--light-gray); border-radius:3px;">
           <label style="margin-top:0;">Document Name</label>
           <input type="text" id="meritRulesName" placeholder="e.g. Personnel Commission Rules and Regulations 2024">
-          <label>Contract Document</label>
+          <label style="margin-top:16px;">Contract Document</label>
           <div style="display:flex;gap:8px;margin-bottom:8px;">
-            <button id="meritTabUpload" onclick="setMeritInputMode('upload')" style="flex:1;padding:8px;border:2px solid var(--navy);border-radius:3px;background:var(--navy);color:var(--white);font-size:0.8rem;font-weight:700;cursor:pointer;">Upload PDF</button>
-            <button id="meritTabLink" onclick="setMeritInputMode('link')" style="flex:1;padding:8px;border:2px solid var(--light-gray);border-radius:3px;background:var(--white);color:var(--gray);font-size:0.8rem;font-weight:700;cursor:pointer;">Link to URL</button>
+            <button id="meritTabUpload" onclick="setMeritInputMode('upload')" type="button" aria-pressed="true" style="flex:1;padding:8px;border-radius:3px;background:rgba(26,2,86,0.07);color:var(--navy);border:2px solid var(--navy);font-size:0.8rem;font-weight:700;cursor:pointer;">✓ Upload PDF</button>
+            <button id="meritTabLink" onclick="setMeritInputMode('link')" type="button" aria-pressed="false" style="flex:1;padding:8px;border:2px solid var(--light-gray);border-radius:3px;background:var(--white);color:var(--gray);font-size:0.8rem;font-weight:700;cursor:pointer;">Link to URL</button>
           </div>
           <div id="meritUploadMode">
             <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="meritDropZone" onclick="document.getElementById('meritFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleMeritDrop(event)">
@@ -1435,7 +1440,7 @@
               <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF or Word document (.pdf, .doc, .docx)</div>
               <input type="file" id="meritFileInput" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none;" onchange="handleMeritFile(this.files[0])">
             </div>
-            <div id="meritFilePreview" style="display:none;padding:8px 16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);display:flex;align-items:center;justify-content:space-between;">
+            <div id="meritFilePreview" style="display:none;padding:8px 16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);align-items:center;justify-content:space-between;">
               <span id="meritFileName"></span>
               <button onclick="clearMeritFile()" style="font-size:0.72rem;color:var(--gray);background:transparent;border:none;cursor:pointer;text-decoration:underline;">Remove</button>
             </div>
@@ -1450,10 +1455,21 @@
         </div>
       </div>
 
+      <div class="setup-card managers-card">
+        <div class="setup-section-title">Settings Managers</div>
+        <div class="setup-section-sub">Settings managers can change district information, board policies, bargaining agreements, document types, and handbooks. Everyone else at your district can use these settings but cannot change them.</div>
+        <div id="managersList" style="margin-bottom:8px;"></div>
+        <div id="managersAddRow" style="display:none; gap:8px; align-items:center;">
+          <input type="email" id="newManagerEmail" placeholder="name@yourdistrict.org" style="flex:1; margin:0;">
+          <button type="button" class="btn btn-secondary" onclick="addSettingsManager()" style="font-size:0.78rem;">+ Add Manager</button>
+        </div>
+        <div id="managersMsg" style="display:none; font-size:0.82rem; margin-top:8px;"></div>
+      </div>
+
       <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--light-gray);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
         <div id="districtSavedMsg" style="display:none; color:#16a34a; font-size:0.85rem; font-weight:600;">✓ District profile saved</div>
         <button class="btn btn-secondary" onclick="closeSettings()" style="font-size:0.82rem;">Close</button>
-        <button class="btn btn-primary" onclick="saveDistrictAndConfirm()" style="padding:8px 24px;">Save District Profile</button>
+        <button class="btn btn-primary" id="saveDistrictBtn" onclick="saveDistrictAndConfirm()" style="padding:8px 24px;">Save District Profile</button>
       </div>
 
       <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--light-gray);">
@@ -1465,20 +1481,20 @@
     <!-- Schools Tab -->
     <div class="setup-modal-body" id="tabPanelSchools" style="display:none;">
       <form autocomplete="on" onsubmit="return false;">
-      <div class="setup-section-title" style="margin-top:0;padding-top:0;border-top:none;">Site Profiles</div>
-      <div class="setup-section-sub">Save each school or department once. At the start of each memo you'll select which site the document is coming from. If you've uploaded a letterhead for that site, it appears automatically at the top of the downloaded document.</div>
+      <div class="setup-section-title" style="margin-top:0;padding-top:0;border-top:none;">Sites and Departments</div>
+      <div class="setup-section-sub">Add each school site and district department once, such as an elementary school, Human Resources, or Transportation. When you start a writeup, you will choose which site or department it comes from. If you upload a letterhead, it appears automatically at the top of that site's documents.</div>
 
       <div id="schoolProfileList">
-        <div id="schoolProfileEmpty" style="font-size:0.85rem;color:var(--gray);font-style:italic;padding:8px 0;">No sites saved yet.</div>
+        <div id="schoolProfileEmpty" style="font-size:0.85rem;color:var(--gray);font-style:italic;padding:8px 0;">No sites or departments saved yet.</div>
       </div>
 
       <div style="margin-top:16px;">
-        <button class="btn btn-secondary" onclick="toggleSchoolForm()" id="schoolFormToggleBtn" style="font-size:0.78rem;">+ Add School</button>
+        <button class="btn btn-secondary" onclick="toggleSchoolForm()" id="schoolFormToggleBtn" style="font-size:0.78rem;">+ Add Site or Department</button>
       </div>
 
       <div id="schoolAddForm" style="display:none;margin-top:16px;padding:16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:3px;">
-        <label style="margin-top:0;">Site Name</label>
-        <input type="text" id="newSchoolName" name="schoolName" autocomplete="organization" placeholder="School or site name">
+        <label style="margin-top:0;">Site or Department Name</label>
+        <input type="text" id="newSchoolName" name="schoolName" autocomplete="organization" placeholder="e.g. Lincoln Elementary or Human Resources">
 
         <div style="display:flex;gap:8px;margin-top:16px;align-items:flex-end;">
           <div style="flex:1;">
@@ -1491,9 +1507,11 @@
         <div style="background:var(--white);border:2px dashed var(--light-gray);border-radius:3px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="letterheadDropZone" onclick="document.getElementById('letterheadFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--light-gray)'" ondrop="handleLetterheadDrop(event)">
           <div style="font-size:0.85rem;color:var(--gray);margin-bottom:8px;">Drag and drop, or</div>
           <button type="button" onclick="event.stopPropagation(); document.getElementById('letterheadFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:8px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
-          <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PNG or JPG. Max 2MB. Best as a wide banner shape.</div>
-          <input type="file" id="letterheadFileInput" accept="image/png,image/jpeg" style="display:none;" onchange="handleLetterheadFile(this.files[0])">
+          <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF, PNG, or JPG. Max 5MB for a PDF, 2MB for an image.</div>
+          <input type="file" id="letterheadFileInput" accept="application/pdf,.pdf,image/png,image/jpeg" style="display:none;" onchange="handleLetterheadFile(this.files[0])">
         </div>
+        <div style="font-size:0.78rem;color:var(--gray);margin-top:8px;">Using Word or Google Docs? Save or download your letterhead as a PDF, then upload it here. In Word, choose File, then Save As, then PDF. In Google Docs, choose File, then Download, then PDF Document.</div>
+        <div id="letterheadStatus" style="display:none;font-size:0.82rem;margin-top:8px;"></div>
         <div id="newSchoolLetterheadWrap" style="display:none;align-items:center;gap:16px;padding:8px 16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;">
           <img id="newSchoolLetterheadPreviewImg" src="" style="max-height:44px;max-width:220px;object-fit:contain;">
           <div>
@@ -1525,7 +1543,7 @@
 
         <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--light-gray);">
           <div style="font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--navy);margin-bottom:4px;">Site Administrators</div>
-          <div style="font-size:0.8rem;color:var(--gray);margin-bottom:8px;">Add the administrators who may write memos from this site. You'll select one at the start of each writeup.</div>
+          <div style="font-size:0.8rem;color:var(--gray);margin-bottom:8px;">Add the administrators who may write memos from this site. You'll select one at the start of each writeup. Adding an administrator's district email also lets them edit this site.</div>
           <div id="adminInputs"></div>
           <button type="button" onclick="addAdminRow()" style="margin-top:8px;font-size:0.78rem;color:var(--gold);font-weight:700;background:transparent;border:none;cursor:pointer;text-decoration:underline;">+ Add Administrator</button>
         </div>
@@ -1608,9 +1626,9 @@ if (window.location.protocol === 'file:') {
     <a href="mailto:help@trackument.com" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:4px 16px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em; text-decoration:none; display:inline-flex; align-items:center;">❓ Help</a>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:4px 16px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">⚙ District &amp; Site Settings</button>
     <div style="position:relative;">
-      <button onclick="toggleHeaderMenu()" id="headerMenuBtn" style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); font-weight:700; font-size:0.9rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; letter-spacing:0;"><span style="color:var(--gold);">•</span><span style="color:var(--red);">•</span><span style="color:var(--teal);">•</span></button>
+      <button onclick="toggleHeaderMenu()" id="headerMenuBtn" aria-label="Account menu" aria-haspopup="true" aria-expanded="false" style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); font-weight:700; font-size:0.9rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; letter-spacing:0;"><span style="color:var(--gold); pointer-events:none;">•</span><span style="color:var(--red); pointer-events:none;">•</span><span style="color:var(--teal); pointer-events:none;">•</span></button>
       <div id="headerMenuDropdown" style="display:none; position:absolute; right:0; top:40px; background:#fff; border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.2); min-width:170px; overflow:hidden; z-index:50;">
-        <a href="/api/auth/logout" style="display:block; padding:8px 16px; font-size:0.82rem; color:var(--navy); font-weight:700; text-decoration:none; border-bottom:1px solid var(--light-gray);">Log out</a>
+        <a href="/api/auth/logout" onclick="event.preventDefault(); clearSavedWriteup().finally(() => { window.location.href = '/api/auth/logout'; });" style="display:block; padding:8px 16px; font-size:0.82rem; color:var(--navy); font-weight:700; text-decoration:none; border-bottom:1px solid var(--light-gray);">Log out</a>
         <a href="/privacy" target="_blank" style="display:block; padding:8px 16px; font-size:0.82rem; color:var(--navy); text-decoration:none; border-bottom:1px solid var(--light-gray);">Privacy Policy</a>
         <div style="padding:8px 16px; font-size:0.75rem; color:var(--gray);">Version v50</div>
       </div>
@@ -1622,13 +1640,29 @@ if (window.location.protocol === 'file:') {
 <script>
 function toggleHeaderMenu(){
   const el = document.getElementById('headerMenuDropdown');
-  if (el) el.style.display = el.style.display === 'block' ? 'none' : 'block';
+  const btn = document.getElementById('headerMenuBtn');
+  if (!el) return;
+  const open = el.style.display !== 'block';
+  el.style.display = open ? 'block' : 'none';
+  if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
 }
+// Close the menu on any click outside it. A click on one of the dots lands on
+// the dot, not the button itself, so the check has to cover everything inside
+// the button; comparing to the button alone closed the menu the moment it opened.
 document.addEventListener('click', function(e){
   const menu = document.getElementById('headerMenuDropdown');
   const btn = document.getElementById('headerMenuBtn');
-  if (menu && menu.style.display === 'block' && !menu.contains(e.target) && e.target !== btn) {
+  if (menu && menu.style.display === 'block' && !menu.contains(e.target) && !(btn && btn.contains(e.target))) {
     menu.style.display = 'none';
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+});
+document.addEventListener('keydown', function(e){
+  const menu = document.getElementById('headerMenuDropdown');
+  if (e.key === 'Escape' && menu && menu.style.display === 'block') {
+    menu.style.display = 'none';
+    const btn = document.getElementById('headerMenuBtn');
+    if (btn) { btn.setAttribute('aria-expanded', 'false'); btn.focus(); }
   }
 });
 </script>
@@ -1693,7 +1727,7 @@ document.addEventListener('click', function(e){
 
       <!-- School selector — compact strip with Edit when selected, selector list when not -->
       <div style="margin-bottom:16px;">
-        <label style="margin-bottom:8px; display:block;">Site <span style="color:var(--red, #c0392b); font-weight:700;">*</span></label>
+        <label style="margin-bottom:8px; display:block;">Site or Department <span style="color:var(--red, #c0392b); font-weight:700;">*</span></label>
 
         <!-- Strip shown after school is selected (matches district strip style) -->
         <div id="schoolSelectedStrip" style="display:none; background:var(--cream); border:1px solid var(--light-gray); border-radius:3px; padding:8px 16px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
@@ -1707,13 +1741,13 @@ document.addEventListener('click', function(e){
         <!-- Selector shown when no school is chosen -->
         <div id="schoolSelectorWrap">
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
-            <span style="font-size:0.8rem; color:var(--navy); font-weight:600;">Select your site:</span>
-            <button onclick="openSettings(); switchTab('schools')" style="font-size:0.75rem; color:var(--navy); font-weight:700; background:var(--white); border:1.5px solid var(--navy); border-radius:4px; padding:4px 8px; cursor:pointer; white-space:nowrap;">+ Add a Site</button>
+            <span style="font-size:0.8rem; color:var(--navy); font-weight:600;">Select your site or department:</span>
+            <button onclick="openSettings(); switchTab('schools')" style="font-size:0.75rem; color:var(--navy); font-weight:700; background:var(--white); border:1.5px solid var(--navy); border-radius:4px; padding:4px 8px; cursor:pointer; white-space:nowrap;">+ Add a Site or Department</button>
           </div>
           <select id="schoolSelectorDropdown" onchange="if(this.value) selectSchool(this.value);" style="width:100%;">
-            <option value="">— Select a site —</option>
+            <option value="">Select a site or department</option>
           </select>
-          <div id="schoolSelectorEmpty" style="display:none; font-size:0.85rem; color:var(--gray); font-style:italic; width:100%; margin-top:4px;">No sites saved yet. Add your sites in Settings → Sites tab.</div>
+          <div id="schoolSelectorEmpty" style="display:none; font-size:0.85rem; color:var(--gray); font-style:italic; width:100%; margin-top:4px;">No sites or departments saved yet. Add them in Settings, on the Sites and Departments tab.</div>
         </div>
       </div>
 
@@ -2713,6 +2747,15 @@ function nextStep(from) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// Every error a person sees ends by pointing them to help. Field reminders such
+// as "Please complete..." are instructions, not errors, and are left alone.
+function withHelp(msg) {
+  let text = String(msg || 'Something went wrong.').trim();
+  if (/help@trackument\.com/i.test(text)) return text;
+  if (!/[.!?]$/.test(text)) text += '.';
+  return text + ' For assistance, email help@trackument.com.';
+}
+
 function showStepError(msg) {
   // Remove any existing error message first
   const existing = document.getElementById('stepErrorMsg');
@@ -2779,16 +2822,19 @@ async function generateMemo() {
   );
 
   let messageContent = [];
+  // The chosen citations already carry the exact contract and handbook
+  // language. Only the related sections go along for context, never whole
+  // files, which are too large for the AI to accept.
+  const draftKeywords = relevanceKeywords([data.factDescription, data.employeeTitle, data.docType, [...selectedSituations].join(' ')].join(' '));
   const cba = window._activeCBAEntry;
   if (cba && cba.sourceType === 'file') {
-    const cbaB64 = await loadEntryPdfBase64(cba);
-    if (cbaB64) messageContent.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: cbaB64 }, title: cba.name });
-    else console.warn('Could not attach the saved agreement; its name is still referenced in the prompt.');
+    const excerpt = await loadEntryExcerpts(cba, draftKeywords, 15000);
+    if (excerpt) messageContent.push({ type: 'text', text: 'Related sections of the bargaining agreement "' + cba.name + '":\n\n' + excerpt });
   }
   for (const h of await getHandbookLibrary()) {
     if (h.sourceType !== 'file') continue;
-    const b64 = await loadEntryPdfBase64(h);
-    if (b64) messageContent.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 }, title: h.name });
+    const excerpt = await loadEntryExcerpts(h, draftKeywords, 8000);
+    if (excerpt) messageContent.push({ type: 'text', text: 'Related sections of the employee handbook "' + h.name + '":\n\n' + excerpt });
   }
   (window._priorDocFiles || []).forEach(f => {
     if (isPDFData(f.data)) {
@@ -2833,7 +2879,7 @@ async function generateMemo() {
   } catch (err) {
     document.getElementById('loading').style.display = 'none';
     hideStatus();
-    alert('Error generating document: ' + (err.message || 'Unknown error. Please try again.'));
+    alert(withHelp('Error generating document: ' + (err.message || 'Unknown error. Please try again.')));
     currentStep = 6;
     document.getElementById('step-6').classList.add('active');
     updateSideNav();
@@ -3265,6 +3311,9 @@ function downloadMemo() {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+  // The document is now on the administrator's computer, so the working copy
+  // with the employee's information does not need to stay in the browser.
+  clearSavedWriteup();
 }
 
 async function saveToGoogleDrive() {
@@ -3308,8 +3357,8 @@ async function saveToGoogleDrive() {
       // Administrators get a plain message. The technical detail is emailed to
       // the Trackument team by the server instead of shown here.
       throw new Error(data.error === 'drive_unavailable'
-        ? 'Google Drive is not available right now. Your document is safe, so please use Copy to Clipboard or Download in the meantime. Our team has been notified and will follow up.'
-        : 'Something went wrong while saving. Your document is safe, so please use Copy to Clipboard or Download in the meantime.');
+        ? withHelp('Google Drive is not available right now. Your document is safe, so please use Copy to Clipboard or Download in the meantime. Our team has been notified and will follow up.')
+        : withHelp('Something went wrong while saving. Your document is safe, so please use Copy to Clipboard or Download in the meantime.'));
     }
 
     btn.disabled = false;
@@ -3317,21 +3366,29 @@ async function saveToGoogleDrive() {
     statusEl.className = 'status';
     statusEl.style.display = 'block';
     statusEl.style.color = 'var(--success)';
+    clearSavedWriteup();
     statusEl.innerHTML = '✓ Saved to Google Drive. <a href="' + data.webViewLink + '" target="_blank" style="color:var(--navy); font-weight:700;">Open it →</a>';
   } catch (err) {
     btn.disabled = false;
     btn.textContent = originalLabel;
     statusEl.style.display = 'block';
     statusEl.style.color = '#c0392b';
-    statusEl.textContent = 'Could not save to Drive: ' + err.message;
+    statusEl.textContent = withHelp('Could not save to Drive: ' + err.message);
   }
 }
 
 function copyMemo() {
   const text = document.getElementById('memoOutput').innerText;
   navigator.clipboard.writeText(text).then(() => {
+    clearSavedWriteup();
     alert('Memo copied to clipboard.');
   });
+}
+
+// Removes the in-progress writeup saved on this computer. The document on
+// screen is left alone, so the administrator can keep reading it.
+async function clearSavedWriteup() {
+  try { await store.delete('form:draft'); } catch (e) {}
 }
 
 function startOver() {
@@ -3569,7 +3626,7 @@ INSTRUCTIONS:
     if (loadingEl) loadingEl.style.display = 'none';
     hideStatus();
     if (generateBtn) generateBtn.disabled = false;
-    showStepError('Error generating draft: ' + (err.message || 'Please try again.'));
+    showStepError(withHelp('Error generating draft: ' + (err.message || 'Please try again.')));
   }
 }
 
@@ -3810,15 +3867,26 @@ async function analyzeAndSuggestCitations() {
   const handbookLibrary = await getHandbookLibrary();
   const handbookFiles = handbookLibrary.filter(h => h.sourceType === 'file' && (h.sourceData || h.documentId));
   const handbookLinks = handbookLibrary.filter(h => h.sourceType === 'link' && h.sourceData);
+  // Keywords from the facts pick which parts of the saved documents are sent.
+  const earlyKeywords = relevanceKeywords([citeData.factDescription, citeData.employeeTitle, docType, [...selectedSituations].join(' ')].join(' '));
+  const cbaExcerpt = hasCBAFile ? await loadEntryExcerpts(cbaEntry, earlyKeywords, 25000) : null;
+  const handbookExcerpts = [];
+  for (const h of handbookFiles) {
+    const text = await loadEntryExcerpts(h, earlyKeywords, 12000);
+    if (text) handbookExcerpts.push({ name: h.name, text });
+  }
   const handbookInstruction = handbookLibrary.length === 0
     ? 'No employee handbook saved.'
-    : (handbookFiles.length > 0
-        ? 'Employee handbook document(s) attached (' + handbookFiles.map(h => h.name).join(', ') + ') — extract only the single most relevant sentence per applicable section.'
+    : (handbookExcerpts.length > 0
+        ? 'EMPLOYEE HANDBOOK EXCERPTS (the sections most related to these facts). Quote only the single most relevant sentence per applicable section, word for word:\n\n' + handbookExcerpts.map(h => '--- ' + h.name + ' ---\n' + h.text).join('\n\n')
         : 'Employee handbook(s) on file: ' + handbookLibrary.map(h => h.name + (h.sourceType === 'link' ? ' (available at ' + h.sourceData + ' — no document uploaded, so cite section types typically applicable)' : '')).join('; '));
 
-  const bpInstruction = window._realBoardPolicies && window._realBoardPolicies.length > 0
+  // Only the board policies related to these facts go into the request.
+  const citeKeywords = relevanceKeywords([pseudoFacts, employeeTitle, docType, [...selectedSituations].join(' ')].join(' '));
+  const relevantPolicies = selectRelevantBoardPolicies(window._realBoardPolicies, citeKeywords, classification);
+  const bpInstruction = relevantPolicies.length > 0
     ? `DISTRICT BOARD POLICY — REAL, ADOPTED TEXT. Cite only these policy numbers, and for each one copy the applicable language word for word from the text below. Never paraphrase, summarize, or describe a policy in your own words. If no sentence in a policy applies to these facts, leave that policy out.
-${window._realBoardPolicies.map(p => `${p.policy_number}${p.title ? ' — ' + p.title : ''}:\n${p.policy_text}`).join('\n\n')}`
+${relevantPolicies.map(p => `${p.policy_number}${p.title ? ' — ' + p.title : ''}:\n${p.policy_text}`).join('\n\n')}`
     : `NO DISTRICT BOARD POLICY TEXT IS ON FILE for this district. Do not cite, suggest, or invent any board policy or administrative regulation numbers. Return an empty "boardpolicy" array.`;
 
   const prompt = `You are a California school district HR attorney. Analyze the following facts and return citations for a ${docType || 'disciplinary document'} for a ${classLabels[classification] || 'California school district employee'} at a California K-12 school district.
@@ -3830,7 +3898,7 @@ ${pseudoFacts}
 
 ${bpInstruction}
 
-${hasCBAFile ? 'CBA document attached — extract only the single most relevant sentence per applicable article.' : hasCBALink ? 'CBA: ' + cbaEntry.name + ' (available at ' + cbaEntry.sourceData + ' — no document was uploaded, so cite article types typically applicable to this conduct for this unit).' : cbaEntry ? 'CBA: ' + cbaEntry.name + '. No document uploaded — cite article types typically applicable.' : 'No CBA saved.'}
+${cbaExcerpt ? 'COLLECTIVE BARGAINING AGREEMENT EXCERPTS from "' + cbaEntry.name + '" (the articles most related to these facts). Quote only the single most relevant sentence per applicable article, word for word, and cite the article number shown in the text:\n\n' + cbaExcerpt : hasCBAFile ? 'A bargaining agreement is on file (' + cbaEntry.name + '), but no article in it matched these facts. Return an empty "cba" array.' : hasCBALink ? 'CBA: ' + cbaEntry.name + ' (available at ' + cbaEntry.sourceData + ' — no document was uploaded, so cite article types typically applicable to this conduct for this unit).' : cbaEntry ? 'CBA: ' + cbaEntry.name + '. No document uploaded — cite article types typically applicable.' : 'No CBA saved.'}
 
 ${handbookInstruction}
 
@@ -3838,7 +3906,7 @@ Return ONLY a JSON object — no preamble, no markdown backticks, no explanation
 {
   "edcode": [{"code": "Ed Code § XXXXX", "desc": "Direct verbatim quote of the most relevant 1-sentence clause"}],
   "cvc": [{"code": "CVC § XXXXX", "desc": "Direct verbatim quote — only populate if employee drives a district vehicle"}],
-  "other": [{"code": "Citation name § number", "desc": "Direct verbatim quote — only for health code, DMV, or non-Ed Code regulatory citations when directly relevant. County health department entries are the one exception: use a plain-language verification note instead of a quote, as instructed above."}],
+  "other": [{"code": "Citation name § number", "desc": "Direct verbatim quote — only for health code, DMV, or non-Ed Code regulatory citations when directly relevant. note instead of a quote, as instructed above."}],
   "boardpolicy": [{"code": "BP XXXX", "desc": "The applicable sentence copied word for word from the district policy text provided above, with no paraphrasing"}],
   "cba": [{"code": "Article X.X — Title", "desc": "Direct verbatim quote of the single most relevant sentence only"}],
   "handbook": [{"code": "Handbook Section X.X — Title", "desc": "Direct verbatim quote of the single most relevant sentence only"}],
@@ -3924,7 +3992,7 @@ REQUIRED citations for driving/transportation violations:
 
 REQUIRED citations for food service/nutrition/cafeteria violations (food handling, sanitation, temperature control, allergen handling, expired product, certification lapses):
 - California Retail Food Code sections the employee actually violated (California Health & Safety Code, Division 104, Part 7 — e.g. § 113996 for food handler card requirements, § 113953 for time/temperature control, § 113947 for handwashing). Only cite sections you can quote verbatim and accurately; if uncertain of the exact text, omit the citation rather than guess.
-- Do NOT invent or quote a specific county health ordinance number or text — county-level amendments are not reliably known. Instead, if a county was provided (${county ? `"${county}"` : 'none provided'}), add a citation in the "other" array with "code": "${county ? county + ' County Environmental Health' : 'County Environmental Health'}" and "desc" set to a plain-language note (not a quote) such as "Administrator should confirm current local permit and food handler certification requirements with the ${county || 'county'} Department of Environmental Health" — mark this citation clearly as a verification note, not a verbatim quote.
+- Do NOT cite or mention county health ordinances or county Environmental Health departments. Cite only the state California Retail Food Code sections described above.
 - Ed Code performance/conduct sections and BP citations as usual, if the facts support them.
 
 For CBA: only cite if the article specifically addresses: attendance, punctuality, safe work practices, compliance with laws while on duty, professional conduct, or leave notification. A CBA article about employee safety/assault reporting does NOT apply to a traffic violation.
@@ -3933,7 +4001,7 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
 
 - Ed Code: Classified = 45xxx performance/conduct sections only. Certificated = 44xxx performance/conduct sections only. Max 4.
 - CVC: Bus drivers, van drivers, any driver — cite the specific code sections violated. Return [] if not a driving situation.
-- Food Code / County Environmental Health: Nutrition services, cafeteria, food service staff — cite California Retail Food Code sections violated, plus a county verification note if a county was provided. Return [] if not a food-service situation.
+- Food Code: Nutrition services, cafeteria, food service staff. Cite California Retail Food Code sections violated. Return [] if not a food-service situation.
 - Board Policy: Correct series by classification. Classified = 4200 series. Certificated = 4100 series. Management = 4300 series. Max 3.
 - CBA: Max 3 articles that directly state employee obligations. Strict relevance to the actual conduct.
 - Employee Handbook: Max 3 sections that directly state employee obligations. Strict relevance to the actual conduct. Return [] if no handbook was saved.`;
@@ -3941,16 +4009,8 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
 
   // Build message content -- include CBA and handbook files only if they're actually PDFs
   let messageContent;
+  // Agreement and handbook text is already inside the prompt as excerpts.
   const documentBlocks = [];
-  if (hasCBAFile) {
-    const cbaB64 = await loadEntryPdfBase64(cbaEntry);
-    if (cbaB64) documentBlocks.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: cbaB64 }, title: cbaEntry.name });
-    else console.warn('Could not attach the saved agreement, so articles cannot be extracted from it.');
-  }
-  for (const h of handbookFiles) {
-    const b64 = await loadEntryPdfBase64(h);
-    if (b64) documentBlocks.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 }, title: h.name });
-  }
 
   if (documentBlocks.length > 0) {
     messageContent = [...documentBlocks, { type: 'text', text: prompt }];
@@ -4021,7 +4081,7 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
         bpFlagEl.innerHTML = `<strong>✓ Verified:</strong> These citations are quoted directly from your district's adopted board policies.`;
       } else {
         bpFlagEl.style.borderLeftColor = 'var(--navy)';
-        bpFlagEl.innerHTML = `<strong>Note:</strong> No board policies are on file for your district yet, so no board policy citations were added. Add the link to your board policy site in District Settings, upload your policy PDFs there, or contact help@trackument.com and we will load them for you.`;
+        bpFlagEl.innerHTML = `<strong>Note:</strong> No board policies are on file for your district yet, so no board policy citations were added. Add the link to your board policy site in District Settings, or upload your board policy PDFs there, and we will take it from there. For assistance, email help@trackument.com.`;
       }
     }
 
@@ -4069,6 +4129,10 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
     if (loadingEl) loadingEl.style.display = 'none';
     hideStatus();
     if (analyzeBtn) analyzeBtn.disabled = false;
+    // Say so plainly. A quiet fallback is how a demo ends up with no citations
+    // and no explanation. The server has already emailed the details.
+    console.error('Citation analysis failed:', err && err.message);
+    showStepError(withHelp('We could not analyze these facts just now, so citations were not added automatically. Please try Analyze Facts again.'));
     // Fallback to static suggestions
     updateCitations();
     autoSelectCBAForClassification(classification);
@@ -4206,7 +4270,7 @@ async function saveDirectivesToDatabase() {
     hideStatus();
     showToast('✓ ' + texts.length + ' directive(s) saved to your database');
     loadSavedDirectives();
-  } catch(err) { hideStatus(); showToast('Error saving directives'); }
+  } catch(err) { hideStatus(); showToast(withHelp('Error saving directives')); }
 }
 
 async function saveSupportToDatabase() {
@@ -4225,7 +4289,7 @@ async function saveSupportToDatabase() {
     hideStatus();
     showToast('✓ ' + texts.length + ' support resource(s) saved');
     loadSavedSupport();
-  } catch(e) { hideStatus(); showToast('Error saving'); }
+  } catch(e) { hideStatus(); showToast(withHelp('Error saving')); }
 }
 
 async function loadSavedSupport() {
@@ -4617,6 +4681,7 @@ async function saveFormState() {
   state._schoolKey = window._selectedSchool?.key || '';
   state._currentStep = currentStep;
   state._maxReachedStep = maxReachedStep;
+  state._savedAt = Date.now();
   await store.set('form:draft', JSON.stringify(state));
   const indicator = document.getElementById('draftSaveIndicator');
   if (indicator) {
@@ -4633,6 +4698,16 @@ async function restoreFormState() {
   let state;
   try { state = JSON.parse(r.value); }
   catch(e) { console.warn('Trackument: could not parse saved form state', e); return; }
+
+  // An unfinished writeup is kept for at most seven days without activity, so
+  // employee information never sits on a computer indefinitely.
+  const DRAFT_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+  // Drafts saved before this rule existed have no date, so they are kept and
+  // dated the next time they are saved.
+  if (state._savedAt && Date.now() - state._savedAt > DRAFT_MAX_AGE) {
+    await clearSavedWriteup();
+    return;
+  }
 
   FORM_FIELDS.forEach(id => {
     const el = document.getElementById(id);
@@ -4855,6 +4930,37 @@ function dropDocType(e) {
   _dragSrc = null;
 }
 
+const ALL_DOC_TYPES = ['Conference Summary', 'Written Warning', 'Letter of Reprimand', 'Notice of Unsatisfactory Performance', 'Final Written Warning', 'Notice of Unprofessional Conduct'];
+
+// Shows a district's saved choices in Settings: saved types checked in their
+// saved order, custom types added back, and everything checked when the
+// district has not chosen yet. Before this, saved choices never showed, so the
+// boxes always looked empty.
+function applyDocTypesToChecklist(types) {
+  const container = document.getElementById('docTypeCheckList');
+  if (!container) return;
+  const chosen = (types && types.length) ? types : null;
+  const rowsByValue = new Map();
+  container.querySelectorAll('.doctype-row').forEach(row => {
+    const chk = row.querySelector('.doctype-chk');
+    if (chk) rowsByValue.set(chk.value, row);
+  });
+  if (chosen) {
+    chosen.forEach(t => {
+      if (!rowsByValue.has(t)) {
+        const input = document.getElementById('customDocTypeInput');
+        if (input) { input.value = t; addCustomDocType(); }
+        const rows = container.querySelectorAll('.doctype-row');
+        rowsByValue.set(t, rows[rows.length - 1]);
+      }
+    });
+    // Saved types first, in their saved order, then the unchosen ones.
+    chosen.forEach(t => { const row = rowsByValue.get(t); if (row) container.appendChild(row); });
+    rowsByValue.forEach((row, value) => { if (!chosen.includes(value)) container.appendChild(row); });
+  }
+  container.querySelectorAll('.doctype-chk').forEach(chk => { chk.checked = chosen ? chosen.includes(chk.value) : true; });
+}
+
 function getCheckedDocTypes() {
   return Array.from(document.querySelectorAll('.doctype-chk:checked')).map(c => c.value);
 }
@@ -4864,7 +4970,7 @@ function populateDocTypeSelect(types) {
   if (!select) return;
   const current = select.value;
   select.innerHTML = '';
-  (types && types.length ? types : ['Conference Summary', 'Written Warning', 'Letter of Reprimand', 'Notice of Unsatisfactory Performance']).forEach(t => {
+  (types && types.length ? types : ALL_DOC_TYPES).forEach(t => {
     const opt = document.createElement('option');
     opt.value = t; opt.textContent = t;
     select.appendChild(opt);
@@ -4984,10 +5090,11 @@ function applyDistrictProfile(profile) {
   if (bpEl) bpEl.value = profile.bpURL || '';
   if (countyEl) countyEl.value = profile.county || '';
 
-  // Populate docType select from saved types
+  // Populate docType select and the Settings checklist from saved types
   if (profile.docTypes && profile.docTypes.length) {
     populateDocTypeSelect(profile.docTypes);
   }
+  applyDocTypesToChecklist(profile.docTypes);
 }
 
 async function saveDistrictAndConfirm() {
@@ -5052,13 +5159,13 @@ async function saveDistrictProfile() {
       document.getElementById('tabNewMemo').style.display = 'block';
       document.getElementById('setupCloseBtn').style.display = 'flex';
       document.getElementById('setupModalTitle').textContent = 'District and Site Settings';
-      document.getElementById('setupModalSub').textContent = 'Now add your school or site — you can add more later';
+      document.getElementById('setupModalSub').textContent = 'Now add your first site or department. You can add more later.';
       switchTab('schools');
     }
     return true;
   } catch (err) {
     hideStatus();
-    alert('Error saving profile: ' + (err.message || String(err)));
+    alert(withHelp('Error saving profile: ' + (err.message || String(err))));
     return false;
   }
 }
@@ -5067,6 +5174,17 @@ async function saveDistrictProfile() {
 // Pushes the current district profile + CBA library to the server, keyed by
 // domain, so any other site admin who enters the same domain gets it back
 // without retyping anything.
+// Keys deleted on this computer, kept until the server confirms it has them,
+// so another browser's older copy cannot bring a deleted item back.
+async function recordDeletedKey(key) {
+  try {
+    const raw = await store.get('sync:deleted');
+    const list = raw?.value ? JSON.parse(raw.value) : [];
+    if (!list.includes(key)) list.push(key);
+    await store.set('sync:deleted', JSON.stringify(list));
+  } catch (e) {}
+}
+
 async function pushDistrictSettings() {
   const domain = document.getElementById('setupDistrictDomain')?.value.trim().toLowerCase()
     || window._districtProfile?.domain;
@@ -5091,7 +5209,13 @@ async function pushDistrictSettings() {
         if (r?.value) schoolSites.push(JSON.parse(r.value));
       } catch (e) {}
     }
-    await fetch('/api/district-settings', {
+    const deletedRaw = await store.get('sync:deleted');
+    const deletedKeys = deletedRaw?.value ? JSON.parse(deletedRaw.value) : [];
+    // An empty document type list only means the list was never drawn on this
+    // screen, so keep the saved one rather than erasing it for everyone.
+    const checkedTypes = getCheckedDocTypes();
+    const docTypes = checkedTypes.length ? checkedTypes : (window._districtProfile?.docTypes || []);
+    const res = await fetch('/api/district-settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -5099,15 +5223,35 @@ async function pushDistrictSettings() {
         districtName: document.getElementById('setupDistrictName')?.value.trim() || window._districtProfile?.name || '',
         bpURL: document.getElementById('setupBPURL')?.value.trim() || '',
         county: document.getElementById('setupCounty')?.value.trim() || '',
-        docTypes: getCheckedDocTypes(),
+        docTypes,
         cbaLibrary,
         handbookLibrary,
-        schoolSites
+        schoolSites,
+        deletedKeys
       })
     });
+    if (!res.ok) throw new Error('Server answered ' + res.status);
+    // The server now holds these deletions, so the local list can be cleared.
+    await store.set('sync:deleted', JSON.stringify([]));
+    // The server's merged copy is the truth, including any change it declined.
+    const merged = await res.json().catch(() => null);
+    if (merged && merged.ok) {
+      for (const entry of [...(merged.cbaLibrary || []), ...(merged.handbookLibrary || []), ...(merged.schoolSites || [])]) {
+        if (entry && entry.key) await store.set(entry.key, JSON.stringify(entry));
+      }
+      const ignored = merged.ignored || {};
+      if (ignored.district || (ignored.sites && ignored.sites.length)) {
+        const parts = [];
+        if (ignored.district) parts.push('district information can only be changed by a settings manager');
+        if (ignored.sites && ignored.sites.length) parts.push('you do not have permission to change ' + ignored.sites.join(', '));
+        showToast('Some changes were not saved because ' + parts.join(', and ') + '.');
+        if (typeof loadSchoolProfileList === 'function') loadSchoolProfileList();
+      }
+    }
   } catch (err) {
-    // Non-fatal -- local save already succeeded, sync will retry next save
+    // The change is still saved on this computer and will sync on the next save.
     console.warn('Could not sync district settings to server:', err.message);
+    showToast(withHelp('Saved on this computer, but it could not reach the server. It will sync next time you save.'));
   }
 }
 
@@ -5134,26 +5278,25 @@ async function pullDistrictSettings(domain) {
     await store.set('setup:complete', '1');
     try { localStorage.setItem('wt__district:profile', JSON.stringify(profile)); } catch(e) {}
 
-    // Write each shared CBA entry into local storage under its own key so
-    // loadSetupCBAList() / loadCBALibrary() work unmodified.
-    for (const entry of (data.cbaLibrary || [])) {
-      if (entry && entry.key) {
-        await store.set(entry.key, JSON.stringify(entry));
-      }
+    // Bring in the shared sites, agreements, and handbooks, but only where the
+    // server's copy is at least as new as this computer's. A local edit that
+    // never reached the server is kept and sent up again below.
+    let localIsNewer = false;
+    const takeIfNewer = async (entry) => {
+      if (!entry || !entry.key) return;
+      let local = null;
+      try { const r = await store.get(entry.key); local = r?.value ? JSON.parse(r.value) : null; } catch (e) {}
+      if (local && (Number(local.updatedAt) || 0) > (Number(entry.updatedAt) || 0)) { localIsNewer = true; return; }
+      await store.set(entry.key, JSON.stringify(entry));
+    };
+    for (const entry of (data.cbaLibrary || [])) await takeIfNewer(entry);
+    for (const entry of (data.handbookLibrary || [])) await takeIfNewer(entry);
+    for (const entry of (data.schoolSites || [])) await takeIfNewer(entry);
+    // Items deleted on another computer are removed here too.
+    for (const key of (data.deletedKeys || [])) {
+      try { await store.delete(key); } catch (e) {}
     }
-    // Same for shared handbook entries.
-    for (const entry of (data.handbookLibrary || [])) {
-      if (entry && entry.key) {
-        await store.set(entry.key, JSON.stringify(entry));
-      }
-    }
-    // Same for shared school site entries -- this is what makes a site added
-    // on one computer actually show up when logging in from another.
-    for (const entry of (data.schoolSites || [])) {
-      if (entry && entry.key) {
-        await store.set(entry.key, JSON.stringify(entry));
-      }
-    }
+    if (localIsNewer) setTimeout(() => pushDistrictSettings(), 0);
 
     window._districtProfile = profile;
     return true;
@@ -5226,6 +5369,81 @@ function bpEscape(str) {
   return div.innerHTML;
 }
 
+// ─── Relevance selection ─────────────────────────────────────────────────────
+// A district can have hundreds of board policies and contracts hundreds of pages
+// long. Sending all of it with every request is far past what the AI accepts,
+// and the request fails. These helpers pick the parts that match the facts.
+const RELEVANCE_STOP_WORDS = new Set(('about above after again against because been before being below between both could does doing down during each from further have having here into itself more most other over same should some such than that their them then there these they this those through under until very were what when where which while with would your yours shall will also must upon within without employee employees district school staff').split(' '));
+function relevanceKeywords(text) {
+  const words = (String(text || '').toLowerCase().match(/[a-z][a-z'-]{3,}/g) || []);
+  return [...new Set(words)].filter(w => !RELEVANCE_STOP_WORDS.has(w)).slice(0, 80);
+}
+function relevanceScore(keywords, title, body) {
+  const t = String(title || '').toLowerCase();
+  const b = String(body || '').toLowerCase();
+  let score = 0;
+  keywords.forEach(w => {
+    if (t.includes(w)) score += 4;
+    let count = 0, idx = b.indexOf(w);
+    while (idx !== -1 && count < 5) { count++; idx = b.indexOf(w, idx + w.length); }
+    score += count;
+  });
+  return score;
+}
+
+// Board policies most related to these facts, within a size the AI accepts.
+function selectRelevantBoardPolicies(policies, keywords, classification) {
+  const series = { 'cert-prob': '41', 'cert-perm': '41', 'class-prob': '42', 'class-perm': '42', 'mgmt': '43' }[classification] || '';
+  const coreDiscipline = /^(BP|AR)\s*4[123]1[89]\b/;
+  const scored = (policies || []).map(p => {
+    const num = String(p.policy_number || '');
+    let score = relevanceScore(keywords, p.title, p.policy_text);
+    const digits = (num.match(/\d{4}/) || [''])[0];
+    if (series && digits.startsWith(series)) score += 6;
+    else if (digits.startsWith('40')) score += 3;
+    if (coreDiscipline.test(num)) score += 4;
+    return { p, score };
+  }).filter(x => x.score > 0).sort((a, b) => b.score - a.score);
+  const chosen = [];
+  let total = 0;
+  for (const { p } of scored) {
+    if (chosen.length >= 20 || total > 60000) break;
+    const text = String(p.policy_text || '').slice(0, 6000);
+    chosen.push({ ...p, policy_text: text });
+    total += text.length;
+  }
+  return chosen;
+}
+
+// The sections of a saved agreement or handbook that match the facts, read from
+// the text the server extracted once, rather than attaching the whole file.
+async function loadEntryExcerpts(entry, keywords, maxChars) {
+  if (!entry || entry.sourceType !== 'file') return null;
+  let text = '';
+  if (entry.documentId) {
+    try {
+      const res = await fetch('/api/documents/' + encodeURIComponent(entry.documentId) + '/text');
+      if (res.ok) text = (await res.json()).text || '';
+    } catch (e) {}
+  }
+  if (!text) return null;
+  // Split on article and section headings, then break any long piece down.
+  const pieces = [];
+  text.split(/\n(?=\s*(?:ARTICLE|Article|SECTION|Section)\s+[0-9IVXLC]+)/).forEach(part => {
+    for (let i = 0; i < part.length; i += 3500) pieces.push(part.slice(i, i + 3500));
+  });
+  const ranked = pieces.map((piece, index) => ({ piece, index, score: relevanceScore(keywords, piece.slice(0, 200), piece) }))
+    .filter(x => x.score > 0).sort((a, b) => b.score - a.score);
+  const keep = [];
+  let total = 0;
+  for (const r of ranked) {
+    if (total + r.piece.length > (maxChars || 25000)) continue;
+    keep.push(r); total += r.piece.length;
+  }
+  if (keep.length === 0) return null;
+  return keep.sort((a, b) => a.index - b.index).map(r => r.piece.trim()).join('\n\n[...]\n\n');
+}
+
 // Saved agreements, handbooks, and rules are stored on the server, with only a
 // documentId kept in the browser. This fetches the actual PDF so it can be
 // attached when citations are analyzed and when the document is drafted.
@@ -5290,6 +5508,73 @@ async function loadEntryPdfBase64(entry) {
   }
 }
 
+// ─── Who can change what ─────────────────────────────────────────────────────
+// The server enforces these rules; the screen simply reflects them.
+async function loadPermissions() {
+  try {
+    const res = await fetch('/api/district/permissions');
+    if (res.ok) window._perms = await res.json();
+  } catch (e) {}
+  return window._perms || { isManager: true, managers: [], email: '' };
+}
+function canEditSiteHere(site) {
+  const p = window._perms;
+  if (!p || p.isManager || !site) return true;
+  if (site.createdBy && site.createdBy.toLowerCase() === p.email) return true;
+  return (site.authors || []).some(a => a && a.email && a.email.toLowerCase() === p.email);
+}
+async function applyDistrictPermissions() {
+  const p = await loadPermissions();
+  const panel = document.getElementById('tabPanelDistrict');
+  const note = document.getElementById('districtReadOnlyNote');
+  const saveBtn = document.getElementById('saveDistrictBtn');
+  const locked = !p.isManager;
+  if (panel) panel.classList.toggle('district-locked', locked);
+  if (saveBtn) saveBtn.style.display = locked ? 'none' : '';
+  if (note) {
+    note.style.display = locked ? 'block' : 'none';
+    note.innerHTML = locked
+      ? '<strong>You can view these settings, but only your district\'s settings managers can change them.</strong> Your settings managers: ' + bpEscape((p.managers || []).join(', ') || 'none named yet') + '. You can still add sites and departments, and edit the ones you added or are listed on.'
+      : '';
+  }
+  renderManagers();
+}
+function renderManagers() {
+  const p = window._perms || {};
+  const list = document.getElementById('managersList');
+  const addRow = document.getElementById('managersAddRow');
+  if (!list) return;
+  const managers = p.managers || [];
+  list.innerHTML = managers.length
+    ? managers.map(m => '<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:8px 16px;border:1px solid var(--light-gray);border-radius:3px;margin-bottom:8px;font-size:0.85rem;"><span>' + bpEscape(m) + (m === p.email ? ' <span style="color:var(--gray);">(you)</span>' : '') + '</span>' + (p.isManager && managers.length > 1 ? '<button type="button" onclick="removeSettingsManager(\'' + bpEscape(m) + '\')" style="font-size:0.72rem;color:var(--gray);background:transparent;border:none;cursor:pointer;text-decoration:underline;">Remove</button>' : '') + '</div>').join('')
+    : '<div style="font-size:0.85rem;color:var(--gray);font-style:italic;padding:8px 0;">No settings managers named yet, so any administrator can change district settings.</div>';
+  if (addRow) addRow.style.display = p.isManager ? 'flex' : 'none';
+}
+async function saveManagers(next) {
+  const msg = document.getElementById('managersMsg');
+  try {
+    const res = await fetch('/api/district/managers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ managers: next }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Could not update settings managers.');
+    await applyDistrictPermissions();
+    if (msg) { msg.style.display = 'block'; msg.style.color = '#166534'; msg.textContent = 'Settings managers updated.'; }
+  } catch (err) {
+    if (msg) { msg.style.display = 'block'; msg.style.color = '#7f1d1d'; msg.textContent = withHelp(err.message); }
+  }
+}
+function addSettingsManager() {
+  const input = document.getElementById('newManagerEmail');
+  const email = (input?.value || '').trim().toLowerCase();
+  if (!email) return;
+  const current = (window._perms && window._perms.managers) || [];
+  saveManagers([...new Set([...current, email])]).then(() => { if (input) input.value = ''; });
+}
+function removeSettingsManager(email) {
+  const current = (window._perms && window._perms.managers) || [];
+  if (!confirm('Remove ' + email + ' as a settings manager?')) return;
+  saveManagers(current.filter(m => m !== email));
+}
+
 async function loadBoardPolicyList() {
   const list = document.getElementById('bpPolicyList');
   if (!list) return;
@@ -5303,7 +5588,7 @@ async function loadBoardPolicyList() {
       return;
     }
     list.innerHTML =
-      '<div style="font-size:0.82rem;font-weight:700;color:var(--navy);margin:8px 0;">' + policies.length + (policies.length === 1 ? ' policy' : ' policies') + ' on file</div>' +
+      '<div style="font-size:0.82rem;font-weight:700;color:var(--navy);margin:8px 0;">' + policies.length + (policies.length === 1 ? ' board policy' : ' board policies') + ' on file</div>' +
       '<div style="max-height:240px;overflow-y:auto;border:1px solid var(--light-gray);border-radius:3px;">' +
       policies.map(p =>
         '<div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 16px;border-bottom:1px solid var(--light-gray);font-size:0.85rem;">' +
@@ -5356,12 +5641,13 @@ async function handleBPFiles(fileList) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Upload failed.');
-      results.push({ ok: true, text: bpEscape(file.name) + ': found ' + data.saved + (data.saved === 1 ? ' policy.' : ' policies.') });
+      results.push({ ok: true, text: bpEscape(file.name) + ': found ' + data.saved + (data.saved === 1 ? ' board policy.' : ' board policies.') });
     } catch (err) {
       results.push({ ok: false, text: bpEscape(err.message) });
     }
   }
-  showBPStatus(results.map(r => (r.ok ? '&#10003; ' : '&#9888; ') + r.text).join('<br>'), results.every(r => r.ok));
+  const anyFailed = results.some(r => !r.ok);
+  showBPStatus(results.map(r => (r.ok ? '&#10003; ' : '&#9888; ') + r.text).join('<br>') + (anyFailed ? '<br>For assistance, email help@trackument.com.' : ''), !anyFailed);
   document.getElementById('bpDropZone').style.borderColor = 'var(--light-gray)';
   loadBoardPolicyList();
 }
@@ -5372,18 +5658,19 @@ function handleBPDrop(e) {
 }
 
 async function removeBoardPolicy(id) {
-  if (!confirm('Remove this policy? Writeups will no longer quote it.')) return;
+  if (!confirm('Remove this board policy? Writeups will no longer quote it.')) return;
   try {
     const res = await fetch('/api/district/board-policies/' + id, { method: 'DELETE' });
     if (!res.ok) throw new Error();
     loadBoardPolicyList();
   } catch (err) {
-    showToast('Could not remove that policy. Please try again.');
+    showToast(withHelp('Could not remove that board policy. Please try again.'));
   }
 }
 
 function switchTab(tab) {
-  if (tab === 'district') loadBoardPolicyList();
+  if (tab === 'district') { loadBoardPolicyList(); applyDistrictPermissions(); }
+  if (tab === 'schools') loadPermissions().then(() => loadSchoolProfileList());
   const tabIds = { district: 'District', schools: 'Schools' };
   Object.keys(tabIds).forEach(t => {
     const suffix = tabIds[t];
@@ -5446,7 +5733,7 @@ function renderSchoolSelector(schools) {
   if (!dropdown) return;
 
   if (schools.length === 0) {
-    dropdown.innerHTML = '<option value="">— Select a site —</option>';
+    dropdown.innerHTML = '<option value="">Select a site or department</option>';
     dropdown.style.display = 'none';
     if (empty) empty.style.display = 'block';
     return;
@@ -5455,25 +5742,33 @@ function renderSchoolSelector(schools) {
   if (empty) empty.style.display = 'none';
 
   const currentKey = window._selectedSchool?.key || '';
-  dropdown.innerHTML = '<option value="">— Select a site —</option>' +
+  dropdown.innerHTML = '<option value="">Select a site or department</option>' +
     schools.map(s => `<option value="${s.key}" ${s.key === currentKey ? 'selected' : ''}>${s.name}</option>`).join('');
 }
 
-function addAdminRow() {
+function addAdminRow(prefill) {
   const container = document.getElementById('adminInputs');
   if (!container) return;
   const row = document.createElement('div');
   row.className = 'author-input-row';
-  row.style.cssText = 'display:grid;grid-template-columns:90px 1fr 1fr 32px;gap:8px;margin-bottom:8px;align-items:center;';
+  row.style.cssText = 'display:grid;grid-template-columns:90px 1fr 1fr 1fr 32px;gap:8px;margin-bottom:8px;align-items:center;';
   row.innerHTML = `
     <select class="author-sal" style="padding:8px 32px 8px 8px;border:1px solid var(--light-gray);background-color:var(--cream);border-radius:2px;font-size:0.88rem;background-position:right 10px center;">
       <option>Mr.</option><option>Ms.</option><option>Mrs.</option><option>Dr.</option><option>Prof.</option><option value="">(None)</option>
     </select>
     <input type="text" class="author-name-input" name="adminName" autocomplete="name" placeholder="Full name" style="padding:8px 8px;border:1px solid var(--light-gray);background:var(--cream);border-radius:2px;font-size:0.88rem;">
     <input type="text" class="author-title-input" name="adminTitle" autocomplete="organization-title" placeholder="Title (e.g. Principal)" style="padding:8px 8px;border:1px solid var(--light-gray);background:var(--cream);border-radius:2px;font-size:0.88rem;">
+    <input type="email" class="author-email-input" name="adminEmail" autocomplete="email" placeholder="Email (lets them edit this site)" style="padding:8px 8px;border:1px solid var(--light-gray);background:var(--cream);border-radius:2px;font-size:0.88rem;">
     <button type="button" onclick="this.closest('.author-input-row').remove()" style="background:transparent;border:1px solid var(--light-gray);border-radius:2px;color:var(--gray);cursor:pointer;font-size:1rem;padding:0;width:32px;height:36px;line-height:1;">×</button>
   `;
   container.appendChild(row);
+  // When editing a saved site, fill the row with that administrator.
+  if (prefill) {
+    if (prefill.salutation !== undefined) row.querySelector('.author-sal').value = prefill.salutation;
+    row.querySelector('.author-name-input').value = prefill.name || '';
+    row.querySelector('.author-title-input').value = prefill.title || '';
+    row.querySelector('.author-email-input').value = prefill.email || '';
+  }
 }
 
 function populateAuthorDropdown(school) {
@@ -5562,7 +5857,7 @@ function toggleSchoolForm() {
   const btn = document.getElementById('schoolFormToggleBtn');
   const visible = form.style.display !== 'none';
   form.style.display = visible ? 'none' : 'block';
-  btn.textContent = visible ? '+ Add School' : 'Cancel';
+  btn.textContent = visible ? '+ Add Site or Department' : 'Cancel';
   if (!visible) {
     // Always clear all fields when opening so previous data doesn't bleed through
     const nameEl = document.getElementById('newSchoolName');
@@ -5613,18 +5908,116 @@ function clearNewSchoolLogo() {
   document.getElementById('logoDropZone').style.borderColor = 'var(--light-gray)';
 }
 
-function handleLetterheadFile(file) {
-  if (!file) return;
-  if (file.size > 2 * 1024 * 1024) { alert('Letterhead file must be under 2MB.'); return; }
-  const reader = new FileReader();
-  reader.onload = e => {
-    window._newSchoolLetterheadBase64 = e.target.result;
-    const wrap = document.getElementById('newSchoolLetterheadWrap');
-    const img = document.getElementById('newSchoolLetterheadPreviewImg');
-    wrap.style.display = 'flex';
-    img.src = e.target.result;
-    document.getElementById('letterheadDropZone').style.borderColor = 'var(--success)';
+function showLetterheadReady(dataUrl) {
+  window._newSchoolLetterheadBase64 = dataUrl;
+  const wrap = document.getElementById('newSchoolLetterheadWrap');
+  const img = document.getElementById('newSchoolLetterheadPreviewImg');
+  wrap.style.display = 'flex';
+  img.src = dataUrl;
+  document.getElementById('letterheadDropZone').style.borderColor = 'var(--success)';
+}
+function setLetterheadStatus(message, isError) {
+  const el = document.getElementById('letterheadStatus');
+  if (!el) return;
+  el.style.display = message ? 'block' : 'none';
+  el.style.color = isError ? '#7f1d1d' : 'var(--gray)';
+  el.textContent = message || '';
+}
+
+// PDF.js draws the PDF in the browser, so the letterhead looks exactly as the
+// district designed it. It loads only when someone uploads a PDF.
+let pdfjsReady = null;
+function loadPdfJs() {
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if (pdfjsReady) return pdfjsReady;
+  pdfjsReady = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    script.onload = () => {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      resolve(window.pdfjsLib);
+    };
+    script.onerror = () => { pdfjsReady = null; reject(new Error('Could not load the PDF reader.')); };
+    document.head.appendChild(script);
+  });
+  return pdfjsReady;
+}
+
+// Draws page one of the PDF and keeps the letterhead band at the top: from the
+// first printed line down to the first clear gap, never more than the top
+// third of the page, trimmed to the printed area.
+async function letterheadFromPdf(file) {
+  const pdfjs = await loadPdfJs();
+  const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+  const page = await pdf.getPage(1);
+  const viewport = page.getViewport({ scale: 2 });
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.floor(viewport.width);
+  canvas.height = Math.floor(viewport.height);
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  await page.render({ canvasContext: ctx, viewport }).promise;
+
+  const { width, height } = canvas;
+  const pixels = ctx.getImageData(0, 0, width, height).data;
+  const inkInRow = (y) => {
+    for (let x = 0; x < width; x += 2) {
+      const i = (y * width + x) * 4;
+      if (pixels[i] < 235 || pixels[i + 1] < 235 || pixels[i + 2] < 235) return true;
+    }
+    return false;
   };
+  const limit = Math.floor(height * 0.34);
+  let top = -1;
+  for (let y = 0; y < limit; y++) { if (inkInRow(y)) { top = y; break; } }
+  if (top === -1) throw new Error('No letterhead was found at the top of the first page.');
+  const gapNeeded = Math.floor(height * 0.035);
+  let bottom = top, blank = 0;
+  for (let y = top; y < limit; y++) {
+    if (inkInRow(y)) { bottom = y; blank = 0; }
+    else if (++blank >= gapNeeded && bottom - top > height * 0.02) break;
+  }
+  let left = width, right = 0;
+  for (let y = top; y <= bottom; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      if (pixels[i] < 235 || pixels[i + 1] < 235 || pixels[i + 2] < 235) { if (x < left) left = x; if (x > right) right = x; }
+    }
+  }
+  const pad = 16;
+  const cropX = Math.max(0, left - pad), cropY = Math.max(0, top - pad);
+  const cropW = Math.min(width, right + pad) - cropX, cropH = Math.min(height, bottom + pad) - cropY;
+  const out = document.createElement('canvas');
+  const maxWidth = 1600;
+  const scale = Math.min(1, maxWidth / cropW);
+  out.width = Math.round(cropW * scale);
+  out.height = Math.round(cropH * scale);
+  out.getContext('2d').drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, out.width, out.height);
+  let dataUrl = out.toDataURL('image/png');
+  if (dataUrl.length > 1.5 * 1024 * 1024) dataUrl = out.toDataURL('image/jpeg', 0.88);
+  return dataUrl;
+}
+
+async function handleLetterheadFile(file) {
+  if (!file) return;
+  const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+  if (isPdf) {
+    if (file.size > 5 * 1024 * 1024) { setLetterheadStatus(withHelp('Letterhead PDFs must be under 5MB.'), true); return; }
+    setLetterheadStatus('Reading your letterhead...', false);
+    try {
+      showLetterheadReady(await letterheadFromPdf(file));
+      setLetterheadStatus('We used the top of the first page as your letterhead. Check the preview below.', false);
+    } catch (err) {
+      setLetterheadStatus(withHelp('We could not read a letterhead from that PDF. ' + (err.message || '')), true);
+    }
+    return;
+  }
+  if (!/^image\/(png|jpeg)$/.test(file.type)) { setLetterheadStatus(withHelp('Please upload a PDF, PNG, or JPG file.'), true); return; }
+  if (file.size > 2 * 1024 * 1024) { setLetterheadStatus(withHelp('Letterhead images must be under 2MB.'), true); return; }
+  setLetterheadStatus('', false);
+  const reader = new FileReader();
+  reader.onload = e => showLetterheadReady(e.target.result);
   reader.readAsDataURL(file);
 }
 
@@ -5654,14 +6047,19 @@ async function saveSchoolProfile() {
     const sal = row.querySelector('.author-sal').value;
     const aname = row.querySelector('.author-name-input').value.trim();
     const atitle = row.querySelector('.author-title-input').value.trim();
-    if (aname) authors.push({ salutation: sal, name: aname, title: atitle });
+    const aemail = (row.querySelector('.author-email-input')?.value || '').trim().toLowerCase();
+    if (aname) authors.push({ salutation: sal, name: aname, title: atitle, email: aemail });
   });
 
   const url = document.getElementById('newSchoolURL').value.trim();
   // If editing an existing profile, reuse its key; otherwise create a new one
   const editKey = nameEl.dataset.editKey;
   const key = editKey || ('school:' + Date.now() + Math.random().toString(36).slice(2));
-  const entry = { key, name, url, authors, logoURL: window._newSchoolLogoBase64 || '', letterheadURL: window._newSchoolLetterheadBase64 || '', savedAt: new Date().toLocaleDateString() };
+  let createdBy = (window._perms && window._perms.email) || '';
+  if (editKey) {
+    try { const prev = await store.get(editKey); if (prev?.value) createdBy = JSON.parse(prev.value).createdBy || createdBy; } catch (e) {}
+  }
+  const entry = { key, name, url, authors, logoURL: window._newSchoolLogoBase64 || '', letterheadURL: window._newSchoolLetterheadBase64 || '', savedAt: new Date().toLocaleDateString(), updatedAt: Date.now() , createdBy };
 
   try {
     showStatus('Saving site profile...', name);
@@ -5691,7 +6089,7 @@ async function saveSchoolProfile() {
     showToast('✓ Site profile saved');
     const msg = document.getElementById('sitesSavedMsg');
     if (msg) { msg.style.display = 'block'; setTimeout(() => msg.style.display = 'none', 4000); }
-  } catch(err) { hideStatus(); alert('Error saving school. The logo or letterhead file may be too large. Try a smaller image.'); }
+  } catch(err) { hideStatus(); alert(withHelp('Error saving this site or department. The logo or letterhead file may be too large, so try a smaller image.')); }
 }
 
 async function loadSchoolProfileList() {
@@ -5700,7 +6098,7 @@ async function loadSchoolProfileList() {
   if (!list) return;
 
   if (schools.length === 0) {
-    list.innerHTML = '<div style="font-size:0.85rem;color:var(--gray);font-style:italic;padding:8px 0;">No sites saved yet.</div>';
+    list.innerHTML = '<div style="font-size:0.85rem;color:var(--gray);font-style:italic;padding:8px 0;">No sites or departments saved yet.</div>';
     return;
   }
 
@@ -5712,13 +6110,14 @@ async function loadSchoolProfileList() {
           <div class="cba-card-name">${s.name}</div>
         </div>
         ${s.authors && s.authors.length > 0
-          ? '<div class="cba-card-preview" style="margin-top:4px;">' + s.authors.map(a => [a.salutation, a.name, a.title ? '— ' + a.title : ''].filter(Boolean).join(' ')).join(' · ') + '</div>'
+          ? '<div class="cba-card-preview" style="margin-top:4px;">' + s.authors.map(a => [a.salutation, a.name].filter(Boolean).join(' ') + (a.title ? ', ' + a.title : '')).join(' · ') + '</div>'
           : ''}
         ${s.url ? '<div class="cba-card-preview">' + s.url + '</div>' : ''}
       </div>
       <div class="cba-card-actions">
-        <button class="btn-cba-edit" data-key="${s.key}" data-type="school-edit" style="font-size:0.72rem; background:var(--navy); color:var(--white); border:none; border-radius:2px; padding:4px 8px; cursor:pointer; margin-right:4px;">Edit</button>
-        <button class="btn-cba-delete" data-key="${s.key}" data-type="school">Remove</button>
+        ${canEditSiteHere(s) ? '' : '<div style="font-size:0.75rem;color:var(--gray);max-width:220px;text-align:right;">Only the person who added this site, its listed administrators, or a settings manager can change it.</div>'}
+        ${canEditSiteHere(s) ? `<button class="btn-cba-edit" data-key="${s.key}" data-type="school-edit" style="font-size:0.72rem; background:var(--navy); color:var(--white); border:none; border-radius:2px; padding:4px 8px; cursor:pointer; margin-right:4px;">Edit</button>
+        <button class="btn-cba-delete" data-key="${s.key}" data-type="school">Remove</button>` : ''}
       </div>
     </div>
   `).join('');
@@ -5787,18 +6186,19 @@ async function editSchoolProfile(key) {
     form?.scrollIntoView({ behavior: 'smooth' });
     if (nameEl) nameEl.focus();
     showToast('Edit the form below and click Save Site Profile to update');
-  } catch(e) { showToast('Error loading site profile: ' + e.message); }
+  } catch(e) { showToast(withHelp('Error loading this site or department: ' + e.message)); }
 }
 
 async function deleteSchoolProfile(key) {
   try {
     await store.delete(key);
+    await recordDeletedKey(key);
     if (window._selectedSchool?.key === key) window._selectedSchool = null;
     await loadSchoolProfileList();
     await loadSchoolProfiles();
     pushDistrictSettings();
     showToast('Site removed');
-  } catch(err) { showToast('Error removing site'); }
+  } catch(err) { showToast(withHelp('Error removing this site or department')); }
 }
 
 async function saveAndStartWriteup() {
@@ -5876,7 +6276,7 @@ function openSettings() {
   document.getElementById('tabSchools').style.display = 'block';
   document.getElementById('tabNewMemo').style.display = 'block';
   document.getElementById('setupModalTitle').textContent = 'District and Site Settings';
-  document.getElementById('setupModalSub').textContent = 'Update your profile, school sites, and bargaining agreements';
+  document.getElementById('setupModalSub').textContent = 'Update your district, sites and departments, and bargaining agreements';
   document.getElementById('setupCloseBtn').style.display = 'flex';
   document.getElementById('setupOverlay').classList.add('visible');
   document.body.style.overflow = 'hidden';
@@ -5915,6 +6315,18 @@ window._cbaFileBase64 = null;
 window._cbaFileName = null;
 window._cbaInputMode = 'upload';
 
+// The Upload / Link choice is a pair of options, so the chosen one gets a light
+// fill and a navy outline. A solid navy fill is reserved for action buttons
+// such as Save, so the two are never confused.
+function styleModeChoice(chosen, other) {
+  chosen.style.background = 'rgba(26,2,86,0.07)'; chosen.style.color = 'var(--navy)'; chosen.style.borderColor = 'var(--navy)';
+  chosen.setAttribute('aria-pressed', 'true');
+  if (!chosen.textContent.startsWith('\u2713 ')) chosen.textContent = '\u2713 ' + chosen.textContent;
+  other.style.background = 'var(--white)'; other.style.color = 'var(--gray)'; other.style.borderColor = 'var(--light-gray)';
+  other.setAttribute('aria-pressed', 'false');
+  other.textContent = other.textContent.replace(/^\u2713 /, '');
+}
+
 function setCBAInputMode(mode) {
   window._cbaInputMode = mode;
   const uploadBtn = document.getElementById('cbaTabUpload');
@@ -5922,12 +6334,10 @@ function setCBAInputMode(mode) {
   const uploadDiv = document.getElementById('cbaUploadMode');
   const linkDiv = document.getElementById('cbaLinkMode');
   if (mode === 'upload') {
-    uploadBtn.style.background = 'var(--navy)'; uploadBtn.style.color = 'var(--white)'; uploadBtn.style.borderColor = 'var(--navy)';
-    linkBtn.style.background = 'var(--white)'; linkBtn.style.color = 'var(--gray)'; linkBtn.style.borderColor = 'var(--light-gray)';
+    styleModeChoice(uploadBtn, linkBtn);
     uploadDiv.style.display = 'block'; linkDiv.style.display = 'none';
   } else {
-    linkBtn.style.background = 'var(--navy)'; linkBtn.style.color = 'var(--white)'; linkBtn.style.borderColor = 'var(--navy)';
-    uploadBtn.style.background = 'var(--white)'; uploadBtn.style.color = 'var(--gray)'; uploadBtn.style.borderColor = 'var(--light-gray)';
+    styleModeChoice(linkBtn, uploadBtn);
     linkDiv.style.display = 'block'; uploadDiv.style.display = 'none';
   }
 }
@@ -6016,7 +6426,7 @@ async function saveSetupCBA() {
       const uploaded = await uploadDocumentToServer(window._cbaFileBase64, window._cbaFileName, window._cbaFileType);
       documentId = uploaded.id;
     }
-    const entry = { key, name, unit, sourceType, sourceData, sourceLabel, documentId, savedAt: new Date().toLocaleDateString() };
+    const entry = { key, name, unit, sourceType, sourceData, sourceLabel, documentId, savedAt: new Date().toLocaleDateString(), updatedAt: Date.now() };
     showStatus('Saving bargaining agreement...', '');
     await store.set(key, JSON.stringify(entry));
     hideStatus();
@@ -6032,7 +6442,7 @@ async function saveSetupCBA() {
     showToast('✓ Bargaining agreement saved');
   } catch (err) {
     hideStatus();
-    alert('Error saving agreement: ' + err.message);
+    alert(withHelp('Error saving agreement: ' + err.message));
   }
 }
 
@@ -6075,19 +6485,20 @@ async function loadSetupCBAList() {
       btn.addEventListener('click', () => deleteSetupCBA(btn.getAttribute('data-key')));
     });
   } catch (err) {
-    list.innerHTML = '<div style="font-size:0.85rem;color:var(--warn);">Error loading agreements.</div>';
+    list.innerHTML = '<div style="font-size:0.85rem;color:var(--warn);">Error loading agreements. For assistance, email help@trackument.com.</div>';
   }
 }
 
 async function deleteSetupCBA(key) {
   try {
     await store.delete(key);
+    await recordDeletedKey(key);
     await loadSetupCBAList();
     await loadCBALibrary();
     pushDistrictSettings();
     showToast('Agreement removed');
   } catch (err) {
-    showToast('Error removing agreement');
+    showToast(withHelp('Error removing agreement'));
   }
 }
 
@@ -6113,12 +6524,10 @@ function setHandbookInputMode(mode) {
   const uploadDiv = document.getElementById('handbookUploadMode');
   const linkDiv = document.getElementById('handbookLinkMode');
   if (mode === 'upload') {
-    uploadBtn.style.background = 'var(--navy)'; uploadBtn.style.color = 'var(--white)'; uploadBtn.style.borderColor = 'var(--navy)';
-    linkBtn.style.background = 'var(--white)'; linkBtn.style.color = 'var(--gray)'; linkBtn.style.borderColor = 'var(--light-gray)';
+    styleModeChoice(uploadBtn, linkBtn);
     uploadDiv.style.display = 'block'; linkDiv.style.display = 'none';
   } else {
-    linkBtn.style.background = 'var(--navy)'; linkBtn.style.color = 'var(--white)'; linkBtn.style.borderColor = 'var(--navy)';
-    uploadBtn.style.background = 'var(--white)'; uploadBtn.style.color = 'var(--gray)'; uploadBtn.style.borderColor = 'var(--light-gray)';
+    styleModeChoice(linkBtn, uploadBtn);
     linkDiv.style.display = 'block'; uploadDiv.style.display = 'none';
   }
 }
@@ -6189,7 +6598,7 @@ async function saveSetupHandbook() {
       const uploaded = await uploadDocumentToServer(window._handbookFileBase64, window._handbookFileName, window._handbookFileType);
       documentId = uploaded.id;
     }
-    const entry = { key, name, unit, sourceType, sourceData, sourceLabel, documentId, savedAt: new Date().toLocaleDateString() };
+    const entry = { key, name, unit, sourceType, sourceData, sourceLabel, documentId, savedAt: new Date().toLocaleDateString(), updatedAt: Date.now() };
     showStatus('Saving handbook...', '');
     await store.set(key, JSON.stringify(entry));
     hideStatus();
@@ -6204,7 +6613,7 @@ async function saveSetupHandbook() {
     showToast('✓ Handbook saved');
   } catch (err) {
     hideStatus();
-    alert('Error saving handbook: ' + err.message);
+    alert(withHelp('Error saving handbook: ' + err.message));
   }
 }
 
@@ -6246,18 +6655,19 @@ async function loadSetupHandbookList() {
       btn.addEventListener('click', () => deleteSetupHandbook(btn.getAttribute('data-key')));
     });
   } catch (err) {
-    list.innerHTML = '<div style="font-size:0.85rem;color:var(--warn);">Error loading handbooks.</div>';
+    list.innerHTML = '<div style="font-size:0.85rem;color:var(--warn);">Error loading handbooks. For assistance, email help@trackument.com.</div>';
   }
 }
 
 async function deleteSetupHandbook(key) {
   try {
     await store.delete(key);
+    await recordDeletedKey(key);
     await loadSetupHandbookList();
     pushDistrictSettings();
     showToast('Handbook removed');
   } catch (err) {
-    showToast('Error removing handbook');
+    showToast(withHelp('Error removing handbook'));
   }
 }
 
@@ -6291,6 +6701,7 @@ function saveCBA() { openSettings(); }
 async function deleteCBA(key) {
   try {
     await store.delete(key);
+    await recordDeletedKey(key);
     if (activeCBAKey === key) {
       activeCBAKey = null;
       window._activeCBAEntry = null;
@@ -6299,7 +6710,7 @@ async function deleteCBA(key) {
     await loadCBALibrary();
     showToast('Agreement removed');
   } catch (err) {
-    showToast('Error deleting agreement');
+    showToast(withHelp('Error deleting agreement'));
   }
 }
 
@@ -6543,12 +6954,10 @@ function setMeritInputMode(mode) {
   const uploadDiv = document.getElementById('meritUploadMode');
   const linkDiv = document.getElementById('meritLinkMode');
   if (mode === 'upload') {
-    uploadBtn.style.background = 'var(--navy)'; uploadBtn.style.color = 'var(--white)'; uploadBtn.style.borderColor = 'var(--navy)';
-    linkBtn.style.background = 'var(--white)'; linkBtn.style.color = 'var(--gray)'; linkBtn.style.borderColor = 'var(--light-gray)';
+    styleModeChoice(uploadBtn, linkBtn);
     uploadDiv.style.display = 'block'; linkDiv.style.display = 'none';
   } else {
-    linkBtn.style.background = 'var(--navy)'; linkBtn.style.color = 'var(--white)'; linkBtn.style.borderColor = 'var(--navy)';
-    uploadBtn.style.background = 'var(--white)'; uploadBtn.style.color = 'var(--gray)'; uploadBtn.style.borderColor = 'var(--light-gray)';
+    styleModeChoice(linkBtn, uploadBtn);
     linkDiv.style.display = 'block'; uploadDiv.style.display = 'none';
   }
 }
@@ -6606,7 +7015,7 @@ async function saveMeritRules() {
       documentId = uploaded.id;
       hideStatus();
     }
-    const entry = { key, name, sourceType, sourceData, sourceLabel, documentId, savedAt: new Date().toLocaleDateString() };
+    const entry = { key, name, sourceType, sourceData, sourceLabel, documentId, savedAt: new Date().toLocaleDateString(), updatedAt: Date.now() };
     await store.set(key, JSON.stringify(entry));
     document.getElementById('meritRulesName').value = '';
     document.getElementById('meritRulesLink').value = '';
@@ -6614,7 +7023,7 @@ async function saveMeritRules() {
     toggleMeritForm();
     await loadMeritRulesList();
     showToast('✓ Personnel Commission Rules saved');
-  } catch (err) { hideStatus(); alert('Error saving document: ' + err.message); }
+  } catch (err) { hideStatus(); alert(withHelp('Error saving document: ' + err.message)); }
 }
 
 
@@ -6650,7 +7059,7 @@ async function loadMeritRulesList() {
           await store.delete(btn.getAttribute('data-key'));
           await loadMeritRulesList();
           showToast('Document removed');
-        } catch(err) { showToast('Error removing document'); }
+        } catch(err) { showToast(withHelp('Error removing document')); }
       });
     });
   } catch (err) {}
@@ -6692,7 +7101,7 @@ Promise.resolve().then(() => {
   if (driveParam) {
     history.replaceState(null, '', window.location.pathname);
     if (driveParam === 'connected') showToast('✓ Google Drive connected. Generate your document, then click "Save to Google Drive."');
-    else if (driveParam === 'failed') alert('Could not connect Google Drive. Please try again.');
+    else if (driveParam === 'failed') alert(withHelp('Could not connect Google Drive. Please try again.'));
     else if (driveParam === 'denied') alert('Google Drive connection was not completed.');
   }
 });
