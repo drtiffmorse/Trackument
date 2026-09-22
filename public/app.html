@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-22-r12 -->
+<!-- BUILD: 2026-09-22-r16 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2170,6 +2170,7 @@ document.addEventListener('keydown', function(e){
         <div style="display:flex; align-items:center; gap:8px; font-size:0.88rem; font-weight:700; color:var(--navy); margin-bottom:8px;">Suggested Directives <span class="auto-tag">Based on situation</span></div>
         <div style="font-size:0.83rem; color:var(--navy); margin-bottom:8px; font-weight:600; padding:8px 8px; background:#faf7f0; border-left:3px solid var(--gold); border-radius:2px;">All applicable directives are pre-checked. Uncheck any that don't apply, and click the text to edit.</div>
         <div id="suggestedDirectivesList" style="display:flex; flex-direction:column; gap:8px;"></div>
+        <button type="button" onclick="suggestDirectivesFromFacts()" style="margin-top:8px; background:transparent; border:1px solid var(--light-gray); border-radius:3px; padding:6px 14px; font-size:0.78rem; font-weight:700; color:var(--navy); cursor:pointer;">Rewrite directives for these facts</button>
       </div>
 
       <label>Additional Directives</label>
@@ -2614,7 +2615,8 @@ function renderCitations(listId, citations) {
       <input type="checkbox" id="${listId}-${i}" checked>
       <div class="citation-text">
         <div class="citation-code">${c.code}</div>
-        <div class="citation-desc">${c.desc}</div>
+        ${c.desc ? `<div class="citation-desc">${c.desc}</div>` : `<div class="citation-desc" style="font-style:italic;">Cited by section number. The text of this section is not on file, so nothing is quoted.</div>`}
+        ${c.why ? `<div class="citation-desc" style="margin-top:4px; color:var(--gray);"><strong style="color:var(--navy);">Why this applies:</strong> ${c.why}</div>` : ''}
       </div>
     `;
     list.appendChild(item);
@@ -3028,6 +3030,8 @@ function buildPrompt(d) {
   return `You are a California K-12 HR attorney. Your task is to write a complete, ready-to-sign ${d.docType}. Use the facts and information provided below. Do not ask questions. Do not request more information. Do not write a preamble. Start immediately with the document header. The document is addressed TO the employee using "you" and "your" throughout.
 
 CRITICAL RULE ON CBA REFERENCES: The opening paragraph and goals section must NEVER contain any CBA article numbers. Never write "Pursuant to Article X" or "In accordance with Article X" anywhere in this document. CBA article numbers appear ONLY as bullet points in the citations section, and only if they are explicitly listed in the CBA citations field below. If that field is empty, write zero CBA citations. Do not invent, infer, or reuse any article numbers from examples.
+
+CRITICAL RULE ON CITATIONS WITH NO QUOTED TEXT: Some citations below list a section number with no quoted wording. For those, write the section number only, exactly as given. Never add a description, summary, or characterization of what that section says.
 
 CRITICAL RULE ON QUOTED POLICY LANGUAGE: When quoting Ed Code, Board Policies, or CBA provisions, the quotes must be the actual verbatim statutory or policy text. Never insert the employee's name, job title, or any personal identifier inside a quoted passage. Policy language uses generic terms like "employees," "unit members," or "classified employees" -- not individual names. A quote that reads "Mr. Smith employees are expected to..." is wrong. The correct quote reads "Employees are expected to..."
 
@@ -3741,7 +3745,7 @@ Sincerely,
 ${authorName}${authorTitle ? '\n' + authorTitle : ''}`;
   }
 
-  updateSuggestedDirectives();
+  suggestDirectivesFromFacts();
 }
 
 function populateDraftPreview() {
@@ -3847,6 +3851,14 @@ async function analyzeAndSuggestCitations() {
 
   // Board policy citations come only from the district's own uploaded policy
   // text. When none is on file, no policy numbers are cited at all.
+  // The statute text Trackument has on file, used to quote Ed Code word for
+  // word and to drop anything that cannot be verified.
+  window._statuteLibrary = [];
+  try {
+    const stRes = await fetch('/api/statutes');
+    if (stRes.ok) window._statuteLibrary = (await stRes.json()).statutes || [];
+  } catch (e) {}
+
   window._realBoardPolicies = [];
   // Use the domain of whoever is signed in. A district that has loaded board
   // policies but has not filled in District Settings yet has no saved profile,
@@ -3899,6 +3911,12 @@ async function analyzeAndSuggestCitations() {
         ? 'EMPLOYEE HANDBOOK EXCERPTS (the sections most related to these facts). Quote only the single most relevant sentence per applicable section, word for word:\n\n' + handbookExcerpts.map(h => '--- ' + h.name + ' ---\n' + h.text).join('\n\n')
         : 'Employee handbook(s) on file: ' + handbookLibrary.map(h => h.name + (h.sourceType === 'link' ? ' (available at ' + h.sourceData + ' — no document uploaded, so cite section types typically applicable)' : '')).join('; '));
 
+  // Statute text Trackument has loaded, so the model quotes rather than
+  // paraphrases. Without it, section numbers are cited with no wording.
+  const statuteInstruction = (window._statuteLibrary || []).length > 0
+    ? `STATUTE TEXT ON FILE. Quote only from the text below, word for word, and never describe a statute in your own words:\n\n${window._statuteLibrary.map(st => `${st.code}${st.title ? ' — ' + st.title : ''}:\n${String(st.statute_text || '').slice(0, 4000)}`).join('\n\n')}`
+    : 'NO STATUTE TEXT IS ON FILE. Cite Education Code section numbers that apply, and leave every "desc" field empty. Never describe or summarize a statute.';
+
   // Only the board policies related to these facts go into the request.
   const citeKeywords = relevanceKeywords([pseudoFacts, employeeTitle, docType, [...selectedSituations].join(' ')].join(' '));
   const relevantPolicies = selectRelevantBoardPolicies(window._realBoardPolicies, citeKeywords, classification);
@@ -3914,6 +3932,8 @@ EMPLOYEE JOB TITLE: ${employeeTitle || 'not specified'}
 FACTS:
 ${pseudoFacts}
 
+${statuteInstruction}
+
 ${bpInstruction}
 
 ${cbaExcerpt ? 'COLLECTIVE BARGAINING AGREEMENT EXCERPTS from "' + cbaEntry.name + '" (the articles most related to these facts). Quote only the single most relevant sentence per applicable article, word for word, and cite the article number shown in the text:\n\n' + cbaExcerpt : hasCBAFile ? 'A bargaining agreement is on file (' + cbaEntry.name + '), but no article in it matched these facts. Return an empty "cba" array.' : hasCBALink ? 'CBA: ' + cbaEntry.name + ' (available at ' + cbaEntry.sourceData + ' — no document was uploaded, so cite article types typically applicable to this conduct for this unit).' : cbaEntry ? 'CBA: ' + cbaEntry.name + '. No document uploaded — cite article types typically applicable.' : 'No CBA saved.'}
@@ -3922,8 +3942,8 @@ ${handbookInstruction}
 
 Return ONLY a JSON object — no preamble, no markdown backticks, no explanation:
 {
-  "edcode": [{"code": "Ed Code § XXXXX", "desc": "Direct verbatim quote of the most relevant 1-sentence clause"}],
-  "cvc": [{"code": "CVC § XXXXX", "desc": "Direct verbatim quote — only populate if employee drives a district vehicle"}],
+  "edcode": [{"code": "Ed Code § XXXXX", "desc": "The applicable sentence copied word for word from the statute text provided above. If a section's text is not provided above, still cite the section number and leave desc empty rather than describing it.", "why": "One sentence, in your own words, connecting these specific facts to this section. This is analysis, not a quotation, so never phrase it as statutory text."}],
+  "cvc": [{"code": "CVC § XXXXX", "desc": "Direct verbatim quote — only populate if employee drives a district vehicle", "why": "One sentence connecting these facts to this section."}],
   "other": [{"code": "Citation name § number", "desc": "Direct verbatim quote — only for health code, DMV, or non-Ed Code regulatory citations when directly relevant. note instead of a quote, as instructed above."}],
   "boardpolicy": [{"code": "BP XXXX", "desc": "The applicable sentence copied word for word from the district policy text provided above, with no paraphrasing"}],
   "cba": [{"code": "Article X.X — Title", "desc": "Direct verbatim quote of the single most relevant sentence only"}],
@@ -3943,7 +3963,10 @@ Before including ANY citation, apply this checklist. ALL must be YES:
 
 AUTOMATIC EXCLUSIONS — exclude immediately without further analysis:
 - Any provision where the subject is "The District", "The governing board", "The Superintendent", "Management", or "The commission" — these are institutional obligations, not employee conduct standards
-- Ed Code 44932, 44938, 44939, 45113, 45302, 45304, 45101 — dismissal/Skelly only
+- Ed Code 44932, 44939, 44940, 45113, 45302, 45304, 45101 — dismissal and suspension grounds, never in pre-disciplinary documentation
+- Ed Code 44660 through 44665 — the evaluation system, a separate process from discipline. Never cite these.
+- Ed Code 44938 — cite ONLY on a Notice of Unprofessional Conduct or a Notice of Unsatisfactory Performance, where it is the authority for the notice itself. Never on a conference summary, warning, or letter of reprimand.
+- Conduct statutes that the facts actually implicate ARE welcome, whatever the series. Examples: Ed Code 39831.3 for school bus driver conduct, Ed Code 49001 for corporal punishment, Ed Code 49076 for student record confidentiality, Ed Code 45123 for unauthorized absence, Penal Code 11166 for mandated reporting, Vehicle Code sections for driving, and California Retail Food Code sections for food service. Cite these when the employee's own conduct violates them.
 - Ed Code 45020 — defines classified service structure, not an employee conduct standard
 - Ed Code 39800 — authorizes districts to provide transportation, not an employee driving standard
 - Board Policies in the 3000 series — district operations
@@ -4073,13 +4096,16 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
 
     // Render Ed Code and BP citations. Board policy entries are checked against
     // the district's own policy text, so what appears is the district's wording.
-    renderCitations('edcodeList', data.edcode || []);
+    // Any statute the AI names is looked up once and kept, so its wording can
+    // be quoted rather than described.
+    await ensureStatuteTextFor([...(data.edcode || []), ...(data.cvc || []), ...(data.other || [])]);
+    renderCitations('edcodeList', verifyStatuteCitations(data.edcode || []));
     renderCitations('bpList', verifyBoardPolicyCitations(data.boardpolicy || []));
 
     // Render CVC citations in separate section if present
     const cvcCitations = data.cvc || [];
     if (cvcCitations.length > 0) {
-      renderCitations('cvcList', cvcCitations);
+      renderCitations('cvcList', verifyStatuteCitations(cvcCitations));
       document.getElementById('cvcGroup').style.display = 'block';
     }
 
@@ -4215,6 +4241,90 @@ function getSuggestedSupport() {
     'A follow-up meeting has been scheduled with [name] on [date] to review progress toward the directives outlined above.',
     'Professional development resources are available through the district Human Resources office.',
   ];
+}
+
+// Directives written for these facts, rather than the generic list for a
+// category. The generic list is still the fallback when the request fails.
+async function suggestDirectivesFromFacts() {
+  const wrap = document.getElementById('suggestedDirectivesWrap');
+  const list = document.getElementById('suggestedDirectivesList');
+  const supportList = document.getElementById('suggestedSupportList');
+  if (!list || !wrap) return;
+  const data = collectData();
+  const facts = (data.factDescription || '').trim();
+  if (facts.length < 40) { updateSuggestedDirectives(); return; }
+
+  const { pseudoData } = pseudonymizeData(data);
+  const chosen = ['edcodeList', 'bpList', 'cbaRefList', 'handbookList']
+    .map(id => (document.getElementById(id) ? getCheckedCitations(id) : ''))
+    .filter(Boolean).join('\n').trim();
+  wrap.style.display = 'block';
+  list.innerHTML = '<div style="font-size:0.85rem;color:var(--gray);font-style:italic;padding:8px 0;">Writing directives for these facts...</div>';
+
+  const prompt = `You are a California school district HR attorney writing the directives section of employee discipline documentation.
+
+FACTS:
+${pseudoData.factDescription}
+
+EMPLOYEE: ${data.employeeTitle || 'employee'} (${data.employeeClass || 'certificated'})
+DOCUMENT TYPE: ${data.docType || 'Conference Summary'}
+${chosen ? 'CITATIONS ALREADY SELECTED:\n' + chosen : ''}
+
+Write directives that tell this employee exactly what to do going forward about THESE facts. Rules:
+- Every directive begins with "You are directed to".
+- Each one addresses something specific in the facts, such as the approval that was skipped, the material that was inappropriate, or the notification that was missed. Generic professionalism language is not acceptable unless the facts are about professionalism itself.
+- Write 3 to 6 directives, each one sentence, in plain language an administrator would use.
+- Use a placeholder in square brackets where a date, name, or program must be filled in, for example [date].
+- Never name the employee, the school, or the district.
+
+Also write 2 to 4 support measures the district will provide, each a single sentence, specific to these facts.
+
+Return ONLY a JSON object, with no preamble and no markdown:
+{"directives": ["You are directed to ..."], "support": ["..."]}`;
+
+  try {
+    const response = await fetch('/api/anthropic', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 1200, messages: [{ role: 'user', content: prompt }] })
+    });
+    if (!response.ok) throw new Error('Request failed');
+    const result = await response.json();
+    const raw = (result.content || []).map(b => b.text || '').join('');
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('No JSON in response');
+    const parsed = JSON.parse(match[0]);
+    const directives = (parsed.directives || []).filter(Boolean);
+    const support = (parsed.support || []).filter(Boolean);
+    if (directives.length === 0) throw new Error('No directives returned');
+    renderDirectiveLists(directives, support.length ? support : getSuggestedSupport());
+  } catch (err) {
+    console.warn('Could not write directives from the facts:', err && err.message);
+    updateSuggestedDirectives();
+  }
+}
+
+// Draws whichever set of directives and support measures we ended up with.
+function renderDirectiveLists(directives, support) {
+  const list = document.getElementById('suggestedDirectivesList');
+  const supportList = document.getElementById('suggestedSupportList');
+  if (!list) return;
+  const markPlaceholders = (t) => t.replace(/\[([^\]]+)\]/g, '<span class="fill-in">[$1]</span>');
+  list.innerHTML = directives.map((d, i) => `
+    <div style="display:flex; align-items:flex-start; gap:8px; padding:8px 8px; background:var(--white); border:1px solid var(--light-gray); border-radius:2px;">
+      <input type="checkbox" id="dir-chk-${i}" checked style="margin-top:4px; flex-shrink:0; accent-color:var(--navy);" onchange="syncDirectivesField()">
+      <div contenteditable="true" spellcheck="true" id="dir-text-${i}" style="flex:1; font-size:0.85rem; line-height:1.5; color:var(--text); outline:none; min-height:20px;" oninput="syncDirectivesField()">${markPlaceholders(d)}</div>
+    </div>
+  `).join('');
+  if (supportList) {
+    supportList.innerHTML = (support || []).map((sItem, i) => `
+      <div style="display:flex; align-items:flex-start; gap:8px; padding:8px 8px; background:var(--white); border:1px solid var(--light-gray); border-radius:2px;">
+        <input type="checkbox" id="sup-chk-${i}" checked style="margin-top:4px; flex-shrink:0; accent-color:var(--navy);" onchange="syncSupportField()">
+        <div contenteditable="true" spellcheck="true" id="sup-text-${i}" style="flex:1; font-size:0.85rem; line-height:1.5; color:var(--text); outline:none; min-height:20px;" oninput="syncSupportField()">${markPlaceholders(sItem)}</div>
+      </div>
+    `).join('');
+  }
+  setTimeout(() => { syncDirectivesField(); syncSupportField(); }, 50);
 }
 
 function updateSuggestedDirectives() {
@@ -5502,6 +5612,61 @@ async function loadEntryExcerpts(entry, keywords, maxChars) {
 // Keeps board policy citations honest: drops any policy number the district
 // has not uploaded, and replaces any paraphrased description with the closest
 // matching sentence from the district's actual policy text.
+// Statute citations follow the same rule as board policies: quote the loaded
+// text or say nothing. A citation whose text is not loaded keeps its number
+// and drops the description, so a summary can never read like a quotation.
+// Asks the server for the text of any cited section Trackument does not
+// already have. The server pulls it from California Legislative Information
+// and keeps it for every district after that.
+async function ensureStatuteTextFor(citations) {
+  const library = window._statuteLibrary || [];
+  const digitsOf = (t) => (String(t || '').match(/\d[\d.]*/g) || [])[0] || '';
+  const missing = (citations || [])
+    .map(c => c && c.code)
+    .filter(Boolean)
+    .filter(code => !library.some(st => digitsOf(st.code) === digitsOf(code)));
+  if (missing.length === 0) return;
+  try {
+    const res = await fetch('/api/statutes/lookup', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ codes: missing })
+    });
+    if (!res.ok) return;
+    const found = (await res.json()).statutes || [];
+    window._statuteLibrary = [...library, ...found];
+  } catch (e) {}
+}
+
+function verifyStatuteCitations(citations) {
+  const library = window._statuteLibrary || [];
+  const normalize = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+  // Compare on the section number itself, so 'Ed. Code § 44932(a)(2)' and
+  // the stored 'EDC 44932' are recognized as the same section.
+  const digitsOf = (t) => ((String(t || '').match(/\d{3,6}(?:\.\d+)?/) || [])[0] || '');
+  return (citations || []).map(c => {
+    const match = library.find(st => normalize(st.code) === normalize(c.code))
+      || library.find(st => digitsOf(st.code) && digitsOf(st.code) === digitsOf(c.code));
+    if (!match) return { code: c.code, desc: '', why: c.why || '', unverified: true };
+    const full = match.statute_text || '';
+    if (normalize(c.desc).length > 25 && normalize(full).includes(normalize(c.desc))) return { code: c.code, desc: c.desc, why: c.why || '' };
+    // Not word for word, so take the part of the statute the citation points
+    // at. Subdivisions such as (a)(2) are matched first, then wording.
+    const pieces = full.split(/(?=\(\w{1,3}\)\s)|(?<=[.;:])\s+/).map(x => x.trim()).filter(x => x.length > 12);
+    const subdivisions = (String(c.code).match(/\(([A-Za-z0-9]{1,3})\)/g) || []);
+    const lastSubdivision = subdivisions.length ? subdivisions[subdivisions.length - 1] : '';
+    const wanted = new Set(normalize(c.desc).split(' ').filter(w => w.length > 4));
+    let best = null, bestScore = -1;
+    pieces.forEach(piece => {
+      let score = 0;
+      if (lastSubdivision && piece.startsWith(lastSubdivision)) score += 10;
+      const words = new Set(normalize(piece).split(' ').filter(w => w.length > 4));
+      wanted.forEach(w => { if (words.has(w)) score++; });
+      if (score > bestScore) { bestScore = score; best = piece; }
+    });
+    return { code: c.code, desc: (bestScore > 0 ? best : (pieces[0] || '')).trim(), why: c.why || '' };
+  });
+}
+
 function verifyBoardPolicyCitations(citations) {
   const policies = window._realBoardPolicies || [];
   if (policies.length === 0) return [];
