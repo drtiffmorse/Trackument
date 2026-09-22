@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-20-r1 -->
+<!-- BUILD: 2026-09-20-r2 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -203,7 +203,7 @@
       document.getElementById('contactForm').style.display = 'none';
       document.getElementById('contactSuccess').style.display = 'block';
     } catch (err) {
-      errEl.textContent = err.message;
+      errEl.textContent = (err.message || 'Something went wrong.').replace(/[.!?]?$/, '.') + ' For assistance, email help@trackument.com.';
       errEl.style.display = 'block';
       btn.disabled = false;
       btn.textContent = 'Send message';

@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-19-r6 -->
+<!-- BUILD: 2026-09-20-r2 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -103,19 +103,19 @@
   .sig-field input:focus{ outline:none; border-color:var(--navy); }
   .sig-field input[readonly]{ background:#f6f4fb; color:var(--text-light); }
   .sticky-accept-bar{
-    position:fixed; left:0; right:0; bottom:0; z-index:100;
-    background:#fff; border-top:1px solid var(--rule);
-    box-shadow:0 -6px 20px rgba(40,11,91,0.1);
+    max-width:850px; margin:32px auto 0;
+    background:#fff; border:1px solid var(--rule); border-radius:16px;
+    box-shadow:0 2px 12px rgba(40,11,91,0.06);
   }
   .sticky-accept-inner{
-    max-width:946px; margin:0 auto; padding:16px 48px;
-    display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap;
+    padding:24px 40px;
+    display:flex; flex-direction:column; align-items:flex-start; gap:24px;
   }
   .print-only{ display:none; }
   @media (max-width:640px){
     .terms-hero{ padding:32px 16px 32px; }
     .terms-body-wrap{ padding:24px; }
-    .sticky-accept-inner{ padding:16px; }
+    .sticky-accept-inner{ padding:24px; }
   }
   @media print{
     body{ padding-bottom:0 !important; }
@@ -539,17 +539,18 @@
       </div>
     </div>
   </div>
+
+  <div class="sticky-accept-bar">
+    <div class="sticky-accept-inner">
+      <div class="terms-accept-row locked">
+        <input type="checkbox" id="termsAccept" disabled>
+        <label for="termsAccept">I have read and agree to the Trackument Service Agreement above, and I am authorized to accept it on behalf of my district, on <span id="agreementDate"></span>.<span class="scroll-hint" id="scrollHint">Please scroll to the end of the agreement to enable this box.</span></label>
+      </div>
+      <button type="button" class="terms-continue-btn" id="termsContinueBtn" disabled onclick="completeSignup()">Continue to Sign Up &rarr;</button>
+    </div>
+  </div>
 </section>
 
-<div class="sticky-accept-bar">
-  <div class="sticky-accept-inner">
-    <div class="terms-accept-row locked">
-      <input type="checkbox" id="termsAccept" disabled>
-      <label for="termsAccept">I have read and agree to the Trackument Service Agreement above, and I am authorized to accept it on behalf of my district, on <span id="agreementDate"></span>.<span class="scroll-hint" id="scrollHint">Please scroll to the end of the agreement to enable this box.</span></label>
-    </div>
-    <button type="button" class="terms-continue-btn" id="termsContinueBtn" disabled onclick="completeSignup()">Continue to Sign Up &rarr;</button>
-  </div>
-</div>
 
 <footer class="site-footer">
   <div class="footer-inner">
@@ -627,27 +628,13 @@
   acceptBox.addEventListener('change', refreshContinueState);
 
   // The acceptance box stays locked until the reader has scrolled far enough
-  // that the end of the agreement is visible above the sticky accept bar.
+  // that the end of the agreement is visible on screen.
   // Once unlocked it stays unlocked, even if they scroll back up.
-  // Reserve exactly enough room at the bottom of the page for the fixed
-  // accept bar, so the footer can scroll fully into view above it.
-  function reserveSpaceForBar() {
-    const bar = document.querySelector('.sticky-accept-bar');
-    if (bar) document.body.style.paddingBottom = bar.offsetHeight + 'px';
-  }
-  reserveSpaceForBar();
-  window.addEventListener('resize', reserveSpaceForBar);
-  // The bar gets shorter when the scroll hint disappears, so keep watching it.
-  if (window.ResizeObserver && document.querySelector('.sticky-accept-bar')) {
-    new ResizeObserver(reserveSpaceForBar).observe(document.querySelector('.sticky-accept-bar'));
-  }
-
   const agreementEnd = document.getElementById('agreementEnd');
   const acceptRow = acceptBox.closest('.terms-accept-row');
-  const stickyBar = document.querySelector('.sticky-accept-bar');
   function checkReachedEnd() {
     if (!acceptBox.disabled) return;
-    const visibleBottom = window.innerHeight - (stickyBar ? stickyBar.offsetHeight : 0);
+    const visibleBottom = window.innerHeight;
     if (agreementEnd.getBoundingClientRect().top <= visibleBottom) {
       acceptBox.disabled = false;
       acceptRow.classList.remove('locked');
@@ -697,7 +684,7 @@
         window.location.href = '/welcome?purchase=invoice&active=' + (data.activated ? '1' : '0');
       }
     } catch (err) {
-      errEl.textContent = err.message;
+      errEl.textContent = (err.message || 'Something went wrong.').replace(/[.!?]?$/, '.') + ' For assistance, email help@trackument.com.';
       errEl.style.display = 'block';
       continueBtn.disabled = false;
       continueBtn.textContent = 'Continue to Sign Up →';
