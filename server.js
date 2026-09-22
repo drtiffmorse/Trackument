@@ -1,4 +1,4 @@
-// BUILD: 2026-09-21-r2
+// BUILD: 2026-09-21-r5
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -64,6 +64,8 @@ if (STRIPE_SECRET_KEY) {
 // An admin key missing from the environment must never match a missing key in
 // a request, which is what a bare !== comparison allowed.
 const ADMIN_KEY = process.env.ADMIN_KEY || '';
+// The address a support visit signs in as, so it is obvious in the logs.
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@trackument.com';
 if (!ADMIN_KEY) console.error('WARNING: ADMIN_KEY is not set, so every admin tool is disabled until you set it in Railway.');
 function adminKeyValid(provided) {
   if (!ADMIN_KEY || typeof provided !== 'string' || provided.length !== ADMIN_KEY.length) return false;
@@ -109,6 +111,8 @@ async function checkBeta(req, res, next) {
   // here on purpose. Admin routes carry their own ADMIN_KEY check.
   const openApiPrefixes = [
     '/api/auth/', '/api/admin/', '/api/agreement/download', '/api/billing-portal', '/api/contact',
+    // Manager setup right after purchase; each request carries its own proof.
+    '/api/setup/',
   ];
   const openPrefixes = ['/assets/'];
   if (openExact.includes(req.path) || openPrefixes.some(p => req.path.startsWith(p)) || openApiPrefixes.some(p => req.path.startsWith(p))) return next();
@@ -183,7 +187,8 @@ async function findActiveDistrictByDomain(domain) {
 
 async function createSession(email, domain, method) {
   const token = crypto.randomBytes(32).toString('hex');
-  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days, matching the old cookie's lifetime
+  // A support visit lasts two hours. Everyone else stays signed in for 30 days.
+  const expiresAt = new Date(Date.now() + (method === 'support' ? 2 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000));
   await pool.query(
     `INSERT INTO sessions (token, email, district_domain, login_method, expires_at) VALUES ($1, $2, $3, $4, $5)`,
     [token, email, domain, method, expiresAt]
@@ -627,7 +632,7 @@ app.get('/api/me', async (req, res) => {
     if (!cookies[SESSION_COOKIE_NAME]) return res.json({ loggedIn: false });
     const session = await getValidSession(cookies[SESSION_COOKIE_NAME]);
     if (!session) return res.json({ loggedIn: false });
-    res.json({ loggedIn: true, email: session.email, domain: session.district_domain });
+    res.json({ loggedIn: true, email: session.email, domain: session.district_domain, support: session.login_method === 'support' });
   } catch (err) {
     console.error('api/me failed:', err.message);
     res.json({ loggedIn: false });
@@ -1501,7 +1506,7 @@ app.post('/api/checkout', async (req, res) => {
       tierLabel, amountCents: totalCents, isTest,
       poNumber, agreedAt, wantsTraining, sitesNum,
     });
-    return res.json({ ok: true, method: 'invoice', activated: result.activated });
+    return res.json({ ok: true, method: 'invoice', activated: result.activated, domain: normalizedDomain, setupPass: signSetupPass(normalizedDomain) });
   }
 
   if (!stripe) return res.status(500).json({ error: 'Payment system not configured. Please contact tiffany@trackument.com.' });
@@ -1635,7 +1640,10 @@ async function districtRole(req, domain) {
   } catch (err) { console.error('Could not read district roles:', err.message); }
   const named = ((stored && stored.managers) || []).map(m => String(m).toLowerCase()).filter(Boolean);
   const managers = named.length ? named : (contactEmail ? [contactEmail] : []);
-  return { email, managers, isManager: managers.length === 0 || managers.includes(email) };
+  // A Trackument support visit can look at everything but change nothing that
+  // belongs to the district.
+  const isSupport = req.districtSession && req.districtSession.login_method === 'support';
+  return { email, managers, isManager: !isSupport && (managers.length === 0 || managers.includes(email)) };
 }
 
 // A site or department can be changed by whoever added it, by anyone listed
@@ -1647,6 +1655,167 @@ function canEditSite(site, role) {
   return (site.authors || []).some(a => a && a.email && String(a.email).toLowerCase() === role.email);
 }
 
+// Saves a district's settings managers after checking every address belongs to
+// the district, and emails anyone newly added so they know their role.
+async function saveDistrictManagers(domain, requested, addedByLabel) {
+  const list = [...new Set((requested || []).map(m => String(m).trim().toLowerCase()).filter(Boolean))];
+  if (list.length === 0) return { error: 'Keep at least one settings manager.' };
+  const invalid = list.filter(m => !/^[^@\s]+@[^@\s]+$/.test(m));
+  if (invalid.length) return { error: 'Please check these email addresses: ' + invalid.join(', ') + '.' };
+  const outside = list.filter(m => !m.endsWith('@' + domain));
+  if (outside.length) return { error: 'Settings managers must use a district email address ending in @' + domain + '.' };
+
+  let previous = [];
+  let districtName = domain;
+  try {
+    const r1 = await pool.query('SELECT managers, district_name FROM district_settings WHERE domain = $1', [domain]);
+    previous = ((r1.rows[0] && r1.rows[0].managers) || []).map(m => String(m).toLowerCase());
+    if (r1.rows[0] && r1.rows[0].district_name) districtName = r1.rows[0].district_name;
+    else {
+      const r2 = await pool.query('SELECT district_name FROM districts WHERE domain = $1 LIMIT 1', [domain]);
+      if (r2.rows[0] && r2.rows[0].district_name) districtName = r2.rows[0].district_name;
+    }
+  } catch (err) { /* first save for this district */ }
+
+  await pool.query(`
+    INSERT INTO district_settings (domain, managers, updated_at) VALUES ($1, $2, now())
+    ON CONFLICT (domain) DO UPDATE SET managers = EXCLUDED.managers, updated_at = now()
+  `, [domain, JSON.stringify(list)]);
+
+  const added = list.filter(m => !previous.includes(m));
+  // Nobody needs an email telling them about a change they just made themselves.
+  const actor = String(addedByLabel || '').toLowerCase();
+  for (const email of added.filter(m => m !== actor)) {
+    sendNotificationEmail({
+      to: email,
+      subject: 'You are a Trackument settings manager for ' + districtName,
+      text: [
+        'Hello,',
+        '',
+        (addedByLabel ? addedByLabel + ' named you' : 'You have been named') + ' a settings manager for ' + districtName + ' in Trackument, the employee discipline documentation tool your district uses.',
+        '',
+        'As a settings manager, you can change your district\'s information, board policies, bargaining agreements, document types, and handbooks. Other administrators at your district can use these settings but cannot change them.',
+        '',
+        'To get started, sign in with your district email address here:',
+        BASE_URL + '/login',
+        '',
+        'Once you are signed in, open District & Site Settings to complete your district setup.',
+        '',
+        'For assistance, email help@trackument.com.',
+        '',
+        'The Trackument Team',
+      ].join('\n'),
+    }).catch(err => console.error('Could not send manager welcome email:', err.message));
+  }
+  return { ok: true, managers: list, added: added.filter(m => m !== actor) };
+}
+
+// Right after purchase, the welcome page lets the purchaser name the district's
+// settings managers. It proves it is that purchase with either the Stripe
+// checkout session (card) or a short-lived signed pass (purchase order).
+const SETUP_PASS_HOURS = 48;
+function signSetupPass(domain, hour) {
+  if (!ADMIN_KEY) return '';
+  const h = hour || Math.floor(Date.now() / 3600000);
+  return h + '.' + crypto.createHmac('sha256', ADMIN_KEY).update('setup:' + domain + '|' + h).digest('hex').slice(0, 40);
+}
+function setupPassValid(domain, pass) {
+  if (!ADMIN_KEY || typeof pass !== 'string' || !pass.includes('.')) return false;
+  const hour = Number(pass.split('.')[0]);
+  if (!Number.isFinite(hour)) return false;
+  const age = Math.floor(Date.now() / 3600000) - hour;
+  if (age < 0 || age > SETUP_PASS_HOURS) return false;
+  const expected = signSetupPass(domain, hour);
+  return expected.length === pass.length && crypto.timingSafeEqual(Buffer.from(pass), Buffer.from(expected));
+}
+async function purchaseFromSetupRequest(q) {
+  if (q.sessionId && stripe) {
+    try {
+      const cs = await stripe.checkout.sessions.retrieve(String(q.sessionId));
+      const ageHours = (Date.now() / 1000 - (cs.created || 0)) / 3600;
+      const domain = String(cs.metadata && cs.metadata.districtDomain || '').toLowerCase();
+      if (domain && ageHours <= SETUP_PASS_HOURS) {
+        return { domain, purchaser: String(cs.metadata.contactEmail || '').toLowerCase(), districtName: cs.metadata.districtName || domain };
+      }
+    } catch (err) { console.error('Setup lookup failed:', err.message); }
+    return null;
+  }
+  const domain = String(q.domain || '').trim().toLowerCase();
+  if (domain && setupPassValid(domain, q.pass)) {
+    const { rows } = await pool.query('SELECT district_name, contact_email FROM districts WHERE domain = $1 LIMIT 1', [domain]);
+    return { domain, purchaser: String(rows[0] && rows[0].contact_email || '').toLowerCase(), districtName: (rows[0] && rows[0].district_name) || domain };
+  }
+  return null;
+}
+
+app.get('/api/setup/managers', async (req, res) => {
+  const purchase = await purchaseFromSetupRequest({ sessionId: req.query.session_id, domain: req.query.domain, pass: req.query.pass });
+  if (!purchase) return res.status(403).json({ error: 'This setup link has expired. You can name settings managers later in District Settings.' });
+  const { rows } = await pool.query('SELECT managers FROM district_settings WHERE domain = $1', [purchase.domain]);
+  const saved = (rows[0] && rows[0].managers) || [];
+  res.json({ domain: purchase.domain, districtName: purchase.districtName, managers: saved.length ? saved : (purchase.purchaser ? [purchase.purchaser] : []) });
+});
+
+app.post('/api/setup/managers', async (req, res) => {
+  const purchase = await purchaseFromSetupRequest({ sessionId: req.body.sessionId, domain: req.body.domain, pass: req.body.pass });
+  if (!purchase) return res.status(403).json({ error: 'This setup link has expired. You can name settings managers later in District Settings.' });
+  const result = await saveDistrictManagers(purchase.domain, req.body.managers, purchase.purchaser || 'Your district');
+  if (result.error) return res.status(400).json({ error: result.error });
+  res.json(result);
+});
+
+// Tiffany's view of any district's managers, for help@ requests.
+app.get('/api/admin/managers', async (req, res) => {
+  res.send(adminPageShell('District settings managers', `
+    <h1>District settings managers</h1>
+    <p>View or change who can edit a district's settings. Anyone newly added gets a welcome email.</p>
+    <label for="key">Admin key</label>
+    <input type="password" id="key" autocomplete="off">
+    <label for="domain">District email domain</label>
+    <input type="text" id="domain" placeholder="e.g. ouhsd.org">
+    <button type="button" id="load">Load managers</button>
+    <label for="list" style="margin-top:20px;">Managers, one email per line</label>
+    <textarea id="list" rows="6" style="width:100%;font:inherit;padding:10px;border:1px solid #ccc;border-radius:6px;"></textarea>
+    <button type="button" id="save">Save managers</button>
+    <p id="msg"></p>
+    <script>
+      const msg = document.getElementById('msg');
+      const api = (m, body) => fetch('/api/admin/managers/data' + (m === 'GET' ? '?key=' + encodeURIComponent(document.getElementById('key').value) + '&domain=' + encodeURIComponent(document.getElementById('domain').value) : ''), {
+        method: m, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined
+      }).then(async r => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
+      document.getElementById('load').onclick = async () => {
+        const { ok, data } = await api('GET');
+        if (!ok) { msg.textContent = data.error || 'Could not load.'; return; }
+        document.getElementById('list').value = (data.managers || []).join('\\n');
+        msg.textContent = data.named ? 'These managers were named by the district.' : 'None named yet, so the purchasing contact is the manager.';
+      };
+      document.getElementById('save').onclick = async () => {
+        const managers = document.getElementById('list').value.split(/\\s+/).filter(Boolean);
+        const { ok, data } = await api('POST', { key: document.getElementById('key').value, domain: document.getElementById('domain').value, managers });
+        msg.textContent = ok ? 'Saved. ' + (data.added && data.added.length ? 'Welcome emails went to ' + data.added.join(', ') + '.' : '') : (data.error || 'Could not save.');
+      };
+    </script>
+  `));
+});
+app.get('/api/admin/managers/data', async (req, res) => {
+  if (!adminKeyValid(req.query.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  const domain = String(req.query.domain || '').trim().toLowerCase();
+  if (!domain) return res.status(400).json({ error: 'Enter a district domain.' });
+  const { rows } = await pool.query('SELECT managers FROM district_settings WHERE domain = $1', [domain]);
+  const named = (rows[0] && rows[0].managers) || [];
+  if (named.length) return res.json({ managers: named, named: true });
+  const d = await pool.query('SELECT contact_email FROM districts WHERE domain = $1 LIMIT 1', [domain]);
+  res.json({ managers: d.rows[0] && d.rows[0].contact_email ? [d.rows[0].contact_email] : [], named: false });
+});
+app.post('/api/admin/managers/data', async (req, res) => {
+  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  const domain = String(req.body.domain || '').trim().toLowerCase();
+  if (!domain) return res.status(400).json({ error: 'Enter a district domain.' });
+  const result = await saveDistrictManagers(domain, req.body.managers, 'Trackument');
+  if (result.error) return res.status(400).json({ error: result.error });
+  res.json(result);
+});
+
 app.get('/api/district/permissions', requireAppAccess, async (req, res) => {
   const role = await districtRole(req, req.districtSession.district_domain);
   res.json({ email: role.email, isManager: role.isManager, managers: role.managers });
@@ -1656,15 +1825,9 @@ app.post('/api/district/managers', requireAppAccess, async (req, res) => {
   const domain = req.districtSession.district_domain;
   const role = await districtRole(req, domain);
   if (!role.isManager) return res.status(403).json({ error: 'Only a settings manager can change who manages district settings.' });
-  const list = [...new Set((req.body.managers || []).map(m => String(m).trim().toLowerCase()).filter(Boolean))];
-  if (list.length === 0) return res.status(400).json({ error: 'Keep at least one settings manager.' });
-  const outside = list.filter(m => !m.endsWith('@' + domain));
-  if (outside.length) return res.status(400).json({ error: 'Settings managers must use a district email address ending in @' + domain + '.' });
-  await pool.query(`
-    INSERT INTO district_settings (domain, managers, updated_at) VALUES ($1, $2, now())
-    ON CONFLICT (domain) DO UPDATE SET managers = EXCLUDED.managers, updated_at = now()
-  `, [domain, JSON.stringify(list)]);
-  res.json({ ok: true, managers: list });
+  const result = await saveDistrictManagers(domain, req.body.managers, role.email);
+  if (result.error) return res.status(400).json({ error: result.error });
+  res.json(result);
 });
 
 app.get('/api/district-settings', requireAppAccess, async (req, res) => {
@@ -2234,6 +2397,226 @@ app.post('/api/admin/w9', async (req, res) => {
 });
 
 // ─── Admin: list all districts ────────────────────────────────────────────────
+// ─── Removing a district ─────────────────────────────────────────────────────
+// Two levels: turn off access and keep everything, or delete every trace of the
+// district from Trackument. Stripe is never touched here, so billing only ever
+// changes when Tiffany does it herself in Stripe.
+async function districtSummary(domain) {
+  const [district, settings, policies, docs, sessions] = await Promise.all([
+    pool.query('SELECT district_name, status, contact_email, contact_name, renewal_date, stripe_subscription_id, payment_status FROM districts WHERE domain = $1', [domain]),
+    pool.query('SELECT district_name, school_sites, cba_library, handbook_library, managers FROM district_settings WHERE domain = $1', [domain]),
+    pool.query('SELECT COUNT(*)::int AS n FROM board_policies WHERE domain = $1', [domain]),
+    pool.query('SELECT COUNT(*)::int AS n FROM documents WHERE domain = $1', [domain]),
+    pool.query('SELECT COUNT(*)::int AS n FROM sessions WHERE district_domain = $1', [domain]),
+  ]);
+  const d = district.rows[0] || null;
+  const st = settings.rows[0] || null;
+  return {
+    found: !!(d || st),
+    districtName: (d && d.district_name) || (st && st.district_name) || domain,
+    status: d ? d.status : 'no district record',
+    contact: d ? [d.contact_name, d.contact_email].filter(Boolean).join(', ') : '',
+    renewalDate: d && d.renewal_date ? new Date(d.renewal_date).toLocaleDateString('en-US') : '',
+    subscription: (d && d.stripe_subscription_id) || '',
+    paymentStatus: (d && d.payment_status) || '',
+    managers: (st && st.managers) || [],
+    sites: ((st && st.school_sites) || []).length,
+    agreements: ((st && st.cba_library) || []).length,
+    handbooks: ((st && st.handbook_library) || []).length,
+    boardPolicies: policies.rows[0].n,
+    uploadedFiles: docs.rows[0].n,
+    signedInNow: sessions.rows[0].n,
+  };
+}
+
+// ─── Support sign-in ─────────────────────────────────────────────────────────
+// Lets Tiffany open any district's account to check that everything works. The
+// visit lasts two hours, cannot change the district's settings, and never shows
+// employee information, which stays in each administrator's own browser.
+app.get('/api/admin/support-login', async (req, res) => {
+  res.send(adminPageShell('Sign in to a district', `
+    <h1>Sign in to a district</h1>
+    <p>Open a district's account to check that their setup works. The visit lasts two hours and cannot change their district settings, board policies, or agreements. Employee information is never visible, because writeups stay in each administrator's own browser.</p>
+    <label for="key">Admin key</label>
+    <input type="password" id="key" autocomplete="off">
+    <label for="domain">District email domain</label>
+    <input type="text" id="domain" placeholder="e.g. ouhsd.org">
+    <label style="display:flex;align-items:center;gap:8px;margin-top:16px;font-weight:400;">
+      <input type="checkbox" id="notify" checked style="width:auto;margin:0;">
+      Email the district's settings managers that support signed in
+    </label>
+    <button type="button" id="go">Sign in to this district</button>
+    <p id="msg"></p>
+    <script>
+      document.getElementById('go').onclick = async () => {
+        const msg = document.getElementById('msg');
+        msg.textContent = 'Signing in...';
+        const r = await fetch('/api/admin/support-login', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            key: document.getElementById('key').value,
+            domain: document.getElementById('domain').value,
+            notify: document.getElementById('notify').checked
+          })
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) { msg.textContent = data.error || 'Could not sign in.'; return; }
+        window.location.href = '/app';
+      };
+    </script>
+  `));
+});
+
+app.post('/api/admin/support-login', async (req, res) => {
+  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  const domain = String(req.body.domain || '').trim().toLowerCase();
+  if (!domain) return res.status(400).json({ error: 'Enter a district domain.' });
+  const district = await findActiveDistrictByDomain(domain);
+  if (!district) return res.status(404).json({ error: 'No active district with that domain. Activate it first, or check the spelling.' });
+
+  const token = await createSession(SUPPORT_EMAIL, domain, 'support');
+  setSessionCookie(res, token);
+  console.log('Support sign-in for', domain);
+
+  if (req.body.notify) {
+    try {
+      const { rows } = await pool.query('SELECT managers FROM district_settings WHERE domain = $1', [domain]);
+      const managers = ((rows[0] && rows[0].managers) || []);
+      const to = managers.length ? managers : (district.contact_email ? [district.contact_email] : []);
+      for (const email of to) {
+        sendNotificationEmail({
+          to: email,
+          subject: 'Trackument support signed in to ' + (district.district_name || domain),
+          text: [
+            'Hello,',
+            '',
+            'Trackument support signed in to your district today to check that your setup is working. The visit lasts two hours and cannot change your district settings, board policies, or bargaining agreements.',
+            '',
+            'Employee information is never visible during a support visit, because writeups stay in each administrator\'s own browser and are never stored by Trackument.',
+            '',
+            'If you have questions about this, reply to this email or write to help@trackument.com.',
+            '',
+            'The Trackument Team',
+          ].join('\n'),
+        }).catch(err => console.error('Could not send support visit notice:', err.message));
+      }
+    } catch (err) { console.error('Could not notify district of support visit:', err.message); }
+  }
+  res.json({ ok: true });
+});
+
+app.get('/api/admin/remove-district', async (req, res) => {
+  res.send(adminPageShell('Remove a district', `
+    <h1>Remove a district</h1>
+    <p>Look up a district, then either turn off its access or delete everything it has saved. This never changes anything in Stripe, so cancel or void billing there yourself.</p>
+    <label for="key">Admin key</label>
+    <input type="password" id="key" autocomplete="off">
+    <label for="domain">District email domain</label>
+    <input type="text" id="domain" placeholder="e.g. ouhsd.org">
+    <button type="button" id="look">Look up district</button>
+    <div id="summary" style="margin-top:20px;"></div>
+    <div id="actions" style="display:none;margin-top:20px;">
+      <button type="button" id="off" style="background:#3d3553;">Turn off access, keep everything</button>
+      <p style="margin-top:24px;">To delete everything this district has saved, type its domain to confirm. This cannot be undone.</p>
+      <input type="text" id="confirm" placeholder="Type the domain to confirm">
+      <button type="button" id="wipe" style="background:#c80204;">Delete everything for this district</button>
+    </div>
+    <p id="msg"></p>
+    <script>
+      const el = (id) => document.getElementById(id);
+      const post = (path, body) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ key: el('key').value, domain: el('domain').value }, body || {})) }).then(async r => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
+      const refresh = async () => {
+        const { ok, data } = await post('/api/admin/district-summary');
+        if (!ok) { el('summary').innerHTML = ''; el('actions').style.display = 'none'; el('msg').textContent = data.error || 'Could not look that up.'; return; }
+        if (!data.found) { el('summary').innerHTML = '<p>Nothing saved for that domain.</p>'; el('actions').style.display = 'none'; return; }
+        el('summary').innerHTML = '<p><strong>' + data.districtName + '</strong><br>Status: ' + data.status +
+          (data.contact ? '<br>Contact: ' + data.contact : '') +
+          (data.renewalDate ? '<br>Renews: ' + data.renewalDate : '') +
+          (data.subscription ? '<br>Stripe subscription still on file: ' + data.subscription : '') +
+          '<br>Settings managers: ' + (data.managers.join(', ') || 'none named') +
+          '<br>Sites and departments: ' + data.sites +
+          '<br>Board policies: ' + data.boardPolicies +
+          '<br>Agreements: ' + data.agreements + ', handbooks: ' + data.handbooks +
+          '<br>Uploaded files: ' + data.uploadedFiles +
+          '<br>Administrators signed in right now: ' + data.signedInNow + '</p>' +
+          (data.status === 'active' && data.subscription ? '<p style="color:#c80204;">This district still has a Stripe subscription. Cancel or void it in Stripe as well.</p>' : '');
+        el('actions').style.display = 'block';
+      };
+      el('look').onclick = () => { el('msg').textContent = ''; refresh(); };
+      el('off').onclick = async () => {
+        const { ok, data } = await post('/api/admin/district-remove', { mode: 'access' });
+        await refresh();
+        el('msg').textContent = ok ? 'Access turned off. ' + data.signedOut + ' administrator sessions ended.' : (data.error || 'Could not turn off access.');
+      };
+      el('wipe').onclick = async () => {
+        const { ok, data } = await post('/api/admin/district-remove', { mode: 'everything', confirm: el('confirm').value });
+        el('confirm').value = '';
+        await refresh();
+        el('msg').textContent = ok
+          ? 'Deleted everything for this district: ' + Object.entries(data.deleted).map(([k, v]) => v + ' ' + k.replace(/([A-Z])/g, ' $1').toLowerCase()).join(', ') + '.'
+          : (data.error || 'Could not delete.');
+      };
+    </script>
+  `));
+});
+
+app.post('/api/admin/district-summary', async (req, res) => {
+  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  const domain = String(req.body.domain || '').trim().toLowerCase();
+  if (!domain) return res.status(400).json({ error: 'Enter a district domain.' });
+  res.json(await districtSummary(domain));
+});
+
+app.post('/api/admin/district-remove', async (req, res) => {
+  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  const domain = String(req.body.domain || '').trim().toLowerCase();
+  if (!domain) return res.status(400).json({ error: 'Enter a district domain.' });
+
+  if (req.body.mode === 'access') {
+    await pool.query(`UPDATE districts SET status = 'canceled' WHERE domain = $1`, [domain]);
+    const ended = await pool.query('DELETE FROM sessions WHERE district_domain = $1', [domain]);
+    await pool.query('DELETE FROM login_tokens WHERE district_domain = $1', [domain]);
+    console.log('Admin turned off access for', domain);
+    return res.json({ ok: true, signedOut: ended.rowCount });
+  }
+
+  if (req.body.mode !== 'everything') return res.status(400).json({ error: 'Choose what to remove.' });
+  if (String(req.body.confirm || '').trim().toLowerCase() !== domain) {
+    return res.status(400).json({ error: 'Type the district domain exactly to confirm deletion.' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const emails = await client.query('SELECT DISTINCT email FROM sessions WHERE district_domain = $1', [domain]);
+    const deleted = {};
+    const run = async (label, sql) => { const r = await client.query(sql, [domain]); deleted[label] = r.rowCount; };
+    await run('boardPolicies', 'DELETE FROM board_policies WHERE domain = $1');
+    await run('uploadedFiles', 'DELETE FROM documents WHERE domain = $1');
+    await run('sessions', 'DELETE FROM sessions WHERE district_domain = $1');
+    await run('signInLinks', 'DELETE FROM login_tokens WHERE district_domain = $1');
+    await run('settings', 'DELETE FROM district_settings WHERE domain = $1');
+    await run('districtRecord', 'DELETE FROM districts WHERE domain = $1');
+    let driveRemoved = 0;
+    for (const row of emails.rows) {
+      if (String(row.email || '').toLowerCase().endsWith('@' + domain)) {
+        const r = await client.query('DELETE FROM google_drive_connections WHERE email = $1', [row.email]);
+        driveRemoved += r.rowCount;
+      }
+    }
+    deleted.googleDriveConnections = driveRemoved;
+    await client.query('COMMIT');
+    console.log('Admin deleted everything for', domain, JSON.stringify(deleted));
+    res.json({ ok: true, deleted });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('District deletion failed for', domain, err.message);
+    res.status(500).json({ error: 'Could not delete that district. Nothing was removed.' });
+  } finally {
+    client.release();
+  }
+});
+
 app.get('/api/admin/districts', async (req, res) => {
   if (!adminKeyValid(req.query.key)) return res.status(403).json({ error: 'Unauthorized' });
   const { rows } = await pool.query('SELECT * FROM districts ORDER BY created_at DESC');
