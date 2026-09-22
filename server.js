@@ -1,4 +1,4 @@
-// BUILD: 2026-09-20-r6
+// BUILD: 2026-09-21-r2
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -61,6 +61,30 @@ if (STRIPE_SECRET_KEY) {
 }
 
 // ─── Sign-in gate ───────────────────────────────────────────────────────
+// An admin key missing from the environment must never match a missing key in
+// a request, which is what a bare !== comparison allowed.
+const ADMIN_KEY = process.env.ADMIN_KEY || '';
+if (!ADMIN_KEY) console.error('WARNING: ADMIN_KEY is not set, so every admin tool is disabled until you set it in Railway.');
+function adminKeyValid(provided) {
+  if (!ADMIN_KEY || typeof provided !== 'string' || provided.length !== ADMIN_KEY.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(ADMIN_KEY));
+}
+
+// A short-lived signed value that ties an OAuth redirect to the browser that
+// started it, so a code from another session cannot be swapped in.
+const OAUTH_STATE_COOKIE = 'trackument_oauth_state';
+function newOauthState(res) {
+  const state = crypto.randomBytes(16).toString('hex');
+  res.setHeader('Set-Cookie', `${OAUTH_STATE_COOKIE}=${state}; Path=/; HttpOnly; Secure; Max-Age=600; SameSite=Lax`);
+  return state;
+}
+function oauthStateValid(req) {
+  const expected = parseCookies(req.headers.cookie)[OAUTH_STATE_COOKIE];
+  const got = req.query.state;
+  if (!expected || typeof got !== 'string' || got.length !== expected.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(got), Buffer.from(expected));
+}
+
 function parseCookies(cookieHeader) {
   return (cookieHeader || '').split(';').reduce((acc, c) => {
     const [k, ...v] = c.trim().split('=');
@@ -77,11 +101,32 @@ async function checkBeta(req, res, next) {
     '/', '/login', '/privacy', '/checkout', '/welcome', '/contact', '/terms', '/demo', '/admin-policies',
     '/how-it-works.html', '/security.html', '/pricing.html',
     '/robots.txt', '/sitemap.xml',
-    '/api/checkout', '/api/webhook', '/api/check-access',
+    '/api/checkout', '/api/webhook',
     '/api/auth/request-link', '/api/auth/verify', '/api/auth/google', '/api/auth/google/callback',
   ];
-  const openPrefixes = ['/api/', '/assets/'];
-  if (openExact.includes(req.path) || openPrefixes.some(p => req.path.startsWith(p))) return next();
+  // Public API routes, named one at a time. Everything else under /api/ needs a
+  // signed-in district session, so a new route is private unless it is added
+  // here on purpose. Admin routes carry their own ADMIN_KEY check.
+  const openApiPrefixes = [
+    '/api/auth/', '/api/admin/', '/api/agreement/download', '/api/billing-portal', '/api/contact',
+  ];
+  const openPrefixes = ['/assets/'];
+  if (openExact.includes(req.path) || openPrefixes.some(p => req.path.startsWith(p)) || openApiPrefixes.some(p => req.path.startsWith(p))) return next();
+
+  // Any other /api/ route requires a session; the JSON answer keeps the app
+  // from redirecting an API call to the login page.
+  if (req.path.startsWith('/api/')) {
+    const apiCookies = parseCookies(req.headers.cookie);
+    if (apiCookies[SESSION_COOKIE_NAME]) {
+      try {
+        const apiSession = await getValidSession(apiCookies[SESSION_COOKIE_NAME]);
+        if (apiSession) { req.districtSession = apiSession; return next(); }
+      } catch (err) {
+        console.error('Session check failed:', err.message);
+      }
+    }
+    return res.status(401).json({ error: 'Your session has ended. Please sign in again.' });
+  }
   const cookies = parseCookies(req.headers.cookie);
 
   // District access: a real session created by Google sign-in or a magic link.
@@ -162,7 +207,7 @@ async function getValidSession(token) {
 }
 
 function setSessionCookie(res, token) {
-  res.setHeader('Set-Cookie', `${SESSION_COOKIE_NAME}=${token}; Path=/; HttpOnly; Max-Age=${30 * 24 * 60 * 60}; SameSite=Lax`);
+  res.setHeader('Set-Cookie', `${SESSION_COOKIE_NAME}=${token}; Path=/; HttpOnly; Secure; Max-Age=${30 * 24 * 60 * 60}; SameSite=Lax`);
 }
 
 // ─── Login page ───────────────────────────────────────────────────────────────
@@ -226,12 +271,12 @@ app.get('/login', (req, res) => {
   <script>
     const params = new URLSearchParams(window.location.search);
     const errorMessages = {
-      invalid_link: 'That sign-in link is invalid.',
-      expired_link: 'That sign-in link has expired or was already used. Request a new one below.',
-      inactive_district: 'We couldn\\'t find an active Trackument subscription for that email\\'s district. Contact help@trackument.com if you think this is a mistake.',
-      google_not_configured: 'Google sign-in isn\\'t set up yet. Try emailing yourself a sign-in link instead.',
-      google_failed: 'Something went wrong signing in with Google. Please try again.',
-      google_email_unverified: 'Your Google account\\'s email isn\\'t verified. Please verify it with Google and try again.',
+      invalid_link: 'That sign-in link is invalid. Request a new one below. For assistance, email help@trackument.com.',
+      expired_link: 'That sign-in link has expired or was already used. Request a new one below. For assistance, email help@trackument.com.',
+      inactive_district: 'We couldn\\'t find an active Trackument subscription for that email\\'s district. If you think this is a mistake, email help@trackument.com for assistance.',
+      google_not_configured: 'Google sign-in isn\\'t set up yet. Try emailing yourself a sign-in link instead. For assistance, email help@trackument.com.',
+      google_failed: 'Something went wrong signing in with Google. Please try again. For assistance, email help@trackument.com.',
+      google_email_unverified: 'Your Google account\\'s email isn\\'t verified. Please verify it with Google and try again. For assistance, email help@trackument.com.',
     };
     const errCode = params.get('error');
     if (errCode && errorMessages[errCode]) {
@@ -301,8 +346,12 @@ app.get('/api/auth/verify', async (req, res) => {
   if (!token) return res.redirect('/login?error=invalid_link');
 
   try {
+    // Claiming the link and marking it used happen in one statement, so two
+    // clicks at the same moment cannot both succeed.
     const { rows } = await pool.query(
-      `SELECT * FROM login_tokens WHERE token = $1 AND expires_at > now() AND used_at IS NULL`,
+      `UPDATE login_tokens SET used_at = now()
+       WHERE token = $1 AND expires_at > now() AND used_at IS NULL
+       RETURNING *`,
       [token]
     );
     const loginToken = rows[0];
@@ -310,8 +359,6 @@ app.get('/api/auth/verify', async (req, res) => {
 
     const district = await findActiveDistrictByDomain(loginToken.district_domain);
     if (!district) return res.redirect('/login?error=inactive_district');
-
-    await pool.query(`UPDATE login_tokens SET used_at = now() WHERE token = $1`, [token]);
     const sessionToken = await createSession(loginToken.email, loginToken.district_domain, 'magic_link');
     setSessionCookie(res, sessionToken);
     res.redirect('/app');
@@ -330,6 +377,7 @@ app.get('/api/auth/google', (req, res) => {
     response_type: 'code',
     scope: 'email profile',
     prompt: 'select_account',
+    state: newOauthState(res),
   });
   res.redirect('https://accounts.google.com/o/oauth2/v2/auth?' + params.toString());
 });
@@ -337,6 +385,10 @@ app.get('/api/auth/google', (req, res) => {
 app.get('/api/auth/google/callback', async (req, res) => {
   const code = req.query.code;
   if (!code || !GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) return res.redirect('/login?error=google_failed');
+  if (!oauthStateValid(req)) {
+    console.error('Google sign-in rejected: state did not match.');
+    return res.redirect('/login?error=google_failed');
+  }
 
   const redirectUri = BASE_URL + '/api/auth/google/callback';
   console.log('Google token exchange using redirect_uri:', redirectUri, '| client_id ends in:', GOOGLE_CLIENT_ID.slice(-20));
@@ -406,6 +458,7 @@ app.get('/api/drive/connect', async (req, res) => {
     access_type: 'offline',
     prompt: 'consent', // forces a refresh_token every time, not just the first connection
     login_hint: session.email,
+    state: newOauthState(res),
   });
   res.redirect('https://accounts.google.com/o/oauth2/v2/auth?' + params.toString());
 });
@@ -416,6 +469,10 @@ app.get('/api/drive/callback', async (req, res) => {
   const session = await getValidSession(cookies[SESSION_COOKIE_NAME]);
   if (!session) return res.redirect('/login');
   if (!code) return res.redirect('/app?drive=denied');
+  if (!oauthStateValid(req)) {
+    console.error('Drive connect rejected: state did not match.');
+    return res.redirect('/app?drive=failed');
+  }
 
   try {
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -663,6 +720,16 @@ async function initDb() {
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS renewal_reminder_sent_for TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS contact_title TEXT;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS contact_phone TEXT;`);
+  // Who may change district-wide settings (district information, board
+  // policies, agreements, document types, handbooks).
+  await pool.query(`ALTER TABLE district_settings ADD COLUMN IF NOT EXISTS managers JSONB DEFAULT '[]'::jsonb;`);
+  // Keys deleted on any computer, so a stale browser cannot bring them back.
+  await pool.query(`ALTER TABLE district_settings ADD COLUMN IF NOT EXISTS deleted_keys JSONB DEFAULT '[]'::jsonb;`);
+  // Uploaded agreements and handbooks belong to one district.
+  await pool.query(`ALTER TABLE documents ADD COLUMN IF NOT EXISTS domain TEXT;`);
+  // Text pulled out of each PDF once, so the app can send the relevant
+  // sections of an agreement instead of the whole file.
+  await pool.query(`ALTER TABLE documents ADD COLUMN IF NOT EXISTS text_content TEXT;`);
   // Purchase order / invoice workflow
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS po_number TEXT;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS stripe_invoice_id TEXT;`);
@@ -789,10 +856,10 @@ const FEEDBACK_NOTIFY_EMAIL = process.env.FEEDBACK_NOTIFY_EMAIL || 'tiffany@trac
 async function sendNotificationEmail({ to, subject, text, attachments, replyTo }) {
   if (!process.env.RESEND_API_KEY) {
     console.warn('RESEND_API_KEY not set -- no email sent. Subject:', subject);
-    return;
+    return { ok: false, detail: 'RESEND_API_KEY not set' };
   }
   try {
-    await fetch('https://api.resend.com/emails', {
+    const emailRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + process.env.RESEND_API_KEY,
@@ -805,9 +872,18 @@ async function sendNotificationEmail({ to, subject, text, attachments, replyTo }
         ...(attachments && attachments.length ? { attachments } : {}),
       }),
     });
+    // fetch only throws on network failures, so a rejected email looks like a
+    // success unless the response is checked.
+    if (!emailRes.ok) {
+      const detail = await emailRes.text().catch(() => '');
+      console.error('Email rejected by Resend:', emailRes.status, 'to', to, 'subject', subject, detail.slice(0, 300));
+      return { ok: false, status: emailRes.status, detail: detail.slice(0, 300) };
+    }
+    return { ok: true };
   } catch (err) {
     // Never let an email failure break whatever flow triggered it.
     console.error('Failed to send notification email:', err.message);
+    return { ok: false, detail: err.message };
   }
 }
 
@@ -878,16 +954,29 @@ async function sendRenewalReminders() {
 const INVOICE_DAYS_UNTIL_DUE = 30;
 const LEGAL_BUSINESS_NAME = 'Intentional Schools, LLC';
 
-// Signed links for one district, so Tiffany's activation link and a district's
-// agreement link work without exposing ADMIN_KEY. Returns '' if ADMIN_KEY is
-// missing, which makes every signed link fail closed.
+// Signed links for one district, so an activation link in Tiffany's inbox and a
+// district's agreement link work without exposing ADMIN_KEY. The day of issue
+// is part of the signature and of the link itself, so a link stops working
+// after SIGNED_LINK_DAYS instead of lasting forever.
+const SIGNED_LINK_DAYS = 45;
+function signDistrictTokenForDay(domain, day) {
+  if (!ADMIN_KEY) return '';
+  return day + '.' + crypto.createHmac('sha256', ADMIN_KEY).update('district:' + domain + '|' + day).digest('hex').slice(0, 40);
+}
+function currentSignedDay() {
+  return Math.floor(Date.now() / (24 * 60 * 60 * 1000));
+}
 function signDistrictToken(domain) {
-  if (!process.env.ADMIN_KEY) return '';
-  return crypto.createHmac('sha256', process.env.ADMIN_KEY).update('district:' + domain).digest('hex').slice(0, 40);
+  return signDistrictTokenForDay(domain, currentSignedDay());
 }
 function verifyDistrictToken(domain, token) {
-  const expected = signDistrictToken(domain);
-  if (!expected || !token || token.length !== expected.length) return false;
+  if (!ADMIN_KEY || typeof token !== 'string' || !token.includes('.')) return false;
+  const day = Number(token.split('.')[0]);
+  if (!Number.isFinite(day)) return false;
+  const age = currentSignedDay() - day;
+  if (age < 0 || age > SIGNED_LINK_DAYS) return false;
+  const expected = signDistrictTokenForDay(domain, day);
+  if (!expected || token.length !== expected.length) return false;
   return crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expected));
 }
 
@@ -1063,11 +1152,16 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
     : 'NOT SET';
   console.log('Webhook received. Using STRIPE_WEBHOOK_SECRET:', secretPreview);
 
+  // Without a signing secret anyone could post a fake event that activates or
+  // cancels a district, so refuse rather than trusting unsigned JSON.
+  if (!STRIPE_WEBHOOK_SECRET) {
+    console.error('Webhook rejected: STRIPE_WEBHOOK_SECRET is not set.');
+    return res.status(500).json({ error: 'Webhook signing secret is not configured.' });
+  }
+
   let event;
   try {
-    event = STRIPE_WEBHOOK_SECRET
-      ? stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], STRIPE_WEBHOOK_SECRET)
-      : JSON.parse(req.body);
+    event = stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.error('Webhook signature verification failed:', err.message);
     return res.status(400).json({ error: err.message });
@@ -1200,9 +1294,17 @@ app.post('/api/anthropic', requireAppAccess, async (req, res) => {
       timeout: 120000
     });
     const data = await response.json();
-    if (!response.ok) return res.status(response.status).json(data);
+    if (!response.ok) {
+      // A rejected AI request means an administrator got no citations or no
+      // draft, so it is worth an email, not just a log line.
+      const reason = (data && data.error && data.error.message) || ('status ' + response.status);
+      console.error('Anthropic request rejected:', response.status, reason);
+      reportServerError({ where: 'AI request (citations or drafting)', message: 'Anthropic rejected the request: ' + reason, method: req.method, url: req.originalUrl });
+      return res.status(response.status).json(data);
+    }
     res.json(data);
   } catch (err) {
+    reportServerError({ where: 'AI request (citations or drafting)', message: 'Could not reach Anthropic: ' + err.message, stack: err.stack, method: req.method, url: req.originalUrl });
     res.status(500).json({ error: { message: 'Server error: ' + err.message } });
   }
 });
@@ -1273,7 +1375,28 @@ async function handleInvoicePurchase(info) {
 
   let inv = {};
   let invoiceError = null;
-  if (stripe) {
+  // A second submission (double click, refresh, retry) must not create a second
+  // Stripe subscription and a second invoice for the same district.
+  let existing = null;
+  try {
+    const { rows } = await pool.query(
+      `SELECT stripe_subscription_id, stripe_customer_id, invoice_url, renewal_date
+       FROM districts WHERE domain = $1 AND stripe_subscription_id IS NOT NULL
+         AND payment_status IS NOT NULL AND (renewal_date IS NULL OR renewal_date > now())`,
+      [info.districtDomain]
+    );
+    existing = rows[0] || null;
+  } catch (err) { console.error('Could not check for an existing invoice subscription:', err.message); }
+
+  if (existing) {
+    console.log('Reusing the existing invoice subscription for', info.districtDomain);
+    inv = {
+      stripeCustomerId: existing.stripe_customer_id,
+      stripeSubscriptionId: existing.stripe_subscription_id,
+      invoiceUrl: existing.invoice_url,
+      renewalDate: existing.renewal_date,
+    };
+  } else if (stripe) {
     try {
       inv = await createInvoiceSubscription({
         districtName: info.districtName,
@@ -1348,6 +1471,8 @@ app.post('/api/checkout', async (req, res) => {
   if (!agreedToContract) return res.status(400).json({ error: 'You must agree to the Service Agreement before continuing.' });
 
   const tierIndex = PRICING_TIERS[tier] ? Number(tier) : 0;
+  // Sign-in looks districts up by lowercase email domain, so store it that way.
+  const normalizedDomain = String(districtDomain || '').trim().toLowerCase();
   const selectedTier = PRICING_TIERS[tierIndex];
 
   // $1 test mode: opening /checkout?testkey=ADMIN_KEY lets Tiffany run the
@@ -1355,7 +1480,7 @@ app.post('/api/checkout', async (req, res) => {
   // the tier price. A wrong key is rejected rather than silently ignored.
   let isTest = false;
   if (testKey) {
-    if (!process.env.ADMIN_KEY || testKey !== process.env.ADMIN_KEY) {
+    if (!adminKeyValid(testKey)) {
       return res.status(403).json({ error: 'That test key was not recognized. Check the ADMIN_KEY value in Railway.' });
     }
     isTest = true;
@@ -1372,7 +1497,7 @@ app.post('/api/checkout', async (req, res) => {
   if (method === 'invoice') {
     const result = await handleInvoicePurchase({
       districtName, contactName, contactTitle, contactPhone, contactEmail,
-      districtDomain: String(districtDomain).trim().toLowerCase(),
+      districtDomain: normalizedDomain,
       tierLabel, amountCents: totalCents, isTest,
       poNumber, agreedAt, wantsTraining, sitesNum,
     });
@@ -1399,9 +1524,9 @@ app.post('/api/checkout', async (req, res) => {
         quantity: 1,
       }],
       subscription_data: {
-        metadata: { districtName, contactName, contactEmail, districtDomain, tierLabel: tierLabel, contactTitle: contactTitle || '', contactPhone: contactPhone || '' },
+        metadata: { districtName, contactName, contactEmail, districtDomain: normalizedDomain, tierLabel: tierLabel, contactTitle: contactTitle || '', contactPhone: contactPhone || '' },
       },
-      metadata: { districtName, contactName, contactEmail, districtDomain, tierLabel: tierLabel, agreedToContractAt: agreedAt, wantsTraining: String(!!wantsTraining), contactTitle: contactTitle || '', contactPhone: contactPhone || '' },
+      metadata: { districtName, contactName, contactEmail, districtDomain: normalizedDomain, tierLabel: tierLabel, agreedToContractAt: agreedAt, wantsTraining: String(!!wantsTraining), contactTitle: contactTitle || '', contactPhone: contactPhone || '' },
       // Shows the "Add promotion code" link so customers can enter codes
       // created in the Stripe Dashboard (for example, a 10% off code).
       allow_promotion_codes: true,
@@ -1427,7 +1552,7 @@ app.post('/api/checkout', async (req, res) => {
 // Afterward, refund the payment AND cancel the subscription in Stripe. Canceling
 // fires customer.subscription.deleted, which marks this test district canceled.
 app.get('/api/admin/test-checkout', async (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'Unauthorized' });
+  if (!adminKeyValid(req.query.key)) return res.status(403).json({ error: 'Unauthorized' });
   if (!stripe) return res.status(500).send('Payment system not configured.');
 
   const districtDomain = (req.query.domain || '').trim().toLowerCase();
@@ -1487,19 +1612,61 @@ app.get('/api/admin/test-checkout', async (req, res) => {
 });
 
 // ─── Check district access ────────────────────────────────────────────────────
-app.post('/api/check-access', async (req, res) => {
-  const { domain } = req.body;
-  if (!domain) return res.status(400).json({ access: false });
-  const district = await getDistrictByDomain(domain.toLowerCase());
-  district
-    ? res.json({ access: true, districtName: district.district_name, sites: district.sites })
-    : res.json({ access: false });
-});
 
 // ─── District settings (shared across every site in a district) ─────────────
 // Lets one admin enter the district name, board policy link, document types,
 // and CBA library once; every other site pulls the same data by domain instead
 // of re-entering it.
+// ─── District roles ─────────────────────────────────────────────────────────
+// District information (name, board policies, agreements, document types,
+// handbooks) can be changed only by the district's settings managers. Until a
+// district names its own, the person who purchased Trackument is the manager;
+// a district with no purchaser on record lets its first administrators manage
+// until someone names managers.
+async function districtRole(req, domain) {
+  const email = String(req.districtSession && req.districtSession.email || '').toLowerCase();
+  let stored = null;
+  let contactEmail = '';
+  try {
+    const r1 = await pool.query('SELECT managers FROM district_settings WHERE domain = $1', [domain]);
+    stored = r1.rows[0] || null;
+    const r2 = await pool.query('SELECT contact_email FROM districts WHERE domain = $1 LIMIT 1', [domain]);
+    contactEmail = String(r2.rows[0] && r2.rows[0].contact_email || '').toLowerCase();
+  } catch (err) { console.error('Could not read district roles:', err.message); }
+  const named = ((stored && stored.managers) || []).map(m => String(m).toLowerCase()).filter(Boolean);
+  const managers = named.length ? named : (contactEmail ? [contactEmail] : []);
+  return { email, managers, isManager: managers.length === 0 || managers.includes(email) };
+}
+
+// A site or department can be changed by whoever added it, by anyone listed
+// with their email as one of its administrators, or by a settings manager.
+function canEditSite(site, role) {
+  if (!site) return true;
+  if (role.isManager) return true;
+  if (site.createdBy && String(site.createdBy).toLowerCase() === role.email) return true;
+  return (site.authors || []).some(a => a && a.email && String(a.email).toLowerCase() === role.email);
+}
+
+app.get('/api/district/permissions', requireAppAccess, async (req, res) => {
+  const role = await districtRole(req, req.districtSession.district_domain);
+  res.json({ email: role.email, isManager: role.isManager, managers: role.managers });
+});
+
+app.post('/api/district/managers', requireAppAccess, async (req, res) => {
+  const domain = req.districtSession.district_domain;
+  const role = await districtRole(req, domain);
+  if (!role.isManager) return res.status(403).json({ error: 'Only a settings manager can change who manages district settings.' });
+  const list = [...new Set((req.body.managers || []).map(m => String(m).trim().toLowerCase()).filter(Boolean))];
+  if (list.length === 0) return res.status(400).json({ error: 'Keep at least one settings manager.' });
+  const outside = list.filter(m => !m.endsWith('@' + domain));
+  if (outside.length) return res.status(400).json({ error: 'Settings managers must use a district email address ending in @' + domain + '.' });
+  await pool.query(`
+    INSERT INTO district_settings (domain, managers, updated_at) VALUES ($1, $2, now())
+    ON CONFLICT (domain) DO UPDATE SET managers = EXCLUDED.managers, updated_at = now()
+  `, [domain, JSON.stringify(list)]);
+  res.json({ ok: true, managers: list });
+});
+
 app.get('/api/district-settings', requireAppAccess, async (req, res) => {
   const domain = (req.query.domain || '').trim().toLowerCase();
   if (!domain) return res.status(400).json({ found: false, error: 'Missing domain.' });
@@ -1518,6 +1685,7 @@ app.get('/api/district-settings', requireAppAccess, async (req, res) => {
       cbaLibrary: row.cba_library || [],
       handbookLibrary: row.handbook_library || [],
       schoolSites: row.school_sites || [],
+      deletedKeys: row.deleted_keys || [],
       updatedAt: row.updated_at,
     });
   } catch (err) {
@@ -1529,20 +1697,90 @@ app.post('/api/district-settings', requireAppAccess, async (req, res) => {
   const domain = (req.body.domain || '').trim().toLowerCase();
   if (!domain) return res.status(400).json({ error: 'Missing domain.' });
   if (!canAccessDistrict(req, domain)) return res.status(403).json({ error: 'Not allowed for this district.' });
-  const { districtName, bpURL, county, docTypes, cbaLibrary, handbookLibrary, schoolSites } = req.body;
+  const { districtName, bpURL, county, docTypes } = req.body;
 
   // A district sharing its board policy link is a to-do for Trackument staff:
   // the policies still have to be loaded from that site by hand.
   let previousBpUrl = '';
+  let stored = null;
   try {
-    const { rows } = await pool.query('SELECT bp_url FROM district_settings WHERE domain = $1', [domain]);
-    previousBpUrl = (rows[0] && rows[0].bp_url) || '';
+    const { rows } = await pool.query('SELECT * FROM district_settings WHERE domain = $1', [domain]);
+    stored = rows[0] || null;
+    previousBpUrl = (stored && stored.bp_url) || '';
   } catch (err) { /* first save for this district */ }
+
+  // Every browser sends its whole copy of the sites, agreements, and handbooks.
+  // Taking that copy as-is let an older browser erase newer work from another
+  // computer. Instead, merge item by item: the most recently edited version of
+  // each item wins, items this browser does not know about are kept, and items
+  // deleted anywhere stay deleted.
+  const role = await districtRole(req, domain);
+  const ignored = { district: false, sites: [] };
+
+  // Deletions: agreements and handbooks only from a manager, sites only from
+  // someone allowed to change that site.
+  const storedSites = new Map(((stored && stored.school_sites) || []).filter(e => e && e.key).map(e => [e.key, e]));
+  const requestedDeletes = (req.body.deletedKeys || []).filter(Boolean).filter(key => {
+    if (String(key).startsWith('school:')) {
+      const site = storedSites.get(key);
+      if (site && !canEditSite(site, role)) { ignored.sites.push(site.name); return false; }
+      return true;
+    }
+    if (!role.isManager) { ignored.district = true; return false; }
+    return true;
+  });
+  const tombstones = new Set([...(stored && stored.deleted_keys || []), ...requestedDeletes]);
+  const mergeLibrary = (existing, incoming, allowEdit) => {
+    const byKey = new Map();
+    (existing || []).forEach(e => { if (e && e.key) byKey.set(e.key, e); });
+    (incoming || []).forEach(e => {
+      if (!e || !e.key) return;
+      const prev = byKey.get(e.key);
+      if (prev && (Number(e.updatedAt) || 0) < (Number(prev.updatedAt) || 0)) return;
+      const next = allowEdit(e, prev);
+      if (next) byKey.set(e.key, next);
+    });
+    return [...byKey.values()].filter(e => !tombstones.has(e.key));
+  };
+  const withoutOwner = (e) => { if (!e) return null; const { createdBy, ...rest } = e; return rest; };
+  const sameContent = (a, b) => JSON.stringify(withoutOwner(a)) === JSON.stringify(withoutOwner(b));
+  // Agreements and handbooks are district information.
+  const districtItemRule = (incoming, prev) => {
+    if (role.isManager) return incoming;
+    if (!sameContent(incoming, prev)) ignored.district = true;
+    return null;
+  };
+  // Sites: anyone can add one, and it records who did. Changing an existing
+  // site follows canEditSite, and nobody can reassign who created it.
+  const siteRule = (incoming, prev) => {
+    if (!prev) return { ...incoming, createdBy: role.email };
+    if (!canEditSite(prev, role)) {
+      if (!sameContent(incoming, prev)) ignored.sites.push(prev.name);
+      return null;
+    }
+    return { ...incoming, createdBy: prev.createdBy || incoming.createdBy || role.email };
+  };
+  const cbaLibrary = mergeLibrary(stored && stored.cba_library, req.body.cbaLibrary, districtItemRule);
+  const handbookLibrary = mergeLibrary(stored && stored.handbook_library, req.body.handbookLibrary, districtItemRule);
+  const schoolSites = mergeLibrary(stored && stored.school_sites, req.body.schoolSites, siteRule);
+  const deletedKeys = [...tombstones].slice(-500);
+
+  // District fields change only for a manager; everyone else keeps what is saved.
+  const keep = (incomingValue, storedValue) => (role.isManager || !stored) ? incomingValue : storedValue;
+  const finalName = keep(districtName, stored && stored.district_name);
+  const finalBpUrl = keep(bpURL, stored && stored.bp_url);
+  const finalCounty = keep(county, stored && stored.county);
+  const finalDocTypes = keep(docTypes, stored && stored.doc_types);
+  if (!role.isManager && stored) {
+    // Only a value this browser actually sent, and that differs, counts as an attempted change.
+    const changed = (a, b) => a !== undefined && !(Array.isArray(a) && a.length === 0) && JSON.stringify(a || '') !== JSON.stringify(b || '');
+    if (changed(districtName, stored.district_name) || changed(bpURL, stored.bp_url) || changed(docTypes, stored.doc_types)) ignored.district = true;
+  }
 
   try {
     await pool.query(`
-      INSERT INTO district_settings (domain, district_name, bp_url, county, doc_types, cba_library, handbook_library, school_sites, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
+      INSERT INTO district_settings (domain, district_name, bp_url, county, doc_types, cba_library, handbook_library, school_sites, deleted_keys, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now())
       ON CONFLICT (domain) DO UPDATE SET
         district_name = EXCLUDED.district_name,
         bp_url = EXCLUDED.bp_url,
@@ -1551,10 +1789,11 @@ app.post('/api/district-settings', requireAppAccess, async (req, res) => {
         cba_library = EXCLUDED.cba_library,
         handbook_library = EXCLUDED.handbook_library,
         school_sites = EXCLUDED.school_sites,
+        deleted_keys = EXCLUDED.deleted_keys,
         updated_at = now()
-    `, [domain, districtName || '', bpURL || '', county || '', JSON.stringify(docTypes || []), JSON.stringify(cbaLibrary || []), JSON.stringify(handbookLibrary || []), JSON.stringify(schoolSites || [])]);
+    `, [domain, finalName || '', finalBpUrl || '', finalCounty || '', JSON.stringify(finalDocTypes || []), JSON.stringify(cbaLibrary || []), JSON.stringify(handbookLibrary || []), JSON.stringify(schoolSites || []), JSON.stringify(deletedKeys)]);
 
-    const newBpUrl = (bpURL || '').trim();
+    const newBpUrl = (finalBpUrl || '').trim();
     if (newBpUrl && newBpUrl !== previousBpUrl) {
       const { rows } = await pool.query('SELECT district_name, contact_name, contact_email FROM districts WHERE domain = $1 LIMIT 1', [domain]);
       const d = rows[0] || {};
@@ -1575,7 +1814,7 @@ app.post('/api/district-settings', requireAppAccess, async (req, res) => {
       }).catch(err => console.error('Could not send board policy link notice:', err.message));
     }
 
-    res.json({ ok: true });
+    res.json({ ok: true, cbaLibrary, handbookLibrary, schoolSites, deletedKeys, ignored: { district: ignored.district, sites: [...new Set(ignored.sites)] } });
   } catch (err) {
     res.status(500).json({ error: 'Server error: ' + err.message });
   }
@@ -1599,8 +1838,8 @@ app.post('/api/documents', requireAppAccess, async (req, res) => {
     const buffer = Buffer.from(base64, 'base64');
     const id = crypto.randomUUID();
     await pool.query(
-      'INSERT INTO documents (id, filename, content_type, data) VALUES ($1, $2, $3, $4)',
-      [id, filename, contentType || '', buffer]
+      'INSERT INTO documents (id, filename, content_type, data, domain) VALUES ($1, $2, $3, $4, $5)',
+      [id, filename, contentType || '', buffer, req.districtSession.district_domain]
     );
     res.json({ id, filename });
   } catch (err) {
@@ -1612,11 +1851,36 @@ app.post('/api/documents', requireAppAccess, async (req, res) => {
 // Retrieves a previously uploaded document by id, used both for letting an
 // administrator re-download what they uploaded and for the AI drafting step
 // to read the actual contract/handbook content.
+// The plain text of a saved agreement or handbook. Whole contracts are far too
+// large to send to the AI with every request, so the app pulls the sections
+// that match the facts out of this text instead.
+app.get('/api/documents/:id/text', requireAppAccess, async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT filename, content_type, data, domain, text_content FROM documents WHERE id = $1', [req.params.id]);
+    const doc = rows[0];
+    if (!doc || (doc.domain && !canAccessDistrict(req, doc.domain))) return res.status(404).json({ error: 'Document not found.' });
+    if (doc.text_content) return res.json({ filename: doc.filename, text: doc.text_content });
+    const isPdf = /pdf/i.test(doc.content_type || '') || /\.pdf$/i.test(doc.filename || '');
+    if (!isPdf) return res.status(415).json({ error: 'Only PDF documents can be read for citations.' });
+    if (!pdfParse) return res.status(503).json({ error: 'PDF reading is temporarily unavailable.' });
+    const parser = new pdfParse.PDFParse({ data: doc.data });
+    const text = ((await parser.getText()).text || '').trim();
+    await pool.query('UPDATE documents SET text_content = $1 WHERE id = $2', [text, req.params.id]);
+    res.json({ filename: doc.filename, text });
+  } catch (err) {
+    console.error('Document text extraction failed:', req.params.id, err.message);
+    res.status(500).json({ error: 'Could not read that document.' });
+  }
+});
+
 app.get('/api/documents/:id', requireAppAccess, async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT filename, content_type, data FROM documents WHERE id = $1', [req.params.id]);
+    const { rows } = await pool.query('SELECT filename, content_type, data, domain FROM documents WHERE id = $1', [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Document not found.' });
     const doc = rows[0];
+    // Knowing a document id is not permission to read it. Older uploads have no
+    // district recorded, so those stay readable by any signed-in administrator.
+    if (doc.domain && !canAccessDistrict(req, doc.domain)) return res.status(404).json({ error: 'Document not found.' });
     res.setHeader('Content-Type', doc.content_type || 'application/octet-stream');
     res.setHeader('Content-Disposition', `inline; filename="${doc.filename.replace(/"/g, '')}"`);
     res.send(doc.data);
@@ -1631,7 +1895,7 @@ app.get('/api/documents/:id', requireAppAccess, async (req, res) => {
 // admin routes require ADMIN_KEY, matching the existing /api/admin/* pattern.
 
 app.get('/api/admin/board-policies', async (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'Unauthorized' });
+  if (!adminKeyValid(req.query.key)) return res.status(403).json({ error: 'Unauthorized' });
   const domain = (req.query.domain || '').trim().toLowerCase();
   if (!domain) return res.status(400).json({ error: 'Missing domain.' });
   try {
@@ -1647,10 +1911,10 @@ app.get('/api/admin/board-policies', async (req, res) => {
 
 app.post('/api/admin/board-policies', async (req, res) => {
   const { adminKey, domain, policyNumber, title, policyText } = req.body;
-  if (adminKey !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'Unauthorized' });
+  if (!adminKeyValid(adminKey)) return res.status(403).json({ error: 'Unauthorized' });
   const d = (domain || '').trim().toLowerCase();
   const num = (policyNumber || '').trim();
-  if (!d || !num || !policyText) return res.status(400).json({ error: 'Domain, policy number, and policy text are required.' });
+  if (!d || !num || !policyText) return res.status(400).json({ error: 'Domain, board policy number, and board policy text are required.' });
   try {
     await pool.query(`
       INSERT INTO board_policies (domain, policy_number, title, policy_text, updated_at)
@@ -1671,10 +1935,10 @@ app.post('/api/admin/board-policies', async (req, res) => {
 // into individual policies first, then all saved together here.
 app.post('/api/admin/board-policies/bulk', async (req, res) => {
   const { adminKey, domain, policies } = req.body;
-  if (adminKey !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'Unauthorized' });
+  if (!adminKeyValid(adminKey)) return res.status(403).json({ error: 'Unauthorized' });
   const d = (domain || '').trim().toLowerCase();
   if (!d) return res.status(400).json({ error: 'Missing domain.' });
-  if (!Array.isArray(policies) || policies.length === 0) return res.status(400).json({ error: 'No policies provided.' });
+  if (!Array.isArray(policies) || policies.length === 0) return res.status(400).json({ error: 'No board policies provided.' });
 
   const client = await pool.connect();
   let saved = 0;
@@ -1711,7 +1975,7 @@ app.post('/api/admin/board-policies/bulk', async (req, res) => {
 // reviews the preview and clicks Save.
 app.post('/api/admin/extract-pdf-text', async (req, res) => {
   const { adminKey, filename, dataBase64 } = req.body;
-  if (adminKey !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'Unauthorized' });
+  if (!adminKeyValid(adminKey)) return res.status(403).json({ error: 'Unauthorized' });
   if (!pdfParse) return res.status(500).json({ error: 'PDF reading is unavailable on this server right now (pdf-parse did not load). Contact your developer.' });
   if (!dataBase64) return res.status(400).json({ error: 'Missing file data.' });
   try {
@@ -1727,7 +1991,7 @@ app.post('/api/admin/extract-pdf-text', async (req, res) => {
 });
 
 app.delete('/api/admin/board-policies/:id', async (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'Unauthorized' });
+  if (!adminKeyValid(req.query.key)) return res.status(403).json({ error: 'Unauthorized' });
   try {
     await pool.query('DELETE FROM board_policies WHERE id = $1', [req.params.id]);
     res.json({ ok: true });
@@ -1785,10 +2049,11 @@ app.get('/api/district/board-policies', requireAppAccess, async (req, res) => {
 
 app.post('/api/district/board-policies/upload', requireAppAccess, async (req, res) => {
   const domain = req.districtSession.district_domain;
+  if (!(await districtRole(req, domain)).isManager) return res.status(403).json({ error: 'Only your district\'s settings managers can add board policies.' });
   const { filename, dataBase64 } = req.body || {};
   if (!dataBase64) return res.status(400).json({ error: 'No file received.' });
   if (!String(filename || '').toLowerCase().endsWith('.pdf')) return res.status(400).json({ error: 'Please upload board policies as PDF files.' });
-  if (!pdfParse) return res.status(500).json({ error: 'PDF reading is temporarily unavailable. Please try again later, or email your policies to help@trackument.com.' });
+  if (!pdfParse) return res.status(500).json({ error: 'PDF reading is temporarily unavailable. Please try again later, or add the link to your board policy site above and we will load your board policies for you.' });
   let text;
   try {
     const base64 = dataBase64.includes(',') ? dataBase64.split(',')[1] : dataBase64;
@@ -1800,7 +2065,7 @@ app.post('/api/district/board-policies/upload', requireAppAccess, async (req, re
   }
   const policies = parsePolicyText(text);
   if (policies.length === 0) {
-    return res.status(400).json({ error: 'We read ' + filename + ' but could not find policy numbers such as BP 4118 or AR 4218. Please upload policy PDFs downloaded from your board policy website, or email them to help@trackument.com and we will add them for you.' });
+    return res.status(400).json({ error: 'We read ' + filename + ' but could not find board policy numbers such as BP 4118 or AR 4218. Please upload board policy PDFs downloaded from your board policy website, or add the link to your board policy site above and we will load them for you.' });
   }
   const client = await pool.connect();
   try {
@@ -1817,19 +2082,20 @@ app.post('/api/district/board-policies/upload', requireAppAccess, async (req, re
     res.json({ ok: true, filename, saved: policies.length, policyNumbers: policies.map(p => p.policyNumber) });
   } catch (err) {
     await client.query('ROLLBACK');
-    res.status(500).json({ error: 'Could not save policies from ' + filename + '.' });
+    res.status(500).json({ error: 'Could not save board policies from ' + filename + '.' });
   } finally {
     client.release();
   }
 });
 
 app.delete('/api/district/board-policies/:id', requireAppAccess, async (req, res) => {
+  if (!(await districtRole(req, req.districtSession.district_domain)).isManager) return res.status(403).json({ error: 'Only your district\'s settings managers can remove board policies.' });
   try {
     const { rowCount } = await pool.query('DELETE FROM board_policies WHERE id = $1 AND domain = $2', [req.params.id, req.districtSession.district_domain]);
-    if (!rowCount) return res.status(404).json({ error: 'Policy not found.' });
+    if (!rowCount) return res.status(404).json({ error: 'Board policy not found.' });
     res.json({ ok: true });
   } catch (err) {
-    res.status(500).json({ error: 'Could not remove that policy.' });
+    res.status(500).json({ error: 'Could not remove that board policy.' });
   }
 });
 
@@ -1853,7 +2119,7 @@ app.get('/api/board-policies', async (req, res) => {
 // ─── Admin: manually activate a district ─────────────────────────────────────
 app.post('/api/admin/activate', async (req, res) => {
   const { adminKey, districtName, domain, contactEmail, sites } = req.body;
-  if (adminKey !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'Unauthorized' });
+  if (!adminKeyValid(adminKey)) return res.status(403).json({ error: 'Unauthorized' });
   await activateDistrict({ districtName, domain, contactEmail, sites: sites || 1 });
   res.json({ ok: true });
 });
@@ -1954,7 +2220,7 @@ app.get('/api/admin/w9-upload', async (req, res) => {
 
 app.post('/api/admin/w9', async (req, res) => {
   const { adminKey, filename, base64 } = req.body || {};
-  if (!process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'That admin key is not correct.' });
+  if (!adminKeyValid(adminKey)) return res.status(403).json({ error: 'That admin key is not correct.' });
   if (!base64) return res.status(400).json({ error: 'No file received.' });
   const data = Buffer.from(base64, 'base64');
   if (data.slice(0, 4).toString() !== '%PDF') return res.status(400).json({ error: 'Please upload a PDF file.' });
@@ -1969,7 +2235,7 @@ app.post('/api/admin/w9', async (req, res) => {
 
 // ─── Admin: list all districts ────────────────────────────────────────────────
 app.get('/api/admin/districts', async (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'Unauthorized' });
+  if (!adminKeyValid(req.query.key)) return res.status(403).json({ error: 'Unauthorized' });
   const { rows } = await pool.query('SELECT * FROM districts ORDER BY created_at DESC');
   res.json(rows);
 });
@@ -2070,6 +2336,19 @@ app.get('/api/billing-portal', async (req, res) => {
   try {
     const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId);
     if (!checkoutSession.customer) return res.status(400).send('No billing account found for this session.');
+
+    // A checkout session id alone is not proof of who is asking. It works for
+    // the two hours right after payment, which is the welcome page flow, and
+    // after that only for someone signed in to that same district.
+    const sessionAgeHours = (Date.now() / 1000 - (checkoutSession.created || 0)) / 3600;
+    if (sessionAgeHours > 2) {
+      const cookies = parseCookies(req.headers.cookie);
+      const districtSession = cookies[SESSION_COOKIE_NAME] ? await getValidSession(cookies[SESSION_COOKIE_NAME]) : null;
+      const sessionDomain = (checkoutSession.metadata && checkoutSession.metadata.districtDomain || '').toLowerCase();
+      if (!districtSession || String(districtSession.district_domain || '').toLowerCase() !== sessionDomain) {
+        return res.status(403).send('Please sign in to Trackument first, then open billing from inside the app.');
+      }
+    }
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: checkoutSession.customer,
       return_url: BASE_URL + '/welcome?session_id=' + sessionId,
@@ -2149,8 +2428,8 @@ app.use((err, req, res, next) => {
   console.error('Unhandled error on', req.method, req.originalUrl, '-', err && err.message);
   reportServerError({ where: 'Request handler', message: (err && err.message) || 'Unknown error', stack: err && err.stack, method: req.method, url: req.originalUrl });
   if (res.headersSent) return next(err);
-  if (req.path.startsWith('/api/')) return res.status(500).json({ error: 'Something went wrong on our end. Please try again.' });
-  res.status(500).send('Something went wrong on our end. Please try again.');
+  if (req.path.startsWith('/api/')) return res.status(500).json({ error: 'Something went wrong on our end. Please try again. For assistance, email help@trackument.com.' });
+  res.status(500).send('Something went wrong on our end. Please try again. For assistance, email help@trackument.com.');
 });
 
 process.on('unhandledRejection', (reason) => {
@@ -2164,7 +2443,17 @@ process.on('uncaughtException', (err) => {
 
 initDb()
   .then(() => {
-    app.listen(PORT, () => console.log('Trackument on port ' + PORT + ' | Stripe: ' + (stripe ? 'enabled' : 'disabled')));
+    app.listen(PORT, () => {
+      console.log('Trackument on port ' + PORT + ' | Stripe: ' + (stripe ? 'enabled' : 'disabled'));
+      // One place to see whether anything important is missing from Railway.
+      const missing = [
+        !ADMIN_KEY && 'ADMIN_KEY (admin tools disabled)',
+        !STRIPE_WEBHOOK_SECRET && 'STRIPE_WEBHOOK_SECRET (webhooks rejected, so purchases will not activate districts)',
+        !process.env.RESEND_API_KEY && 'RESEND_API_KEY (no emails sent)',
+        !GOOGLE_CLIENT_ID && 'GOOGLE_CLIENT_ID (Google sign-in and Drive disabled)',
+      ].filter(Boolean);
+      if (missing.length) console.error('MISSING SETTINGS: ' + missing.join('; '));
+    });
 
     // Check for upcoming renewals once at startup, then once every 24 hours.
     sendRenewalReminders();
