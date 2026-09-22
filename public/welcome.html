@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-19-r2 -->
+<!-- BUILD: 2026-09-21-r1 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -24,6 +24,18 @@
     .btn:hover { opacity: 0.88; }
     .manage-link { display:block; margin-top:16px; font-size: 0.88rem; color: #280b5b; text-decoration: underline; }
     .support { margin-top: 20px; font-size: 0.82rem; color: #9ca3af; }
+    /* Naming settings managers, shown right after purchase */
+    .managers-step { display:none; background:#fbfaff; border:1px solid #e6e1f2; border-left:4px solid #048784; border-radius:10px; padding:20px; text-align:left; margin-bottom:24px; }
+    .managers-step h3 { font-size:1rem; font-weight:800; color:#1a0256; margin-bottom:8px; }
+    .managers-step p { font-size:0.9rem; margin-bottom:14px; }
+    .mgr-row { display:flex; gap:8px; margin-bottom:8px; }
+    .mgr-row input { flex:1; font:inherit; font-size:0.92rem; padding:10px 12px; border:1px solid #d9d4ea; border-radius:6px; }
+    .mgr-row button { background:none; border:none; color:#605d54; font-size:1.1rem; cursor:pointer; padding:0 6px; }
+    .mgr-actions { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-top:12px; }
+    .mgr-add { background:none; border:none; color:#1a0256; font-weight:700; font-size:0.88rem; cursor:pointer; text-decoration:underline; padding:0; }
+    .mgr-save { background:#1a0256; color:#fff; border:none; border-radius:8px; font:inherit; font-weight:700; font-size:0.92rem; padding:10px 22px; cursor:pointer; }
+    .mgr-skip { font-size:0.85rem; color:#605d54; text-decoration:underline; cursor:pointer; background:none; border:none; padding:0; }
+    .mgr-msg { font-size:0.88rem; margin-top:12px; }
   </style>
 </head>
 <body>
@@ -51,6 +63,20 @@
         <div class="step-num">4</div>
         <div>Have your administrators set up their site profile in the District & Site Settings, which takes about 2 minutes.</div>
       </div>
+    </div>
+
+    <div class="managers-step" id="managersStep">
+      <h3>Who will manage your district's settings?</h3>
+      <p>Settings managers can change your district information, board policies, bargaining agreements, document types, and handbooks. Everyone else at your district can use these settings but cannot change them. Add the people who will set up and maintain Trackument, such as your HR director. Each person you add gets an email explaining their role.</p>
+      <div id="mgrRows"></div>
+      <div class="mgr-actions">
+        <button type="button" class="mgr-add" onclick="addManagerRow('')">+ Add another manager</button>
+      </div>
+      <div class="mgr-actions" style="margin-top:16px;">
+        <button type="button" class="mgr-save" id="mgrSave" onclick="saveManagersFromWelcome()">Save Settings Managers</button>
+        <button type="button" class="mgr-skip" onclick="skipManagers()">Skip for now</button>
+      </div>
+      <div class="mgr-msg" id="mgrMsg"></div>
     </div>
 
     <a href="/app" class="btn" id="openBtn">Open Trackument &rarr;</a>
@@ -91,6 +117,61 @@
     document.getElementById('nextSteps').innerHTML = html;
     if (!active) document.getElementById('openBtn').style.display = 'none';
   }
+  // ── Naming settings managers ─────────────────────────────────────────────
+  // The purchase itself is the proof: a Stripe checkout session for a card,
+  // or a short-lived pass for a purchase order.
+  var setupProof = sessionId ? { sessionId: sessionId }
+    : (params.get('pass') && params.get('domain')) ? { domain: params.get('domain'), pass: params.get('pass') } : null;
+  var setupDomain = '';
+  function escapeText(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+  function addManagerRow(value) {
+    var row = document.createElement('div');
+    row.className = 'mgr-row';
+    row.innerHTML = '<input type="email" class="mgr-email" placeholder="name@' + escapeText(setupDomain || 'yourdistrict.org') + '" value="' + escapeText(value) + '">' +
+      '<button type="button" aria-label="Remove this manager" onclick="this.parentNode.remove()">&times;</button>';
+    document.getElementById('mgrRows').appendChild(row);
+  }
+  function showManagerMessage(text, ok) {
+    var el = document.getElementById('mgrMsg');
+    el.style.color = ok ? '#166534' : '#7f1d1d';
+    el.textContent = text;
+  }
+  function skipManagers() {
+    document.getElementById('managersStep').style.display = 'none';
+  }
+  function saveManagersFromWelcome() {
+    var emails = Array.prototype.map.call(document.querySelectorAll('.mgr-email'), function (i) { return i.value.trim(); }).filter(Boolean);
+    if (emails.length === 0) { showManagerMessage('Please add at least one settings manager, or choose Skip for now.', false); return; }
+    var btn = document.getElementById('mgrSave');
+    btn.disabled = true;
+    var body = Object.assign({ managers: emails }, setupProof);
+    fetch('/api/setup/managers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .then(function (res) {
+        btn.disabled = false;
+        if (!res.ok) { showManagerMessage((res.data.error || 'Something went wrong.') + ' For assistance, email help@trackument.com.', false); return; }
+        var added = res.data.added || [];
+        showManagerMessage('Saved. ' + (added.length ? 'We emailed ' + added.join(', ') + ' to explain their role.' : 'Your settings managers are set.') + ' You can change them anytime in District Settings.', true);
+      })
+      .catch(function () {
+        btn.disabled = false;
+        showManagerMessage('Something went wrong. For assistance, email help@trackument.com.', false);
+      });
+  }
+  if (setupProof) {
+    var q = sessionId ? 'session_id=' + encodeURIComponent(sessionId)
+      : 'domain=' + encodeURIComponent(setupProof.domain) + '&pass=' + encodeURIComponent(setupProof.pass);
+    fetch('/api/setup/managers?' + q)
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (!data) return;
+        setupDomain = data.domain;
+        (data.managers && data.managers.length ? data.managers : ['']).forEach(addManagerRow);
+        document.getElementById('managersStep').style.display = 'block';
+      })
+      .catch(function () {});
+  }
+
   if (sessionId) {
     var link = document.getElementById('manageLink');
     link.href = '/api/billing-portal?session_id=' + encodeURIComponent(sessionId);

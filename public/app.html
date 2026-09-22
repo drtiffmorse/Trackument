@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-21-r7 -->
+<!-- BUILD: 2026-09-21-r8 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1186,6 +1186,7 @@
 </style>
 </head>
 <body>
+  <div id="supportBanner" style="display:none; background:#048784; color:#fff; font-size:0.85rem; font-weight:700; text-align:center; padding:8px 16px; letter-spacing:0.02em;"></div>
 
 <!-- Working status banner -->
 <div class="status-banner" id="statusBanner">
@@ -5013,6 +5014,15 @@ async function loadDistrictProfile() {
     try {
       const meRes = await fetch('/api/me');
       const me = await meRes.json();
+      // A Trackument support visit says so at the top of every screen, so it is
+      // never mistaken for the district's own account.
+      if (me.support) {
+        const banner = document.getElementById('supportBanner');
+        if (banner) {
+          banner.textContent = 'Trackument support visit for ' + (me.domain || 'this district') + '. District settings cannot be changed, and this visit ends in two hours.';
+          banner.style.display = 'block';
+        }
+      }
       if (me.loggedIn && me.domain) {
         sessionDomain = me.domain.trim().toLowerCase();
         const found = await pullDistrictSettings(sessionDomain);

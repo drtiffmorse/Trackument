@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-20-r2 -->
+<!-- BUILD: 2026-09-21-r1 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -681,7 +681,8 @@
           throw new Error('Payment could not be started. Please try again, or contact sales@trackument.com.');
         }
       } else {
-        window.location.href = '/welcome?purchase=invoice&active=' + (data.activated ? '1' : '0');
+        window.location.href = '/welcome?purchase=invoice&active=' + (data.activated ? '1' : '0')
+          + (data.setupPass ? '&domain=' + encodeURIComponent(data.domain) + '&pass=' + encodeURIComponent(data.setupPass) : '');
       }
     } catch (err) {
       errEl.textContent = (err.message || 'Something went wrong.').replace(/[.!?]?$/, '.') + ' For assistance, email help@trackument.com.';
