@@ -1,4 +1,4 @@
-// BUILD: 2026-09-21-r5
+// BUILD: 2026-09-22-r1
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -1774,8 +1774,8 @@ app.get('/api/admin/managers', async (req, res) => {
     <label for="domain">District email domain</label>
     <input type="text" id="domain" placeholder="e.g. ouhsd.org">
     <button type="button" id="load">Load managers</button>
-    <label for="list" style="margin-top:20px;">Managers, one email per line</label>
-    <textarea id="list" rows="6" style="width:100%;font:inherit;padding:10px;border:1px solid #ccc;border-radius:6px;"></textarea>
+    <label for="list">Managers, one email per line</label>
+    <textarea id="list" rows="6" style="width:100%;box-sizing:border-box;font:inherit;padding:12px;border:1px solid #d9d4e8;border-radius:8px;"></textarea>
     <button type="button" id="save">Save managers</button>
     <p id="msg"></p>
     <script>
@@ -2297,9 +2297,14 @@ function adminPageShell(title, bodyHtml) {
   body{font-family:Inter,Arial,sans-serif;background:#fbfaff;color:#1a0256;margin:0;padding:48px 24px;}
   .card{max-width:520px;margin:0 auto;background:#fff;border:1px solid #e4e0ef;border-radius:14px;padding:32px;box-shadow:0 2px 12px rgba(40,11,91,0.06);}
   h1{font-size:1.4rem;margin:0 0 16px;} p{line-height:1.6;color:#3d3553;margin:0 0 16px;}
-  label{display:block;font-size:0.8rem;font-weight:700;text-transform:uppercase;margin:0 0 8px;}
-  input[type=text],input[type=password],input[type=file]{width:100%;box-sizing:border-box;padding:12px;border:1px solid #d9d4e8;border-radius:8px;font-size:1rem;margin-bottom:24px;}
-  button{background:#e05b0e;color:#fff;border:none;border-radius:8px;padding:12px 24px;font-size:1rem;font-weight:700;cursor:pointer;}
+  label{display:block;font-size:0.8rem;font-weight:700;text-transform:uppercase;margin:24px 0 8px;}
+  label:first-of-type{margin-top:0;}
+  input[type=text],input[type=password],input[type=email],input[type=file]{width:100%;box-sizing:border-box;padding:12px;border:1px solid #d9d4e8;border-radius:8px;font-size:1rem;margin-bottom:0;}
+  textarea{margin-bottom:0;}
+  /* A checkbox and its wording sit on one line, with room before the button. */
+  label.choice{display:flex;align-items:flex-start;gap:10px;margin:20px 0 0;font-size:0.9rem;font-weight:400;text-transform:none;line-height:1.5;color:#3d3553;}
+  label.choice input{width:auto;margin:2px 0 0;flex-shrink:0;}
+  button{background:#e05b0e;color:#fff;border:none;border-radius:8px;padding:12px 24px;font-size:1rem;font-weight:700;cursor:pointer;margin-top:28px;}
   .ok{background:#e9f6f5;border:1px solid #9fd6d3;color:#035e5c;padding:16px;border-radius:8px;}
   .err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:16px;border-radius:8px;}
 </style></head><body><div class="card">${bodyHtml}</div></body></html>`;
@@ -2441,9 +2446,9 @@ app.get('/api/admin/support-login', async (req, res) => {
     <input type="password" id="key" autocomplete="off">
     <label for="domain">District email domain</label>
     <input type="text" id="domain" placeholder="e.g. ouhsd.org">
-    <label style="display:flex;align-items:center;gap:8px;margin-top:16px;font-weight:400;">
-      <input type="checkbox" id="notify" checked style="width:auto;margin:0;">
-      Email the district's settings managers that support signed in
+    <label class="choice" for="notify">
+      <input type="checkbox" id="notify" checked>
+      <span>Email the district's settings managers that support signed in</span>
     </label>
     <button type="button" id="go">Sign in to this district</button>
     <p id="msg"></p>
