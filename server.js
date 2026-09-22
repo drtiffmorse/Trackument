@@ -1,4 +1,4 @@
-// BUILD: 2026-09-22-r1
+// BUILD: 2026-09-22-r5
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -111,6 +111,8 @@ async function checkBeta(req, res, next) {
   // here on purpose. Admin routes carry their own ADMIN_KEY check.
   const openApiPrefixes = [
     '/api/auth/', '/api/admin/', '/api/agreement/download', '/api/billing-portal', '/api/contact',
+    // Which build is running; no district information in it.
+    '/api/version',
     // Manager setup right after purchase; each request carries its own proof.
     '/api/setup/',
   ];
@@ -1624,7 +1626,7 @@ app.get('/api/admin/test-checkout', async (req, res) => {
 // of re-entering it.
 // ─── District roles ─────────────────────────────────────────────────────────
 // District information (name, board policies, agreements, document types,
-// handbooks) can be changed only by the district's settings managers. Until a
+// handbooks) can be changed only by the District Settings Managers. Until a
 // district names its own, the person who purchased Trackument is the manager;
 // a district with no purchaser on record lets its first administrators manage
 // until someone names managers.
@@ -1647,7 +1649,7 @@ async function districtRole(req, domain) {
 }
 
 // A site or department can be changed by whoever added it, by anyone listed
-// with their email as one of its administrators, or by a settings manager.
+// with their email as one of its administrators, or by a District Settings Manager.
 function canEditSite(site, role) {
   if (!site) return true;
   if (role.isManager) return true;
@@ -1655,15 +1657,15 @@ function canEditSite(site, role) {
   return (site.authors || []).some(a => a && a.email && String(a.email).toLowerCase() === role.email);
 }
 
-// Saves a district's settings managers after checking every address belongs to
+// Saves a district's District Settings Managers after checking every address belongs to
 // the district, and emails anyone newly added so they know their role.
 async function saveDistrictManagers(domain, requested, addedByLabel) {
   const list = [...new Set((requested || []).map(m => String(m).trim().toLowerCase()).filter(Boolean))];
-  if (list.length === 0) return { error: 'Keep at least one settings manager.' };
+  if (list.length === 0) return { error: 'Keep at least one District Settings Manager.' };
   const invalid = list.filter(m => !/^[^@\s]+@[^@\s]+$/.test(m));
   if (invalid.length) return { error: 'Please check these email addresses: ' + invalid.join(', ') + '.' };
   const outside = list.filter(m => !m.endsWith('@' + domain));
-  if (outside.length) return { error: 'Settings managers must use a district email address ending in @' + domain + '.' };
+  if (outside.length) return { error: 'District Settings Managers must use a district email address ending in @' + domain + '.' };
 
   let previous = [];
   let districtName = domain;
@@ -1688,13 +1690,13 @@ async function saveDistrictManagers(domain, requested, addedByLabel) {
   for (const email of added.filter(m => m !== actor)) {
     sendNotificationEmail({
       to: email,
-      subject: 'You are a Trackument settings manager for ' + districtName,
+      subject: 'You are a Trackument District Settings Manager for ' + districtName,
       text: [
         'Hello,',
         '',
-        (addedByLabel ? addedByLabel + ' named you' : 'You have been named') + ' a settings manager for ' + districtName + ' in Trackument, the employee discipline documentation tool your district uses.',
+        (addedByLabel ? addedByLabel + ' named you' : 'You have been named') + ' a District Settings Manager for ' + districtName + ' in Trackument, the employee discipline documentation tool your district uses.',
         '',
-        'As a settings manager, you can change your district\'s information, board policies, bargaining agreements, document types, and handbooks. Other administrators at your district can use these settings but cannot change them.',
+        'As a District Settings Manager, you can change your district information, board policies, bargaining agreements, document types, and handbooks. Other administrators at your district can use these settings but cannot change them.',
         '',
         'To get started, sign in with your district email address here:',
         BASE_URL + '/login',
@@ -1711,7 +1713,7 @@ async function saveDistrictManagers(domain, requested, addedByLabel) {
 }
 
 // Right after purchase, the welcome page lets the purchaser name the district's
-// settings managers. It proves it is that purchase with either the Stripe
+// District Settings Managers. It proves it is that purchase with either the Stripe
 // checkout session (card) or a short-lived signed pass (purchase order).
 const SETUP_PASS_HOURS = 48;
 function signSetupPass(domain, hour) {
@@ -1750,7 +1752,7 @@ async function purchaseFromSetupRequest(q) {
 
 app.get('/api/setup/managers', async (req, res) => {
   const purchase = await purchaseFromSetupRequest({ sessionId: req.query.session_id, domain: req.query.domain, pass: req.query.pass });
-  if (!purchase) return res.status(403).json({ error: 'This setup link has expired. You can name settings managers later in District Settings.' });
+  if (!purchase) return res.status(403).json({ error: 'This setup link has expired. You can name District Settings Managers later in District Settings.' });
   const { rows } = await pool.query('SELECT managers FROM district_settings WHERE domain = $1', [purchase.domain]);
   const saved = (rows[0] && rows[0].managers) || [];
   res.json({ domain: purchase.domain, districtName: purchase.districtName, managers: saved.length ? saved : (purchase.purchaser ? [purchase.purchaser] : []) });
@@ -1758,7 +1760,7 @@ app.get('/api/setup/managers', async (req, res) => {
 
 app.post('/api/setup/managers', async (req, res) => {
   const purchase = await purchaseFromSetupRequest({ sessionId: req.body.sessionId, domain: req.body.domain, pass: req.body.pass });
-  if (!purchase) return res.status(403).json({ error: 'This setup link has expired. You can name settings managers later in District Settings.' });
+  if (!purchase) return res.status(403).json({ error: 'This setup link has expired. You can name District Settings Managers later in District Settings.' });
   const result = await saveDistrictManagers(purchase.domain, req.body.managers, purchase.purchaser || 'Your district');
   if (result.error) return res.status(400).json({ error: result.error });
   res.json(result);
@@ -1766,17 +1768,17 @@ app.post('/api/setup/managers', async (req, res) => {
 
 // Tiffany's view of any district's managers, for help@ requests.
 app.get('/api/admin/managers', async (req, res) => {
-  res.send(adminPageShell('District settings managers', `
-    <h1>District settings managers</h1>
-    <p>View or change who can edit a district's settings. Anyone newly added gets a welcome email.</p>
+  res.send(adminPageShell('District Settings Managers', `
+    <h1>District Settings Managers</h1>
+    <p>View or change who manages a district's District Settings. Anyone newly added gets a welcome email.</p>
     <label for="key">Admin key</label>
     <input type="password" id="key" autocomplete="off">
     <label for="domain">District email domain</label>
     <input type="text" id="domain" placeholder="e.g. ouhsd.org">
-    <button type="button" id="load">Load managers</button>
-    <label for="list">Managers, one email per line</label>
+    <button type="button" id="load">Load District Settings Managers</button>
+    <label for="list">District Settings Managers, one email per line</label>
     <textarea id="list" rows="6" style="width:100%;box-sizing:border-box;font:inherit;padding:12px;border:1px solid #d9d4e8;border-radius:8px;"></textarea>
-    <button type="button" id="save">Save managers</button>
+    <button type="button" id="save">Save District Settings Managers</button>
     <p id="msg"></p>
     <script>
       const msg = document.getElementById('msg');
@@ -1787,7 +1789,7 @@ app.get('/api/admin/managers', async (req, res) => {
         const { ok, data } = await api('GET');
         if (!ok) { msg.textContent = data.error || 'Could not load.'; return; }
         document.getElementById('list').value = (data.managers || []).join('\\n');
-        msg.textContent = data.named ? 'These managers were named by the district.' : 'None named yet, so the purchasing contact is the manager.';
+        msg.textContent = data.named ? 'These District Settings Managers were named by the district.' : 'None named yet, so the purchasing contact is the manager.';
       };
       document.getElementById('save').onclick = async () => {
         const managers = document.getElementById('list').value.split(/\\s+/).filter(Boolean);
@@ -1824,7 +1826,7 @@ app.get('/api/district/permissions', requireAppAccess, async (req, res) => {
 app.post('/api/district/managers', requireAppAccess, async (req, res) => {
   const domain = req.districtSession.district_domain;
   const role = await districtRole(req, domain);
-  if (!role.isManager) return res.status(403).json({ error: 'Only a settings manager can change who manages district settings.' });
+  if (!role.isManager) return res.status(403).json({ error: 'Only a District Settings Manager can change who manages District Settings.' });
   const result = await saveDistrictManagers(domain, req.body.managers, role.email);
   if (result.error) return res.status(400).json({ error: result.error });
   res.json(result);
@@ -2212,7 +2214,7 @@ app.get('/api/district/board-policies', requireAppAccess, async (req, res) => {
 
 app.post('/api/district/board-policies/upload', requireAppAccess, async (req, res) => {
   const domain = req.districtSession.district_domain;
-  if (!(await districtRole(req, domain)).isManager) return res.status(403).json({ error: 'Only your district\'s settings managers can add board policies.' });
+  if (!(await districtRole(req, domain)).isManager) return res.status(403).json({ error: 'Only your District Settings Managers can add board policies.' });
   const { filename, dataBase64 } = req.body || {};
   if (!dataBase64) return res.status(400).json({ error: 'No file received.' });
   if (!String(filename || '').toLowerCase().endsWith('.pdf')) return res.status(400).json({ error: 'Please upload board policies as PDF files.' });
@@ -2252,7 +2254,7 @@ app.post('/api/district/board-policies/upload', requireAppAccess, async (req, re
 });
 
 app.delete('/api/district/board-policies/:id', requireAppAccess, async (req, res) => {
-  if (!(await districtRole(req, req.districtSession.district_domain)).isManager) return res.status(403).json({ error: 'Only your district\'s settings managers can remove board policies.' });
+  if (!(await districtRole(req, req.districtSession.district_domain)).isManager) return res.status(403).json({ error: 'Only your District Settings Managers can remove board policies.' });
   try {
     const { rowCount } = await pool.query('DELETE FROM board_policies WHERE id = $1 AND domain = $2', [req.params.id, req.districtSession.district_domain]);
     if (!rowCount) return res.status(404).json({ error: 'Board policy not found.' });
@@ -2290,6 +2292,28 @@ app.post('/api/admin/activate', async (req, res) => {
 // ─── Admin: activate a district when its PO arrives ─────────────────────────
 // Opened from the link in Tiffany's "awaiting PO" email. The link is signed for
 // that one district, so it works from her inbox without the admin key.
+// What is actually running right now. Read from the build line at the top of
+// each file when the server starts, so it is never out of date by hand.
+function readBuildLine(filePath) {
+  try {
+    const firstLine = fs.readFileSync(filePath, 'utf8').split('\n')[0];
+    const match = firstLine.match(/BUILD:\s*([0-9A-Za-z.-]+)/);
+    return match ? match[1] : 'unknown';
+  } catch (err) {
+    return 'unknown';
+  }
+}
+const BUILD_INFO = {
+  server: readBuildLine(path.join(__dirname, 'server.js')),
+  app: readBuildLine(path.join(__dirname, 'public', 'app.html')),
+  deployedAt: new Date().toISOString(),
+};
+app.get('/api/version', (req, res) => res.json(BUILD_INFO));
+function buildFooterText() {
+  const when = new Date(BUILD_INFO.deployedAt).toLocaleString('en-US', { timeZone: 'America/Los_Angeles', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  return 'Server ' + BUILD_INFO.server + ' · App ' + BUILD_INFO.app + ' · Deployed ' + when + ' Pacific';
+}
+
 function adminPageShell(title, bodyHtml) {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${title} | Trackument</title><meta name="robots" content="noindex, nofollow">
@@ -2307,7 +2331,8 @@ function adminPageShell(title, bodyHtml) {
   button{background:#e05b0e;color:#fff;border:none;border-radius:8px;padding:12px 24px;font-size:1rem;font-weight:700;cursor:pointer;margin-top:28px;}
   .ok{background:#e9f6f5;border:1px solid #9fd6d3;color:#035e5c;padding:16px;border-radius:8px;}
   .err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:16px;border-radius:8px;}
-</style></head><body><div class="card">${bodyHtml}</div></body></html>`;
+  .build-footer{max-width:520px;margin:16px auto 0;font-size:0.75rem;color:#8d86a3;text-align:center;}
+</style></head><body><div class="card">${bodyHtml}</div><div class="build-footer">${buildFooterText()}</div></body></html>`;
 }
 function escapeHtml(v) {
   return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -2434,21 +2459,165 @@ async function districtSummary(domain) {
   };
 }
 
+// ─── Loading a district's agreements and handbooks ──────────────────────────
+// Districts can upload these themselves in District Settings. This does the
+// same thing on their behalf, for districts that would rather email the file,
+// and for demos where everything is set up in advance.
+async function addDistrictLibraryEntry({ domain, kind, name, unit, filename, contentType, buffer }) {
+  const id = crypto.randomUUID();
+  await pool.query(
+    'INSERT INTO documents (id, filename, content_type, data, domain) VALUES ($1, $2, $3, $4, $5)',
+    [id, filename, contentType || 'application/pdf', buffer, domain]
+  );
+  // Pull the text out now, so the first writeup does not wait for it.
+  if (pdfParse && /pdf/i.test(contentType || '') ) {
+    try {
+      const parser = new pdfParse.PDFParse({ data: buffer });
+      const text = ((await parser.getText()).text || '').trim();
+      if (text) await pool.query('UPDATE documents SET text_content = $1 WHERE id = $2', [text, id]);
+    } catch (err) { console.error('Could not read text from', filename, err.message); }
+  }
+
+  const column = kind === 'handbook' ? 'handbook_library' : 'cba_library';
+  const { rows } = await pool.query(`SELECT ${column} AS library FROM district_settings WHERE domain = $1`, [domain]);
+  const library = (rows[0] && rows[0].library) || [];
+  const entry = {
+    key: (kind === 'handbook' ? 'handbook:' : 'cba:') + Date.now() + Math.random().toString(36).slice(2),
+    name,
+    unit: unit || '',
+    sourceType: 'file',
+    sourceLabel: filename,
+    documentId: id,
+    savedAt: new Date().toLocaleDateString('en-US'),
+    updatedAt: Date.now(),
+  };
+  library.push(entry);
+  await pool.query(`
+    INSERT INTO district_settings (domain, ${column}, updated_at) VALUES ($1, $2, now())
+    ON CONFLICT (domain) DO UPDATE SET ${column} = EXCLUDED.${column}, updated_at = now()
+  `, [domain, JSON.stringify(library)]);
+  return entry;
+}
+
+app.get('/api/admin/district-documents', async (req, res) => {
+  res.send(adminPageShell('Load a district document', `
+    <h1>Load a district document</h1>
+    <p>Add a bargaining agreement or employee handbook to a district's District Settings on their behalf. Trackument reads the text right away, so writeups can quote the right article.</p>
+    <label for="key">Admin key</label>
+    <input type="password" id="key" autocomplete="off">
+    <label for="domain">District email domain</label>
+    <input type="text" id="domain" placeholder="e.g. basslakesd.org">
+    <button type="button" id="look">Show what is on file</button>
+    <div id="list" style="margin-top:20px;"></div>
+    <label for="kind">Document type</label>
+    <select id="kind" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #d9d4e8;border-radius:8px;font-size:1rem;">
+      <option value="cba">Collective bargaining agreement</option>
+      <option value="handbook">Employee handbook</option>
+    </select>
+    <label for="name">Name</label>
+    <input type="text" id="name" placeholder="e.g. BLTA Agreement 2024-2027">
+    <label for="unit">Applies to</label>
+    <select id="unit" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #d9d4e8;border-radius:8px;font-size:1rem;">
+      <option value="certificated">Certificated staff</option>
+      <option value="classified">Classified staff</option>
+      <option value="management">Management and confidential</option>
+      <option value="all">All staff</option>
+    </select>
+    <label for="file">PDF file</label>
+    <input type="file" id="file" accept="application/pdf,.pdf">
+    <button type="button" id="save">Add to this district</button>
+    <p id="msg"></p>
+    <script>
+      const el = (id) => document.getElementById(id);
+      const post = (path, body) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ key: el('key').value, domain: el('domain').value }, body || {})) }).then(async r => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
+      const refresh = async () => {
+        const { ok, data } = await post('/api/admin/district-documents/list');
+        if (!ok) { el('list').innerHTML = ''; el('msg').textContent = data.error || 'Could not load.'; return; }
+        const rows = (data.entries || []);
+        el('list').innerHTML = rows.length
+          ? '<p><strong>On file for ' + data.domain + ':</strong><br>' + rows.map(e => e.kindLabel + ': ' + e.name + (e.unit ? ' (' + e.unit + ')' : '') + ' — ' + e.sourceLabel + ' <button type="button" data-k="' + e.key + '" class="rm" style="background:none;border:none;color:#c80204;text-decoration:underline;cursor:pointer;padding:0 0 0 8px;font-size:0.85rem;margin:0;">Remove</button>').join('<br>') + '</p>'
+          : '<p>No agreements or handbooks on file for ' + data.domain + '.</p>';
+        document.querySelectorAll('.rm').forEach(btn => btn.onclick = async () => {
+          const r = await post('/api/admin/district-documents/remove', { entryKey: btn.dataset.k });
+          el('msg').textContent = r.ok ? 'Removed.' : (r.data.error || 'Could not remove.');
+          refresh();
+        });
+      };
+      el('look').onclick = () => { el('msg').textContent = ''; refresh(); };
+      el('save').onclick = async () => {
+        const file = el('file').files[0];
+        if (!file) { el('msg').textContent = 'Choose a PDF first.'; return; }
+        if (!el('name').value.trim()) { el('msg').textContent = 'Give the document a name.'; return; }
+        el('msg').textContent = 'Uploading ' + file.name + '...';
+        const dataBase64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result).split(',')[1]);
+          reader.onerror = () => reject(new Error('Could not read that file.'));
+          reader.readAsDataURL(file);
+        });
+        const { ok, data } = await post('/api/admin/district-documents/upload', {
+          kind: el('kind').value, name: el('name').value, unit: el('unit').value,
+          filename: file.name, dataBase64
+        });
+        el('msg').textContent = ok ? 'Added ' + data.entry.name + ' to ' + el('domain').value + '.' : (data.error || 'Could not add that document.');
+        if (ok) { el('name').value = ''; el('file').value = ''; refresh(); }
+      };
+    </script>
+  `));
+});
+
+app.post('/api/admin/district-documents/list', async (req, res) => {
+  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  const domain = String(req.body.domain || '').trim().toLowerCase();
+  if (!domain) return res.status(400).json({ error: 'Enter a district domain.' });
+  const { rows } = await pool.query('SELECT cba_library, handbook_library FROM district_settings WHERE domain = $1', [domain]);
+  const cba = ((rows[0] && rows[0].cba_library) || []).map(e => ({ ...e, kindLabel: 'Agreement' }));
+  const handbooks = ((rows[0] && rows[0].handbook_library) || []).map(e => ({ ...e, kindLabel: 'Handbook' }));
+  res.json({ domain, entries: [...cba, ...handbooks] });
+});
+
+app.post('/api/admin/district-documents/upload', async (req, res) => {
+  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  const domain = String(req.body.domain || '').trim().toLowerCase();
+  const { kind, name, unit, filename, dataBase64 } = req.body;
+  if (!domain) return res.status(400).json({ error: 'Enter a district domain.' });
+  if (!name || !filename || !dataBase64) return res.status(400).json({ error: 'A name and a PDF file are both required.' });
+  if (!/\.pdf$/i.test(filename)) return res.status(400).json({ error: 'Please upload a PDF file.' });
+  const buffer = Buffer.from(dataBase64, 'base64');
+  const entry = await addDistrictLibraryEntry({ domain, kind: kind === 'handbook' ? 'handbook' : 'cba', name: String(name).trim(), unit, filename, contentType: 'application/pdf', buffer });
+  console.log('Admin added a', kind, 'for', domain, '-', filename);
+  res.json({ ok: true, entry });
+});
+
+app.post('/api/admin/district-documents/remove', async (req, res) => {
+  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  const domain = String(req.body.domain || '').trim().toLowerCase();
+  const entryKey = String(req.body.entryKey || '');
+  if (!domain || !entryKey) return res.status(400).json({ error: 'Missing district or document.' });
+  const column = entryKey.startsWith('handbook:') ? 'handbook_library' : 'cba_library';
+  const { rows } = await pool.query(`SELECT ${column} AS library, deleted_keys FROM district_settings WHERE domain = $1`, [domain]);
+  const library = ((rows[0] && rows[0].library) || []).filter(e => e.key !== entryKey);
+  const tombstones = [...new Set([...((rows[0] && rows[0].deleted_keys) || []), entryKey])].slice(-500);
+  await pool.query(`UPDATE district_settings SET ${column} = $1, deleted_keys = $2, updated_at = now() WHERE domain = $3`,
+    [JSON.stringify(library), JSON.stringify(tombstones), domain]);
+  res.json({ ok: true });
+});
+
 // ─── Support sign-in ─────────────────────────────────────────────────────────
 // Lets Tiffany open any district's account to check that everything works. The
-// visit lasts two hours, cannot change the district's settings, and never shows
+// visit lasts two hours, cannot change a district's District Settings, and never shows
 // employee information, which stays in each administrator's own browser.
 app.get('/api/admin/support-login', async (req, res) => {
   res.send(adminPageShell('Sign in to a district', `
     <h1>Sign in to a district</h1>
-    <p>Open a district's account to check that their setup works. The visit lasts two hours and cannot change their district settings, board policies, or agreements. Employee information is never visible, because writeups stay in each administrator's own browser.</p>
+    <p>Open a district's account to check that their setup works. The visit lasts two hours and cannot change their District Settings, board policies, or agreements. Employee information is never visible, because writeups stay in each administrator's own browser.</p>
     <label for="key">Admin key</label>
     <input type="password" id="key" autocomplete="off">
     <label for="domain">District email domain</label>
     <input type="text" id="domain" placeholder="e.g. ouhsd.org">
     <label class="choice" for="notify">
       <input type="checkbox" id="notify" checked>
-      <span>Email the district's settings managers that support signed in</span>
+      <span>Email the District Settings Managers that support signed in</span>
     </label>
     <button type="button" id="go">Sign in to this district</button>
     <p id="msg"></p>
@@ -2538,7 +2707,7 @@ app.get('/api/admin/remove-district', async (req, res) => {
           (data.contact ? '<br>Contact: ' + data.contact : '') +
           (data.renewalDate ? '<br>Renews: ' + data.renewalDate : '') +
           (data.subscription ? '<br>Stripe subscription still on file: ' + data.subscription : '') +
-          '<br>Settings managers: ' + (data.managers.join(', ') || 'none named') +
+          '<br>District Settings Managers: ' + (data.managers.join(', ') || 'none named') +
           '<br>Sites and departments: ' + data.sites +
           '<br>Board policies: ' + data.boardPolicies +
           '<br>Agreements: ' + data.agreements + ', handbooks: ' + data.handbooks +
