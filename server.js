@@ -1,4 +1,4 @@
-// BUILD: 2026-09-23-r4
+// BUILD: 2026-09-23-r5
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -3481,23 +3481,40 @@ app.post('/api/admin/statutes/upload', asyncRoute(async (req, res) => {
     return res.json({ ok: true, dryRun: true, found: prepared.length, skipped, samples: prepared.slice(0, 5).map(r => ({ code: r.code, title: r.title, preview: r.text.slice(0, 220) })) });
   }
 
+  // The same section can appear twice in an export. Postgres refuses to update
+  // one row twice in a single statement, which failed the whole batch, so the
+  // last version of each section is kept and the earlier one counted as skipped.
+  const byCode = new Map();
+  for (const row of prepared) {
+    if (byCode.has(row.code)) skipped++;
+    byCode.set(row.code, row);
+  }
+  const unique = [...byCode.values()];
+
   let saved = 0;
-  for (let i = 0; i < prepared.length; i += 400) {
-    const batch = prepared.slice(i, i + 400);
+  for (let i = 0; i < unique.length; i += 400) {
+    const batch = unique.slice(i, i + 400);
     const values = [];
     const params = [];
     batch.forEach((row, n) => {
       values.push(`($${n * 3 + 1}, $${n * 3 + 2}, $${n * 3 + 3}, now())`);
       params.push(row.code, row.title, row.text);
     });
-    await pool.query(
-      `INSERT INTO statutes (code, title, statute_text, updated_at) VALUES ${values.join(', ')}
-       ON CONFLICT (code) DO UPDATE SET title = EXCLUDED.title, statute_text = EXCLUDED.statute_text, updated_at = now()`,
-      params
-    );
+    try {
+      await pool.query(
+        `INSERT INTO statutes (code, title, statute_text, updated_at) VALUES ${values.join(', ')}
+         ON CONFLICT (code) DO UPDATE SET title = EXCLUDED.title, statute_text = EXCLUDED.statute_text, updated_at = now()`,
+        params
+      );
+    } catch (err) {
+      // Say what actually went wrong. This page is behind the admin key, and a
+      // vague answer here costs an evening.
+      console.error('Statute upload failed at', batch[0] && batch[0].code, err.message);
+      return res.status(500).json({ error: 'The database refused these sections at ' + (batch[0] ? batch[0].code : 'the first one') + ': ' + err.message, saved });
+    }
     saved += batch.length;
   }
-  res.json({ ok: true, saved, skipped, samples: prepared.slice(0, 5).map(r => ({ code: r.code, title: r.title, preview: r.text.slice(0, 220) })) });
+  res.json({ ok: true, saved, skipped, samples: unique.slice(0, 5).map(r => ({ code: r.code, title: r.title, preview: r.text.slice(0, 220) })) });
 }));
 
 app.post('/api/admin/statutes/import', async (req, res) => {
