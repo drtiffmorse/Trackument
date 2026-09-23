@@ -25,8 +25,8 @@ function loadCitationRules() {
     }
     throw new Error('Could not read ' + name + ' out of public/app.html');
   };
-  const constants = html.match(/const EMPLOYEE_DUTY[\s\S]*?const DISTRICT_PROVISION = [^;]*;/);
-  if (!constants) throw new Error('public/app.html no longer defines EMPLOYEE_DUTY / DISTRICT_PROVISION.');
+  const constants = html.match(/const DUTY_VERBS[\s\S]*?const EXPECTS_OF_EMPLOYEES = [^;]*;/);
+  if (!constants) throw new Error('public/app.html no longer defines the duty word lists.');
   const source = [
     constants[0],
     fn('statesEmployeeDuty'),
@@ -34,9 +34,10 @@ function loadCitationRules() {
     fn('statuteFitsClassification'),
     fn('verifyBoardPolicyCitations'),
     fn('verifyQuotedFromSource'),
+    fn('articleNumberFromQuote'),
     fn('citationNumbersIn'),
     fn('sameCitation'),
-    'return { statesEmployeeDuty, completeQuote, statuteFitsClassification, verifyBoardPolicyCitations, verifyQuotedFromSource, citationNumbersIn, sameCitation };',
+    'return { statesEmployeeDuty, completeQuote, statuteFitsClassification, verifyBoardPolicyCitations, verifyQuotedFromSource, articleNumberFromQuote, citationNumbersIn, sameCitation };',
   ].join('\n\n');
   // The page globals these functions read.
   const window = { _realBoardPolicies: [], _bpDropped: 0 };
@@ -50,6 +51,9 @@ const rules = loadCitationRules();
 describe('A quoted sentence must place a duty on the employee', () => {
   const mustDrop = [
     ['the district program sentence from AR 4257', 'A system for ensuring that employees comply with safe and healthful work practices, which may include, but are not limited to:'],
+    ['a plan that must be accessible to employees', 'The plan, which shall be easily accessible to all employees at all times, shall be in effect at all times and in all work areas.'],
+    ['a protection the employee enjoys', '17.3 School personnel shall not be required to work under proven unsafe conditions or to perform tasks which endanger their health or safety.'],
+    ['copies distributed to employees', 'Copies shall be distributed to all employees at the start of each year.'],
     ['a district obligation', 'The district shall maintain an injury and illness prevention program.'],
     ['a recordkeeping duty', 'Records shall be kept for three years by the Superintendent or designee.'],
     ['training the district provides', 'Training shall be provided to all new employees within 30 days.'],
@@ -57,6 +61,8 @@ describe('A quoted sentence must place a duty on the employee', () => {
   ];
   const mustKeep = [
     ['a duty on drivers', 'Bus drivers shall obey all traffic laws and shall not operate a school bus in an unsafe manner.'],
+    ['a duty on employees of the district', 'Employees of the district shall comply with all safety rules and procedures.'],
+    ['a duty on the driver of a vehicle', 'The driver of any vehicle approaching a stop sign shall stop at a limit line.'],
     ['an expectation of employees', 'Employees are expected to maintain the highest standards of conduct at all times.'],
     ['an attendance duty', 'Each employee shall report to work at the assigned time.'],
     ['a Board expectation of employees', 'The Governing Board expects district employees to maintain professional standards of conduct.'],
@@ -130,6 +136,16 @@ describe('Board policy citations', () => {
     const [citation] = verify([{ code: 'AR 4119.21', desc: 'Employees shall not use district property for personal gain.', why: 'He used the district truck for a side job.' }]);
     assert.equal(citation.code, 'BP 4119.21', 'matched to the number this district actually uses');
     assert.match(citation.desc, /shall not use district property/);
+  });
+});
+
+describe('A citation is labelled with the part it quotes', () => {
+  test('an article number is corrected to the sentence actually quoted', () => {
+    // A demo showed "Article 17.2" above text beginning "17.3".
+    assert.equal(rules.articleNumberFromQuote('17.3 School personnel shall not work under unsafe conditions.', 'Article 17.2 - Safety'), 'Article 17.3');
+  });
+  test('a sentence with no number of its own keeps the citation it came with', () => {
+    assert.equal(rules.articleNumberFromQuote('No unit member shall be disciplined without just cause.', 'Article 15'), 'Article 15');
   });
 });
 

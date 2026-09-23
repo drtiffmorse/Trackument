@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-23-r2 -->
+<!-- BUILD: 2026-09-23-r3 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5911,24 +5911,71 @@ function completeQuote(sentence, fullText) {
 // the district to run a program or keep records are not rules an employee can
 // break, and quoting one in a disciplinary document is indefensible.
 // A citation is a charge against one employee, so the quoted sentence has to
-// place a duty on the employee. Sentences that tell the district to run a
-// program, keep records, or provide training are not rules an employee breaks.
-const EMPLOYEE_DUTY = [
-  /\b(employees?|staff|personnel|unit members?|drivers?|teachers?|administrators?)\b[^.]{0,70}\b(shall not|shall|must|may not|are expected|is expected|are required|is required|are prohibited|is prohibited)\b/i,
-  /\b(expects?|requires?|directs?)\b[^.]{0,50}\b(employees?|staff|personnel|unit members?|drivers?|teachers?)\b[^.]{0,60}\bto\b/i,
-  /\bno (employee|person employed|unit member)\b[^.]{0,70}\b(shall|may)\b/i,
-];
-const DISTRICT_PROVISION = /\b(shall be provided to|shall be offered|the district shall|the board shall|the governing board shall|the superintendent shall|the principal shall|records shall be kept|a system for ensuring|shall establish|shall develop|shall adopt|shall maintain a)\b/i;
+// place a duty on that employee. Three things disqualify a sentence:
+//   the duty belongs to a thing rather than a person ("the plan shall be in
+//   effect"), it belongs to the district, or it grants the employee a right
+//   rather than requiring something of them ("shall not be required to work
+//   under unsafe conditions" protects the employee, it does not bind them).
+const DUTY_VERBS = /\b(shall not|shall|must not|must|may not|are expected|is expected|are required|is required|are prohibited|is prohibited)\b/gi;
+const PERSON_WORDS = /\b(employees?|staff|personnel|unit members?|members?|drivers?|teachers?|administrators?|principals?|supervisors?|workers?|he|she|they|you)\b/i;
+const THING_WORDS = /\b(plan|program|policy|policies|regulation|procedures?|records?|report|reports|training|notice|notices|agreement|section|article|district|board|superintendent|department|committee|office|fund|guidelines?|materials?|equipment|premises|forms?|list)\b/i;
+const EMPLOYEE_RIGHTS = /\b(shall not be required|shall not be compelled|shall be entitled|shall have the right|shall be provided|shall be granted|shall be given|shall receive|may request|may elect|at no cost to)\b/i;
+
+// "The Board expects employees to maintain professional standards" places a
+// duty on employees even though the sentence opens with the Board.
+const EXPECTS_OF_EMPLOYEES = /\b(expects?|requires?|directs?)\b[^.]{0,60}\b(employees?|staff|personnel|unit members?|drivers?|teachers?)\b[^.]{0,60}\bto\b/i;
+
 function statesEmployeeDuty(sentence) {
   const text = String(sentence || '');
-  if (DISTRICT_PROVISION.test(text)) return false;
-  return EMPLOYEE_DUTY.some(pattern => pattern.test(text));
+  if (!text.trim()) return false;
+  // A sentence that protects the employee is not a rule they broke.
+  if (EMPLOYEE_RIGHTS.test(text)) return false;
+  if (EXPECTS_OF_EMPLOYEES.test(text)) return true;
+  DUTY_VERBS.lastIndex = 0;
+  let match;
+  while ((match = DUTY_VERBS.exec(text)) !== null) {
+    // Look at the words just before the duty verb. Whichever comes last, a
+    // person or a thing, is what the duty belongs to. "The plan ... shall be
+    // in effect" is the plan's duty, not the employee's.
+    const before = text.slice(Math.max(0, match.index - 90), match.index);
+    const words = before.split(/[^A-Za-z]+/).filter(Boolean).slice(-8);
+    const PREPOSITIONS = /^(to|for|of|with|by|from|among|upon|between|toward|towards|about|within)$/i;
+    const FILLER = /^(all|the|any|each|every|its|their|new|other)$/i;
+    // Work backwards from the duty verb to the noun that owns it. A noun
+    // inside a prepositional phrase is not the owner: in "accessible to all
+    // employees" the employees benefit, and in "employees of the district"
+    // the district does not act.
+    let owner = '';
+    for (let at = words.length - 1; at >= 0 && !owner; at--) {
+      const word = words[at];
+      const isPerson = PERSON_WORDS.test(word);
+      const isThing = THING_WORDS.test(word);
+      if (!isPerson && !isThing) continue;
+      const preceding = [];
+      for (let back = at - 1; back >= 0 && preceding.length < 2; back--) {
+        if (!FILLER.test(words[back])) preceding.push(words[back]);
+      }
+      if (preceding.some(w => PREPOSITIONS.test(w))) continue;
+      owner = isPerson ? 'person' : 'thing';
+    }
+    if (owner === 'person') return true;
+  }
+  return false;
 }
 
 
 // The same standard for agreements and handbooks: a quote has to appear in the
 // text we actually sent, and it has to place a duty on the employee. Anything
 // else is dropped rather than printed in a district's document.
+// An agreement's sentences begin with their own number, so a citation labelled
+// 17.2 above text that starts "17.3" is relabelled to match what is quoted.
+function articleNumberFromQuote(quote, fallbackCode) {
+  const found = String(quote || '').trim().match(/^(\d{1,2}\.\d{1,2}(?:\.\d{1,2})?)\b/);
+  if (!found) return fallbackCode;
+  const label = String(fallbackCode || '').match(/^([A-Za-z ]+?)\s*\d/);
+  return ((label ? label[1].trim() : 'Article') + ' ' + found[1]).trim();
+}
+
 function verifyQuotedFromSource(citations, sourceText) {
   const source = String(sourceText || '');
   const normalize = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -5938,7 +5985,8 @@ function verifyQuotedFromSource(citations, sourceText) {
   (citations || []).forEach(c => {
     const quoted = String(c.desc || '');
     if (normalize(quoted).length > 25 && flat.includes(normalize(quoted)) && statesEmployeeDuty(quoted)) {
-      verified.push({ ...c, desc: completeQuote(quoted, source) });
+      const text = completeQuote(quoted, source);
+      verified.push({ ...c, code: articleNumberFromQuote(text, c.code), desc: text });
       return;
     }
     // Find the closest sentence in the real text that states a duty.
@@ -5951,7 +5999,10 @@ function verifyQuotedFromSource(citations, sourceText) {
       wanted.forEach(w => { if (words.has(w)) score++; });
       if (score > bestScore) { bestScore = score; best = sentence; }
     });
-    if (best) verified.push({ ...c, desc: completeQuote(best, source) });
+    if (best) {
+      const text = completeQuote(best, source);
+      verified.push({ ...c, code: articleNumberFromQuote(text, c.code), desc: text });
+    }
   });
   return verified;
 }
