@@ -1,4 +1,4 @@
-// BUILD: 2026-09-22-r15
+// BUILD: 2026-09-22-r20
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -1922,6 +1922,10 @@ app.get('/api/admin/managers', async (req, res) => {
     <label for="domain">District email domain</label>
     <input type="text" id="domain" placeholder="e.g. ouhsd.org">
     <button type="button" id="load">Load District Settings Managers</button>
+    <label for="districtName">District name, shown at the top of every document</label>
+    <input type="text" id="districtName" placeholder="e.g. Bass Lake Joint Union Elementary School District">
+    <button type="button" id="saveName">Save district name</button>
+
     <label for="list">District Settings Managers, one email per line</label>
     <textarea id="list" rows="6" style="width:100%;box-sizing:border-box;font:inherit;padding:12px;border:1px solid #d9d4e8;border-radius:8px;"></textarea>
     <button type="button" id="save">Save District Settings Managers</button>
@@ -1935,7 +1939,12 @@ app.get('/api/admin/managers', async (req, res) => {
         const { ok, data } = await api('GET');
         if (!ok) { msg.textContent = data.error || 'Could not load.'; return; }
         document.getElementById('list').value = (data.managers || []).join('\\n');
+        document.getElementById('districtName').value = data.districtName || '';
         msg.textContent = data.named ? 'These District Settings Managers were named by the district.' : 'None named yet, so the purchasing contact is the manager.';
+      };
+      document.getElementById('saveName').onclick = async () => {
+        const { ok, data } = await api('POST', { key: document.getElementById('key').value, domain: document.getElementById('domain').value, districtName: document.getElementById('districtName').value });
+        msg.textContent = ok ? 'District name saved.' : (data.error || 'Could not save the district name.');
       };
       document.getElementById('save').onclick = async () => {
         const managers = document.getElementById('list').value.split(/\\s+/).filter(Boolean);
@@ -1949,16 +1958,33 @@ app.get('/api/admin/managers/data', async (req, res) => {
   if (!adminKeyValid(req.query.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
   const domain = String(req.query.domain || '').trim().toLowerCase();
   if (!domain) return res.status(400).json({ error: 'Enter a district domain.' });
+  const savedName = await pool.query('SELECT district_name FROM district_settings WHERE domain = $1', [domain]);
+  const purchaseName = await pool.query('SELECT district_name FROM districts WHERE domain = $1 LIMIT 1', [domain]);
+  const districtName = (savedName.rows[0] && savedName.rows[0].district_name)
+    || (purchaseName.rows[0] && purchaseName.rows[0].district_name) || '';
   const { rows } = await pool.query('SELECT managers FROM district_settings WHERE domain = $1', [domain]);
   const named = (rows[0] && rows[0].managers) || [];
-  if (named.length) return res.json({ managers: named, named: true });
+  if (named.length) return res.json({ managers: named, named: true, districtName });
   const d = await pool.query('SELECT contact_email FROM districts WHERE domain = $1 LIMIT 1', [domain]);
-  res.json({ managers: d.rows[0] && d.rows[0].contact_email ? [d.rows[0].contact_email] : [], named: false });
+  res.json({ managers: d.rows[0] && d.rows[0].contact_email ? [d.rows[0].contact_email] : [], named: false, districtName });
 });
 app.post('/api/admin/managers/data', async (req, res) => {
   if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
   const domain = String(req.body.domain || '').trim().toLowerCase();
   if (!domain) return res.status(400).json({ error: 'Enter a district domain.' });
+
+  // Saving just the district name, which is what appears at the top of every
+  // document a district generates.
+  if (req.body.districtName !== undefined) {
+    const districtName = String(req.body.districtName || '').trim();
+    if (!districtName) return res.status(400).json({ error: 'Enter the district name.' });
+    await pool.query(`
+      INSERT INTO district_settings (domain, district_name, updated_at) VALUES ($1, $2, now())
+      ON CONFLICT (domain) DO UPDATE SET district_name = EXCLUDED.district_name, updated_at = now()
+    `, [domain, districtName]);
+    await pool.query('UPDATE districts SET district_name = $1 WHERE domain = $2', [districtName, domain]);
+    return res.json({ ok: true, districtName });
+  }
   const result = await saveDistrictManagers(domain, req.body.managers, 'Trackument');
   if (result.error) return res.status(400).json({ error: result.error });
   res.json(result);
@@ -2545,7 +2571,22 @@ function adminPageShell(title, bodyHtml) {
   .ok{background:#e9f6f5;border:1px solid #9fd6d3;color:#035e5c;padding:16px;border-radius:8px;}
   .err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:16px;border-radius:8px;}
   .build-footer{max-width:520px;margin:16px auto 0;font-size:0.75rem;color:#8d86a3;text-align:center;}
-</style></head><body><div class="card">${bodyHtml}</div><div class="build-footer">${buildFooterText()}</div></body></html>`;
+  .show-key{display:flex;align-items:center;gap:8px;margin:8px 0 0;font-size:0.85rem;font-weight:400;text-transform:none;color:#3d3553;}
+  .show-key input{width:auto;margin:0;}
+</style></head><body><div class="card">${bodyHtml}</div><div class="build-footer">${buildFooterText()}</div>
+<script>
+  // Show the admin key while typing, so a mistyped key is easy to spot.
+  document.querySelectorAll('input[type=password]').forEach((field) => {
+    const row = document.createElement('label');
+    row.className = 'show-key';
+    row.innerHTML = '<input type="checkbox"> Show key';
+    field.insertAdjacentElement('afterend', row);
+    row.querySelector('input').addEventListener('change', (e) => {
+      field.type = e.target.checked ? 'text' : 'password';
+    });
+  });
+</script>
+</body></html>`;
 }
 function escapeHtml(v) {
   return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -2883,14 +2924,38 @@ async function fetchStatuteText(citation) {
   const url = 'https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode='
     + parsed.lawCode + '&sectionNum=' + encodeURIComponent(parsed.sectionNum);
   try {
-    const response = await fetch(url, { headers: { 'User-Agent': 'Trackument/1.0 (+https://www.trackument.com)' } });
+    // California Legislative Information is outside Trackument, so a slow day
+    // there must never leave an administrator watching a spinner.
+    const stop = new AbortController();
+    const giveUp = setTimeout(() => stop.abort(), 8000);
+    let response;
+    try {
+      response = await fetch(url, { headers: { 'User-Agent': 'Trackument/1.0 (+https://www.trackument.com)' }, signal: stop.signal });
+    } finally {
+      clearTimeout(giveUp);
+    }
     if (!response.ok) { console.error('Statute fetch failed:', citation, response.status); return null; }
     const html = await response.text();
     // The section body sits in a container the site has used for years. If the
     // page changes, this returns nothing rather than guessing.
-    const block = html.match(/<div[^>]*id="codeLawSectionNoHead"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i)
-      || html.match(/<div[^>]*id="codeLawSectionNoHead"[^>]*>([\s\S]*?)<\/div>/i);
-    if (!block) { console.error('Statute fetch: unfamiliar page layout for', citation); return null; }
+    // The state's page has used several containers over the years. Try each
+    // one, rather than returning nothing the moment the newest layout changes.
+    const patterns = [
+      /<div[^>]*id="codeLawSectionNoHead"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i,
+      /<div[^>]*id="codeLawSectionNoHead"[^>]*>([\s\S]*?)<\/div>/i,
+      /<div[^>]*id="[^"]*lawSection[^"]*"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i,
+      /<div[^>]*class="[^"]*law-section[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
+      /<div[^>]*id="manylawsections"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i,
+    ];
+    let block = null;
+    for (const pattern of patterns) {
+      const found = html.match(pattern);
+      if (found && found[1] && found[1].replace(/<[^>]+>/g, ' ').trim().length > 120) { block = found; break; }
+    }
+    if (!block) {
+      console.error('Statute fetch: unfamiliar page layout for', citation, '- load this section by hand at /api/admin/statutes');
+      return null;
+    }
     const text = block[1]
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<\/p>/gi, '\n')
@@ -2899,7 +2964,17 @@ async function fetchStatuteText(citation) {
       .replace(/[ \t]+/g, ' ')
       .replace(/\n\s*\n+/g, '\n')
       .trim();
-    if (text.length < 40) return null;
+    // Real section text runs to paragraphs. A short line such as
+    // "Education Code - EDC TITLE 2." is the page furniture, not the law, and
+    // storing it would put a meaningless quote in a district's document.
+    // Real section text is long and starts with its own number. Anything else
+    // is page furniture, and storing it would put a meaningless quote in a
+    // district's disciplinary document.
+    const startsWithSection = new RegExp('^\\(?\\s*' + parsed.sectionNum.replace('.', '\\.') + '\\b').test(text);
+    if (text.length < 120 || /^education code\b[^.]{0,40}\.?$/i.test(text) || !startsWithSection) {
+      console.error('Statute fetch: no section text found for', citation, '- load it by hand at /api/admin/statutes');
+      return null;
+    }
     return { text, url, lawCode: parsed.lawCode, sectionNum: parsed.sectionNum };
   } catch (err) {
     console.error('Statute fetch error for', citation, err.message);
@@ -2909,12 +2984,16 @@ async function fetchStatuteText(citation) {
 async function ensureStatutes(citations) {
   const wanted = [...new Set((citations || []).map(c => String(c || '').trim()).filter(Boolean))].slice(0, 12);
   const out = [];
+  // Whatever is already stored comes back immediately; fetching the rest gets
+  // a shared deadline, so a writeup is never held up waiting on an outside site.
+  const deadline = Date.now() + 20000;
   for (const citation of wanted) {
     const parsed = parseCitation(citation);
     if (!parsed) continue;
     const key = parsed.lawCode + ' ' + parsed.sectionNum;
     const existing = await pool.query('SELECT code, title, statute_text FROM statutes WHERE code = $1', [key]);
     if (existing.rows[0]) { out.push(existing.rows[0]); continue; }
+    if (Date.now() > deadline) { console.warn('Statute lookup ran out of time before', citation); continue; }
     const fetched = await fetchStatuteText(citation);
     if (!fetched) continue;
     await pool.query(`
@@ -2925,6 +3004,33 @@ async function ensureStatutes(citations) {
   }
   return out;
 }
+
+// When Trackument cannot load a section's text, the citation still appears by
+// number, and the section is reported here so its text can be added. One email
+// an hour at most, listing everything seen since the last one.
+const missingStatutes = new Set();
+let missingStatutesSentAt = 0;
+app.post('/api/statutes/missing', requireAppAccess, async (req, res) => {
+  const codes = (Array.isArray(req.body.codes) ? req.body.codes : []).map(c => String(c || '').trim()).filter(Boolean).slice(0, 20);
+  codes.forEach(c => missingStatutes.add(c));
+  res.json({ ok: true });
+  if (missingStatutes.size === 0 || Date.now() - missingStatutesSentAt < 60 * 60 * 1000) return;
+  missingStatutesSentAt = Date.now();
+  const list = [...missingStatutes];
+  missingStatutes.clear();
+  sendNotificationEmail({
+    to: SALES_NOTIFY_EMAIL,
+    subject: 'Statute text to load: ' + list.slice(0, 5).join(', ') + (list.length > 5 ? ' and more' : ''),
+    text: [
+      'These Education Code sections were cited in writeups, but Trackument has no text for them, so nothing was quoted.',
+      '',
+      list.join('\n'),
+      '',
+      'Load them here: ' + BASE_URL + '/api/admin/statutes',
+      'Paste the section text, or use Fetch to pull it from California Legislative Information.',
+    ].join('\n'),
+  }).catch(err => console.error('Could not send the missing statute notice:', err.message));
+});
 
 // The app asks for the sections a writeup is about to cite. Anything already
 // stored comes straight back; anything new is fetched once and kept.
@@ -2982,6 +3088,36 @@ app.get('/api/admin/statutes', async (req, res) => {
           refresh();
         });
       };
+      // Loading a whole code runs in the background, so the page asks how it
+      // is going rather than waiting on one very long request.
+      const chosenCodes = () => ['EDC','VEH','GOV','LAB','PEN'].filter(c => el('code' + c).checked);
+      let watching = null;
+      const showProgress = (p) => {
+        const samples = (p.samples || []).map(x => '<li><strong>' + esc(x.code) + '</strong> ' + esc(x.title || '') + '<br><span style="color:#605d54;">' + esc(x.preview || '') + '</span></li>').join('');
+        el('importStatus').innerHTML = '<p>' + esc(p.message || p.state) + '</p>'
+          + '<p style="color:#605d54;">Lines read: ' + (p.read || 0) + ' &middot; sections found: ' + (p.kept || 0) + (p.dryRun ? '' : ' &middot; saved: ' + (p.saved || 0)) + '</p>'
+          + (samples ? '<p><strong>Samples:</strong></p><ul style="font-size:0.85rem;line-height:1.5;">' + samples + '</ul>' : '');
+        if (p.state !== 'downloading' && p.state !== 'reading') { clearInterval(watching); watching = null; refresh(); }
+      };
+      const startImport = async (dryRun) => {
+        const res = await fetch('/api/admin/statutes/import', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: el('key').value, url: el('bulkUrl').value, codes: chosenCodes(), dryRun })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { el('importStatus').textContent = data.error || 'Could not start.'; return; }
+        el('importStatus').textContent = dryRun ? 'Dry run started...' : 'Loading started...';
+        if (watching) clearInterval(watching);
+        watching = setInterval(async () => {
+          const r = await fetch('/api/admin/statutes/import/status?key=' + encodeURIComponent(el('key').value));
+          if (r.ok) showProgress(await r.json());
+        }, 2000);
+      };
+      el('dryRun').onclick = () => startImport(true);
+      el('loadAll').onclick = () => {
+        if (confirm('Load these codes into the statute library? Every district will quote from them.')) startImport(false);
+      };
+
       el('look').onclick = refresh;
       el('fetch').onclick = async () => {
         el('msg').textContent = 'Fetching...';
@@ -3027,6 +3163,211 @@ app.post('/api/admin/statutes/save', async (req, res) => {
   `, [code, String(req.body.title || '').trim(), text]);
   res.json({ ok: true, code });
 });
+// ─── Loading a whole code from the state's bulk download ─────────────────────
+// Fetching one section at a time from the state's web pages is slow and breaks
+// whenever that site changes. California also publishes its entire legal
+// database as a weekly ZIP of tab-delimited files, which is the dependable way
+// to load the Education Code once and have every section available instantly.
+//
+// The work runs in the background because the download is large. The admin page
+// starts it, then asks for progress. A dry run reads the same file and reports
+// what it found without storing anything.
+const zlib = require('zlib');
+const os = require('os');
+
+const STATUTE_IMPORT_CODES = { EDC: 'Education Code', VEH: 'Vehicle Code', GOV: 'Government Code', PEN: 'Penal Code', LAB: 'Labor Code' };
+
+let statuteImport = { state: 'idle', message: '', codes: [], read: 0, kept: 0, saved: 0, samples: [], startedAt: null, finishedAt: null, error: null };
+
+// A ZIP file lists its contents at the end, so the entry we want can be read
+// without unpacking the rest of a very large archive.
+function findZipEntry(fd, fileSize, wantedName) {
+  const tailSize = Math.min(fileSize, 66000);
+  const tail = Buffer.alloc(tailSize);
+  fs.readSync(fd, tail, 0, tailSize, fileSize - tailSize);
+  let end = -1;
+  for (let i = tail.length - 22; i >= 0; i--) {
+    if (tail.readUInt32LE(i) === 0x06054b50) { end = i; break; }
+  }
+  if (end === -1) throw new Error('That file is not a ZIP archive, or it did not download completely.');
+  const entryCount = tail.readUInt16LE(end + 10);
+  let directoryOffset = tail.readUInt32LE(end + 16);
+  let directorySize = tail.readUInt32LE(end + 12);
+  if (directoryOffset === 0xffffffff || directorySize === 0xffffffff) {
+    throw new Error('This archive uses the ZIP64 format, which this importer cannot read. Ask Trackument for help.');
+  }
+  const directory = Buffer.alloc(directorySize);
+  fs.readSync(fd, directory, 0, directorySize, directoryOffset);
+  let at = 0;
+  for (let i = 0; i < entryCount && at < directory.length; i++) {
+    if (directory.readUInt32LE(at) !== 0x02014b50) break;
+    const nameLength = directory.readUInt16LE(at + 28);
+    const extraLength = directory.readUInt16LE(at + 30);
+    const commentLength = directory.readUInt16LE(at + 32);
+    const name = directory.slice(at + 46, at + 46 + nameLength).toString('latin1');
+    const entry = {
+      name,
+      method: directory.readUInt16LE(at + 10),
+      compressedSize: directory.readUInt32LE(at + 20),
+      localOffset: directory.readUInt32LE(at + 42),
+    };
+    if (name.toLowerCase().endsWith(wantedName.toLowerCase())) return entry;
+    at += 46 + nameLength + extraLength + commentLength;
+  }
+  return null;
+}
+
+function zipEntryStream(filePath, fd, entry) {
+  const header = Buffer.alloc(30);
+  fs.readSync(fd, header, 0, 30, entry.localOffset);
+  if (header.readUInt32LE(0) !== 0x04034b50) throw new Error('The archive entry could not be read.');
+  const dataStart = entry.localOffset + 30 + header.readUInt16LE(26) + header.readUInt16LE(28);
+  const raw = fs.createReadStream(filePath, { start: dataStart, end: dataStart + entry.compressedSize - 1 });
+  return entry.method === 0 ? raw : raw.pipe(zlib.createInflateRaw());
+}
+
+// The state's .dat files are tab-delimited, with text fields wrapped in
+// backticks and newlines written as \n inside a field.
+function splitDatLine(line) {
+  return line.split('\t').map(field => {
+    let value = field.trim();
+    if (value.startsWith('`') && value.endsWith('`') && value.length > 1) value = value.slice(1, -1);
+    if (value.startsWith('"') && value.endsWith('"') && value.length > 1) value = value.slice(1, -1);
+    return value.replace(/\\n/g, '\n').replace(/\\t/g, ' ').trim();
+  });
+}
+
+function plainTextFromLawXml(xml) {
+  return String(xml || '')
+    .replace(/<\s*br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&#(\d+);/g, (m, d) => String.fromCharCode(d))
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n\s*\n+/g, '\n')
+    .trim();
+}
+
+// Reads CODE_SECTION.dat out of the archive and loads the sections for the
+// codes asked for. A dry run does everything except the saving.
+async function runStatuteImport({ url, codes, dryRun }) {
+  const zipPath = path.join(os.tmpdir(), 'pubinfo-' + Date.now() + '.zip');
+  statuteImport = { state: 'downloading', message: 'Downloading the state\'s legal database...', codes, read: 0, kept: 0, saved: 0, samples: [], startedAt: new Date().toISOString(), finishedAt: null, error: null, dryRun: !!dryRun };
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('The download answered ' + response.status + '. Check the link on the state\'s downloads page.');
+    await new Promise((resolve, reject) => {
+      const file = fs.createWriteStream(zipPath);
+      response.body.pipe(file);
+      response.body.on('error', reject);
+      file.on('finish', resolve);
+      file.on('error', reject);
+    });
+
+    statuteImport.state = 'reading';
+    statuteImport.message = 'Reading the sections...';
+    const fd = fs.openSync(zipPath, 'r');
+    const size = fs.statSync(zipPath).size;
+    const entry = findZipEntry(fd, size, 'CODE_SECTION.dat');
+    if (!entry) throw new Error('CODE_SECTION.dat is not in this archive. This may be the wrong download.');
+
+    const wanted = new Set(codes);
+    const batch = [];
+    const flush = async () => {
+      if (dryRun || batch.length === 0) { batch.length = 0; return; }
+      const values = [];
+      const params = [];
+      batch.forEach((row, i) => {
+        values.push(`($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3}, now())`);
+        params.push(row.code, row.title, row.text);
+      });
+      await pool.query(
+        `INSERT INTO statutes (code, title, statute_text, updated_at) VALUES ${values.join(', ')}
+         ON CONFLICT (code) DO UPDATE SET title = EXCLUDED.title, statute_text = EXCLUDED.statute_text, updated_at = now()`,
+        params
+      );
+      statuteImport.saved += batch.length;
+      batch.length = 0;
+    };
+
+    await new Promise((resolve, reject) => {
+      const stream = zipEntryStream(zipPath, fd, entry);
+      let carry = '';
+      let queue = Promise.resolve();
+      stream.on('data', chunk => {
+        carry += chunk.toString('utf8');
+        const lines = carry.split('\n');
+        carry = lines.pop();
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          statuteImport.read++;
+          const fields = splitDatLine(line);
+          // Find the pieces by shape rather than by position, so a column added
+          // to the state's export does not break the whole import.
+          const lawCodeAt = fields.findIndex(f => /^[A-Z]{2,4}$/.test(f) && wanted.has(f));
+          if (lawCodeAt === -1) continue;
+          const lawCode = fields[lawCodeAt];
+          // The section number is the field right after the law code. Searching
+          // the whole row would pick up the row's own id instead.
+          const sectionNum = (fields.slice(lawCodeAt + 1, lawCodeAt + 3)
+            .find(f => /^\d{1,6}(\.\d+)*[a-z]?$/i.test(f) && f.length <= 12)) || '';
+          const contentField = fields.slice().sort((a, b) => b.length - a.length)[0] || '';
+          const active = !/^n$/i.test(fields[fields.length - 1] || '');
+          if (!sectionNum || !active) continue;
+          const text = plainTextFromLawXml(contentField);
+          if (text.length < 40) continue;
+          const heading = fields.find(f => /^[A-Z][A-Za-z ,'&-]{6,80}$/.test(f)) || '';
+          const row = { code: lawCode + ' ' + sectionNum, title: heading, text };
+          statuteImport.kept++;
+          if (statuteImport.samples.length < 5) statuteImport.samples.push({ code: row.code, title: row.title, preview: row.text.slice(0, 220) });
+          batch.push(row);
+          if (batch.length >= 400) {
+            stream.pause();
+            queue = queue.then(flush).then(() => stream.resume()).catch(reject);
+          }
+        }
+      });
+      stream.on('end', () => { queue.then(flush).then(resolve).catch(reject); });
+      stream.on('error', reject);
+    });
+
+    fs.closeSync(fd);
+    statuteImport.state = 'done';
+    statuteImport.message = dryRun
+      ? 'Dry run finished. ' + statuteImport.kept + ' sections found, nothing saved. Check the samples below, then run it for real.'
+      : statuteImport.saved + ' sections loaded. Every district can now quote them.';
+  } catch (err) {
+    statuteImport.state = 'failed';
+    statuteImport.error = err.message;
+    statuteImport.message = 'Stopped: ' + err.message;
+    console.error('Statute import failed:', err.message);
+  } finally {
+    statuteImport.finishedAt = new Date().toISOString();
+    try { fs.unlinkSync(zipPath); } catch (e) {}
+  }
+}
+
+app.post('/api/admin/statutes/import', async (req, res) => {
+  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  if (statuteImport.state === 'downloading' || statuteImport.state === 'reading') {
+    return res.status(409).json({ error: 'An import is already running.', progress: statuteImport });
+  }
+  const url = String(req.body.url || '').trim();
+  if (!/^https:\/\/downloads\.leginfo\.legislature\.ca\.gov\//i.test(url)) {
+    return res.status(400).json({ error: 'Use a link from downloads.leginfo.legislature.ca.gov, the state\'s own download site.' });
+  }
+  const codes = (Array.isArray(req.body.codes) ? req.body.codes : ['EDC']).filter(c => STATUTE_IMPORT_CODES[c]);
+  if (codes.length === 0) return res.status(400).json({ error: 'Choose at least one code to load.' });
+  runStatuteImport({ url, codes, dryRun: !!req.body.dryRun });
+  res.json({ ok: true, started: true });
+});
+
+app.get('/api/admin/statutes/import/status', async (req, res) => {
+  if (!adminKeyValid(req.query.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  res.json(statuteImport);
+});
+
 app.post('/api/admin/statutes/remove', async (req, res) => {
   if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
   await pool.query('DELETE FROM statutes WHERE code = $1', [String(req.body.code || '')]);
