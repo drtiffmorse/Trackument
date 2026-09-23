@@ -1,4 +1,4 @@
-// BUILD: 2026-09-23-r9
+// BUILD: 2026-09-23-r10
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -3067,25 +3067,50 @@ app.post('/api/statutes/lookup', requireAppAccess, async (req, res) => {
 
 // The sections that match these facts, ranked by Postgres full text search.
 // A full code is tens of megabytes, so the app never loads all of it.
-app.post('/api/statutes/search', requireAppAccess, asyncRoute(async (req, res) => {
-  const terms = String(req.body.terms || '').replace(/[^a-zA-Z0-9 ]+/g, ' ').trim().split(/\s+/).filter(w => w.length > 3).slice(0, 25).join(' ');
-  const limit = Math.min(Math.max(Number(req.body.limit) || 12, 1), 25);
-  if (!terms) return res.json({ statutes: [] });
-  // A certificated employee is governed by the 44000 series and a classified
-  // employee by the 45000 series, so the other series is not even offered.
-  const classification = String(req.body.classification || '');
-  const excludeSeries = classification.startsWith('cert') || classification === 'mgmt' ? '45' : classification.startsWith('class') ? '44' : '';
-  try {
-    const { rows } = await pool.query(
-      `SELECT code, title, left(statute_text, 4000) AS statute_text
+//
+// A section matches when it contains ANY of the words, and sections that
+// contain more of them rank higher. Until 23 September 2026 the search
+// required every word at once, so a writeup's 25 words matched almost
+// nothing, and CVC 22450 was missed for a driver who ran a stop sign.
+// Results are shared across codes, so a long run of Ed Code matches cannot
+// crowd out the Vehicle Code or the Retail Food Code.
+const SEARCH_STOP_WORDS = new Set('that this with from were have been they their them then than when what which while would could should there where into onto upon also only very just about after before again each other some such more most over under your yours ours shall will must said does done being because through during between against'.split(' '));
+function statuteSearchWords(terms) {
+  const words = String(terms || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/)
+    .filter(w => w.length > 3 && !SEARCH_STOP_WORDS.has(w));
+  return [...new Set(words)].slice(0, 25);
+}
+async function searchStatuteLibrary({ terms, classification, limit }) {
+  const words = statuteSearchWords(terms);
+  if (words.length === 0) return [];
+  const total = Math.min(Math.max(Number(limit) || 12, 1), 25);
+  const perCode = Math.max(3, Math.ceil(total / 2));
+  // A certificated employee is governed by the 44000 series of the Education
+  // Code and a classified employee by the 45000 series, so the other series
+  // is not offered. This applies to the Education Code only.
+  const cls = String(classification || '');
+  const excludeSeries = cls.startsWith('cert') || cls === 'mgmt' ? '45' : cls.startsWith('class') ? '44' : '';
+  const { rows } = await pool.query(
+    `SELECT code, title, statute_text FROM (
+       SELECT code, title, left(statute_text, 4000) AS statute_text,
+              ts_rank(to_tsvector('english', coalesce(title, '') || ' ' || statute_text), to_tsquery('english', $1), 1) AS rank,
+              row_number() OVER (PARTITION BY split_part(code, ' ', 1)
+                ORDER BY ts_rank(to_tsvector('english', coalesce(title, '') || ' ' || statute_text), to_tsquery('english', $1), 1) DESC) AS place
          FROM statutes
-        WHERE ($2 = '' OR code !~ ('^[A-Z]+ ' || $2))
-          AND to_tsvector('english', coalesce(title, '') || ' ' || statute_text) @@ plainto_tsquery('english', $1)
-        ORDER BY ts_rank(to_tsvector('english', coalesce(title, '') || ' ' || statute_text), plainto_tsquery('english', $1)) DESC
-        LIMIT $3`,
-      [terms, excludeSeries, limit]
-    );
-    res.json({ statutes: rows });
+        WHERE ($2 = '' OR code !~ ('^EDC ' || $2))
+          AND to_tsvector('english', coalesce(title, '') || ' ' || statute_text) @@ to_tsquery('english', $1)
+     ) ranked
+     WHERE place <= $3
+     ORDER BY rank DESC
+     LIMIT $4`,
+    [words.join(' | '), excludeSeries, perCode, total]
+  );
+  return rows;
+}
+
+app.post('/api/statutes/search', requireAppAccess, asyncRoute(async (req, res) => {
+  try {
+    res.json({ statutes: await searchStatuteLibrary(req.body || {}) });
   } catch (err) {
     console.error('Statute search failed:', err.message);
     res.json({ statutes: [] });
@@ -3124,9 +3149,21 @@ app.get('/api/admin/statutes', async (req, res) => {
     <label class="choice"><input type="checkbox" id="codeGOV"> Government Code</label>
     <label class="choice"><input type="checkbox" id="codeLAB"> Labor Code</label>
     <label class="choice"><input type="checkbox" id="codePEN"> Penal Code</label>
+    <label class="choice"><input type="checkbox" id="codeHSC"> Health and Safety Code, Retail Food Code only (sections 113700 to 114437)</label>
     <button type="button" id="dryRun">Dry run, save nothing</button>
     <button type="button" id="loadAll" style="background:#048784;">Load these codes for real</button>
     <div id="importStatus" style="margin-top:16px;font-size:0.9rem;"></div>
+
+    <h2 style="margin-top:32px;">Test the writeup search</h2>
+    <p style="font-size:0.85rem;color:#605d54;">Paste the facts of a writeup to see exactly which sections the writeup's statute search would hand to the AI. If a section you expect is missing here, the AI never sees it.</p>
+    <textarea id="testFacts" rows="4" style="width:100%;box-sizing:border-box;font:inherit;padding:12px;border:1px solid #d9d4e8;border-radius:8px;" placeholder="e.g. The bus driver ran the stop sign at Olive and Glenoaks with fourteen students aboard."></textarea>
+    <select id="testClass" style="margin-top:8px;">
+      <option value="class-perm">Classified</option>
+      <option value="cert-perm">Certificated</option>
+      <option value="mgmt">Management</option>
+    </select>
+    <button type="button" id="testSearch">Run the search</button>
+    <div id="testResult" style="margin-top:12px;font-size:0.9rem;"></div>
 
     <label for="fetchList" style="margin-top:32px;">Or fetch a few sections one at a time</label>
     <input type="text" id="fetchList" placeholder="e.g. Ed Code 44932, 44939, 45113">
@@ -3157,9 +3194,19 @@ app.get('/api/admin/statutes', async (req, res) => {
           refresh();
         });
       };
+      el('testSearch').onclick = async () => {
+        el('testResult').textContent = 'Searching...';
+        const { ok, data } = await post('/api/admin/statutes/test-search', { terms: el('testFacts').value, classification: el('testClass').value });
+        if (!ok) { el('testResult').textContent = data.error || 'Search failed.'; return; }
+        const counts = (data.counts || []).map(c => esc(c.law) + ': ' + Number(c.n).toLocaleString()).join(' &middot; ') || 'none';
+        const found = (data.statutes || []).map(st => '<li><strong>' + esc(st.code) + '</strong> ' + esc(st.title || '') + '<br><span style="color:#605d54;">' + esc(st.preview) + '</span></li>').join('');
+        el('testResult').innerHTML = '<p><strong>Sections loaded by code:</strong> ' + counts + '</p>'
+          + '<p><strong>Words searched:</strong> ' + esc((data.words || []).join(', ')) + '</p>'
+          + (found ? '<p><strong>The writeup would see these ' + data.statutes.length + ' sections:</strong></p><ol style="line-height:1.5;">' + found + '</ol>' : '<p>No sections matched these facts.</p>');
+      };
       // Loading a whole code runs in the background, so the page asks how it
       // is going rather than waiting on one very long request.
-      const chosenCodes = () => ['EDC','VEH','GOV','LAB','PEN'].filter(c => el('code' + c).checked);
+      const chosenCodes = () => ['EDC','VEH','GOV','LAB','PEN','HSC'].filter(c => el('code' + c).checked);
       let watching = null;
       const showProgress = (p) => {
         const samples = (p.samples || []).map(x => '<li><strong>' + esc(x.code) + '</strong> ' + esc(x.title || '') + '<br><span style="color:#605d54;">' + esc(x.preview || '') + '</span></li>').join('');
@@ -3245,6 +3292,15 @@ app.get('/api/admin/statutes', async (req, res) => {
     </script>
   `));
 });
+// Lets Tiffany see exactly what a writeup's statute search returns for a set
+// of facts, and how many sections of each code are loaded.
+app.post('/api/admin/statutes/test-search', asyncRoute(async (req, res) => {
+  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  const statutes = await searchStatuteLibrary({ terms: req.body.terms, classification: req.body.classification, limit: 12 });
+  const { rows: counts } = await pool.query(`SELECT split_part(code, ' ', 1) AS law, COUNT(*)::int AS n FROM statutes GROUP BY 1 ORDER BY 1`);
+  res.json({ words: statuteSearchWords(req.body.terms), statutes: statutes.map(st => ({ code: st.code, title: st.title, preview: String(st.statute_text || '').slice(0, 300) })), counts });
+}));
+
 app.post('/api/admin/statutes/list', async (req, res) => {
   if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
   const { rows } = await pool.query('SELECT code, title FROM statutes ORDER BY code');
@@ -3285,7 +3341,18 @@ app.post('/api/admin/statutes/save', async (req, res) => {
 const zlib = require('zlib');
 const os = require('os');
 
-const STATUTE_IMPORT_CODES = { EDC: 'Education Code', VEH: 'Vehicle Code', GOV: 'Government Code', PEN: 'Penal Code', LAB: 'Labor Code' };
+const STATUTE_IMPORT_CODES = { EDC: 'Education Code', VEH: 'Vehicle Code', GOV: 'Government Code', PEN: 'Penal Code', LAB: 'Labor Code', HSC: 'Health and Safety Code (Retail Food Code only)' };
+
+// The Health and Safety Code is enormous, and only the California Retail Food
+// Code (Division 104, Part 7, sections 113700 through 114437) matters for
+// school food service. Everything else in it is skipped on import.
+const STATUTE_IMPORT_RANGES = { HSC: [113700, 114438] };
+function keepImportedSection(lawCode, sectionNum) {
+  const range = STATUTE_IMPORT_RANGES[lawCode];
+  if (!range) return true;
+  const number = parseFloat(String(sectionNum || ''));
+  return Number.isFinite(number) && number >= range[0] && number < range[1];
+}
 
 let statuteImport = { state: 'idle', message: '', codes: [], read: 0, kept: 0, saved: 0, samples: [], startedAt: null, finishedAt: null, error: null };
 
@@ -3425,6 +3492,7 @@ async function runStatuteImport({ url, codes, dryRun }) {
           const contentField = fields.slice().sort((a, b) => b.length - a.length)[0] || '';
           const active = !/^n$/i.test(fields[fields.length - 1] || '');
           if (!sectionNum || !active) continue;
+          if (!keepImportedSection(lawCode, sectionNum)) continue;
           const text = plainTextFromLawXml(contentField);
           if (text.length < 40) continue;
           const heading = fields.find(f => /^[A-Z][A-Za-z ,'&-]{6,80}$/.test(f)) || '';

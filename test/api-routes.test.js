@@ -84,6 +84,7 @@ const ACCESS = {
   // Ed Code statute text, so citations quote the real wording.
   'GET /api/admin/statutes': ADMIN_PAGE,
   'POST /api/admin/statutes/list': ADMIN_KEY,
+  'POST /api/admin/statutes/test-search': ADMIN_KEY,
   'POST /api/admin/statutes/fetch': ADMIN_KEY,
   'POST /api/admin/statutes/save': ADMIN_KEY,
   'POST /api/admin/statutes/remove': ADMIN_KEY,
