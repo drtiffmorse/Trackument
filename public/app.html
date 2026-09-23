@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-22-r14 -->
+<!-- BUILD: 2026-09-23-r2 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2587,7 +2587,7 @@ function toggleSitOther(el) {
 
 // ─── Citation engine ──────────────────────────────────────────────────────────
 
-function updateCitations() {
+function updateCitations(options) {
   const classification = document.getElementById('employeeClass').value;
   if (!classification || selectedSituations.size === 0) return;
 
@@ -2607,7 +2607,9 @@ function updateCitations() {
 
   // Board policy citations come only from the district's own uploaded policy
   // text, so the built-in model-policy list is never used as a suggestion.
-  renderCitations('edcodeList', Array.from(edcodeSet.values()));
+  // The built-in Ed Code list describes sections rather than quoting them, so
+  // it is left out whenever a writeup expects quoted law.
+  if (!(options && options.skipEdCode)) renderCitations('edcodeList', Array.from(edcodeSet.values()));
 
   // Auto-populate CBA reference from active agreement
   updateCBARef();
@@ -3902,11 +3904,10 @@ async function analyzeAndSuggestCitations() {
   // text. When none is on file, no policy numbers are cited at all.
   // The statute text Trackument has on file, used to quote Ed Code word for
   // word and to drop anything that cannot be verified.
+  // A district's whole code runs to tens of megabytes, so the library is not
+  // loaded here. The sections that match a writeup's facts are fetched at the
+  // moment of analysis instead.
   window._statuteLibrary = [];
-  try {
-    const stRes = await fetch('/api/statutes');
-    if (stRes.ok) window._statuteLibrary = (await stRes.json()).statutes || [];
-  } catch (e) {}
 
   window._realBoardPolicies = [];
   // Use the domain of whoever is signed in. A district that has loaded board
@@ -3966,6 +3967,15 @@ async function analyzeAndSuggestCitations() {
 
   // Statute text Trackument has loaded, so the model quotes rather than
   // paraphrases. Without it, section numbers are cited with no wording.
+  // The sections whose wording matches these facts, for this classification.
+  try {
+    const stRes = await fetchWithDeadline('/api/statutes/search', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ terms: citeKeywords.join(' ') + ' ' + situationVocabulary(selectedSituations), classification, limit: 12 })
+    }, 20000);
+    if (stRes.ok) window._statuteLibrary = (await stRes.json()).statutes || [];
+  } catch (e) { window._statuteLibrary = []; }
+
   const statuteInstruction = (window._statuteLibrary || []).length > 0
     ? `STATUTE TEXT ON FILE. These are the only sections you may cite. Cite a section only when the text below places a duty on THIS employee that the conduct described breaks, and quote that sentence word for word. A section that directs the district, the Board, or an administrator is not a rule this employee broke. Citing no section is correct when none of the text below fits:\n\n${window._statuteLibrary.map(st => `${st.code}${st.title ? ' — ' + st.title : ''}:\n${String(st.statute_text || '').slice(0, 4000)}`).join('\n\n')}`
     : 'NO STATUTE TEXT IS ON FILE, so return an empty "edcode" array. Never cite a section number without its text.';
@@ -4268,8 +4278,9 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
     showStepError(withHelp(timedOut
       ? 'This is taking longer than it should, so we stopped waiting. Click Analyze Facts to try once more. If it happens again, email help@trackument.com with your district name and we will fix it right away. In the meantime you can add citations by hand and keep working.'
       : 'We could not analyze these facts just now, so citations were not added automatically. Please try Analyze Facts again.'));
-    // Fallback to static suggestions
-    updateCitations();
+    // The built-in suggestions are descriptions, not quoted law, so they are
+    // not shown as citations. The person adds what they need by hand.
+    updateCitations({ skipEdCode: true });
     autoSelectCBAForClassification(classification);
     updateCBARef();
     document.getElementById('ruleCitationSection').style.display = 'block';
@@ -7492,11 +7503,11 @@ function updateCBARef() {
     <input type="checkbox"${window._citationsAnalyzed ? '' : ' checked'}>
     <div class="citation-text">
       <div class="citation-code">${entry.name}</div>
-      <div class="citation-desc">${entry.unit ? entry.unit.charAt(0).toUpperCase() + entry.unit.slice(1) + ' bargaining agreement' : 'Bargaining agreement'} &middot; ${entry.sourceLabel}. ${
+      <div class="citation-desc">${entry.unit ? entry.unit.charAt(0).toUpperCase() + entry.unit.slice(1) + ' bargaining agreement on file for your district.' : 'Bargaining agreement on file for your district.'} ${
         !window._citationsAnalyzed
-          ? 'Click "Analyze Facts" to find the articles that apply.'
+          ? 'Analyzing the facts will quote the articles that apply.'
           : (window._cbaTextReadable === false
-              ? 'We could not read the text of this agreement, so no article was checked. Add an article reference below, or re-upload the agreement as a text based PDF.'
+              ? 'We could not read the text of this agreement, so no article was quoted. Add an article reference below, or re-upload the agreement as a text based PDF.'
               : 'No article in this agreement addresses these facts, so none is cited. Add an article reference below if you know one.')
       }</div>
     </div>
