@@ -1,4 +1,4 @@
-// BUILD: 2026-09-23-r2
+// BUILD: 2026-09-23-r4
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -3138,19 +3138,37 @@ app.get('/api/admin/statutes', async (req, res) => {
         const picker = el('statuteFile');
         const file = picker && picker.files && picker.files[0];
         if (!file) { el('fileStatus').textContent = 'Choose a file first.'; return; }
-        el('fileStatus').textContent = dryRun ? 'Reading the file...' : 'Loading the sections...';
-        const content = await file.text();
-        const res = await fetch('/api/admin/statutes/upload', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ key: el('key').value, content, dryRun })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) { el('fileStatus').textContent = data.error || 'Could not read that file.'; return; }
-        const samples = (data.samples || []).map(x => '<li><strong>' + esc(x.code) + '</strong> ' + esc(x.title || '') + '<br><span style="color:#605d54;">' + esc(x.preview || '') + '</span></li>').join('');
+        el('fileStatus').textContent = 'Reading the file...';
+        const lines = (await file.text()).split(String.fromCharCode(10)).filter(line => line.trim());
+        if (lines.length === 0) { el('fileStatus').textContent = 'That file was empty.'; return; }
+        if (lines[0].trim().startsWith('[')) { el('fileStatus').textContent = 'Please use one section per line (JSONL) for a file this size.'; return; }
+
+        // A whole code is far more than one request can carry, so it goes up in
+        // batches, with the count kept up to date as it goes.
+        const BATCH = 400;
+        let found = 0, saved = 0, skipped = 0, samples = [];
+        for (let at = 0; at < lines.length; at += BATCH) {
+          const chunk = lines.slice(at, at + BATCH).join(String.fromCharCode(10));
+          const res = await fetch('/api/admin/statutes/upload', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: el('key').value, content: chunk, dryRun })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            el('fileStatus').textContent = (data.error || 'Could not read that file.') + ' Stopped after ' + (dryRun ? found : saved) + ' sections.';
+            return;
+          }
+          found += data.found || data.saved || 0;
+          saved += data.saved || 0;
+          skipped += data.skipped || 0;
+          if (samples.length === 0) samples = data.samples || [];
+          el('fileStatus').textContent = (dryRun ? 'Reading... ' : 'Loading... ') + Math.min(at + BATCH, lines.length) + ' of ' + lines.length + ' lines';
+        }
+        const sampleHtml = samples.map(x => '<li><strong>' + esc(x.code) + '</strong> ' + esc(x.title || '') + '<br><span style="color:#605d54;">' + esc(x.preview || '') + '</span></li>').join('');
         el('fileStatus').innerHTML = '<p>' + (dryRun
-            ? esc(data.found + ' sections found, nothing saved. ' + (data.skipped ? data.skipped + ' lines skipped. ' : '') + 'Check the samples, then load the file.')
-            : esc(data.saved + ' sections loaded. Every district can now quote them.' + (data.skipped ? ' ' + data.skipped + ' lines skipped.' : ''))) + '</p>'
-          + (samples ? '<p><strong>Samples:</strong></p><ul style="font-size:0.85rem;line-height:1.5;">' + samples + '</ul>' : '');
+            ? esc(found + ' sections found, nothing saved. ' + (skipped ? skipped + ' lines skipped. ' : '') + 'Check the samples, then load the file.')
+            : esc(saved + ' sections loaded. Every district can now quote them.' + (skipped ? ' ' + skipped + ' lines skipped.' : ''))) + '</p>'
+          + (sampleHtml ? '<p><strong>Samples:</strong></p><ul style="font-size:0.85rem;line-height:1.5;">' + sampleHtml + '</ul>' : '');
         if (!dryRun) refresh();
       };
       el('fileDryRun').onclick = () => sendStatuteFile(true);
@@ -3424,7 +3442,7 @@ function normalizeStatuteRow(row) {
   return { code: cleanCode, title: title.slice(0, 300), text };
 }
 
-app.post('/api/admin/statutes/upload', async (req, res) => {
+app.post('/api/admin/statutes/upload', asyncRoute(async (req, res) => {
   if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
   const content = String(req.body.content || '');
   if (!content.trim()) return res.status(400).json({ error: 'That file was empty.' });
@@ -3480,7 +3498,7 @@ app.post('/api/admin/statutes/upload', async (req, res) => {
     saved += batch.length;
   }
   res.json({ ok: true, saved, skipped, samples: prepared.slice(0, 5).map(r => ({ code: r.code, title: r.title, preview: r.text.slice(0, 220) })) });
-});
+}));
 
 app.post('/api/admin/statutes/import', async (req, res) => {
   if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
