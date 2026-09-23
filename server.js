@@ -1,4 +1,4 @@
-// BUILD: 2026-09-22-r21
+// BUILD: 2026-09-23-r1
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -3060,7 +3060,14 @@ app.get('/api/admin/statutes', async (req, res) => {
     <input type="password" id="key" autocomplete="off">
     <button type="button" id="look">Show what is loaded</button>
     <div id="list" style="margin-top:20px;"></div>
-    <label>Load a whole code from the state's weekly download</label>
+    <label>Load statutes from a file</label>
+    <p style="font-size:0.85rem;color:#605d54;">The surest way to fill the library. Choose a file of sections, one per line as JSON (JSONL) or a single JSON array, with a code such as "EDC 44932" and the section text. Dry run reads it and reports what it found without saving.</p>
+    <input type="file" id="statuteFile" accept=".jsonl,.json,.txt">
+    <button type="button" id="fileDryRun">Dry run this file</button>
+    <button type="button" id="fileLoad" style="background:#048784;">Load this file</button>
+    <div id="fileStatus" style="margin-top:16px;font-size:0.9rem;"></div>
+
+    <label style="margin-top:32px;">Or load a whole code from the state's weekly download</label>
     <p style="font-size:0.85rem;color:#605d54;">This is the dependable way to fill the library. California publishes its entire legal database once a week as one file. Open <a href="https://downloads.leginfo.legislature.ca.gov/" target="_blank" rel="noopener">downloads.leginfo.legislature.ca.gov</a>, copy the link to the newest pubinfo ZIP, and paste it here. Start with a dry run: it reads the file and reports what it found without saving anything.</p>
     <input type="text" id="bulkUrl" placeholder="https://downloads.leginfo.legislature.ca.gov/pubinfo_2026.zip">
     <label class="choice"><input type="checkbox" id="codeEDC" checked> Education Code</label>
@@ -3126,6 +3133,29 @@ app.get('/api/admin/statutes', async (req, res) => {
           if (r.ok) showProgress(await r.json());
         }, 2000);
       };
+      // A file prepared outside Trackument, read here and stored the same way.
+      const sendStatuteFile = async (dryRun) => {
+        const picker = el('statuteFile');
+        const file = picker && picker.files && picker.files[0];
+        if (!file) { el('fileStatus').textContent = 'Choose a file first.'; return; }
+        el('fileStatus').textContent = dryRun ? 'Reading the file...' : 'Loading the sections...';
+        const content = await file.text();
+        const res = await fetch('/api/admin/statutes/upload', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: el('key').value, content, dryRun })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { el('fileStatus').textContent = data.error || 'Could not read that file.'; return; }
+        const samples = (data.samples || []).map(x => '<li><strong>' + esc(x.code) + '</strong> ' + esc(x.title || '') + '<br><span style="color:#605d54;">' + esc(x.preview || '') + '</span></li>').join('');
+        el('fileStatus').innerHTML = '<p>' + (dryRun
+            ? esc(data.found + ' sections found, nothing saved. ' + (data.skipped ? data.skipped + ' lines skipped. ' : '') + 'Check the samples, then load the file.')
+            : esc(data.saved + ' sections loaded. Every district can now quote them.' + (data.skipped ? ' ' + data.skipped + ' lines skipped.' : ''))) + '</p>'
+          + (samples ? '<p><strong>Samples:</strong></p><ul style="font-size:0.85rem;line-height:1.5;">' + samples + '</ul>' : '');
+        if (!dryRun) refresh();
+      };
+      el('fileDryRun').onclick = () => sendStatuteFile(true);
+      el('fileLoad').onclick = () => sendStatuteFile(false);
+
       el('dryRun').onclick = () => startImport(true);
       el('loadAll').onclick = () => {
         if (confirm('Load these codes into the statute library? Every district will quote from them.')) startImport(false);
@@ -3360,6 +3390,94 @@ async function runStatuteImport({ url, codes, dryRun }) {
     try { fs.unlinkSync(zipPath); } catch (e) {}
   }
 }
+
+// Statutes prepared elsewhere and handed to Trackument as a file. Each line is
+// one section as JSON (JSONL), or the whole file may be one JSON array. This
+// works whatever Railway can or cannot reach, and needs only the admin key.
+function normalizeStatuteRow(row) {
+  if (!row || typeof row !== 'object') return null;
+  const rawCode = String(row.code || row.section_code || '').trim();
+  const lawCode = String(row.law_code || row.lawCode || '').trim().toUpperCase();
+  const sectionNum = String(row.section_num || row.sectionNum || row.section || '').trim();
+  // "EDC 44932" is the form citations are matched against. A row that carries
+  // its parts separately is assembled into that form here.
+  let code = rawCode;
+  if (!/^[A-Z]{2,4}\s+\d/.test(code)) {
+    const fromParts = lawCode && sectionNum ? lawCode + ' ' + sectionNum : '';
+    // "California Education Code § 45123" and "Ed Code 45123" both mean EDC 45123.
+    const NAMED_CODES = [[/educ/i, 'EDC'], [/vehicle/i, 'VEH'], [/government/i, 'GOV'], [/penal/i, 'PEN'], [/labor/i, 'LAB'], [/health/i, 'HSC']];
+    const named = NAMED_CODES.find(([pattern]) => pattern.test(rawCode));
+    const number = (rawCode.match(/(\d{1,6}(?:\.\d+)*[a-z]?)/) || [])[1] || '';
+    const fromAbbreviation = rawCode.match(/\b([A-Z]{2,4})\b[^0-9A-Za-z]*(\d{1,6}(?:\.\d+)*[a-z]?)/);
+    code = fromParts
+      || (named && number ? named[1] + ' ' + number : '')
+      || (fromAbbreviation ? fromAbbreviation[1].toUpperCase() + ' ' + fromAbbreviation[2] : '');
+  }
+  const text = String(row.statute_text || row.text || row.section_text || row.content || '').trim();
+  if (!code || text.length < 40) return null;
+  let title = String(row.title || row.heading || '').trim();
+  // A "title" that only repeats the citation tells an administrator nothing.
+  if (/^(california\s+)?[a-z ]*code\s*§?\s*[\d.]+$/i.test(title)) title = '';
+  return { code: code.replace(/\s+/g, ' ').toUpperCase(), title: title.slice(0, 300), text };
+}
+
+app.post('/api/admin/statutes/upload', async (req, res) => {
+  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  const content = String(req.body.content || '');
+  if (!content.trim()) return res.status(400).json({ error: 'That file was empty.' });
+
+  let rows = [];
+  let unreadable = 0;
+  const trimmed = content.trim();
+  if (trimmed.startsWith('[')) {
+    try {
+      rows = JSON.parse(trimmed);
+    } catch (err) {
+      return res.status(400).json({ error: 'That file starts like a JSON array but could not be read. Check it is complete.' });
+    }
+  } else {
+    // One section per line. A line that cannot be read is counted and skipped,
+    // so one bad line never costs you the whole file.
+    for (const line of trimmed.split('\n')) {
+      if (!line.trim()) continue;
+      try { rows.push(JSON.parse(line)); } catch (err) { unreadable++; }
+    }
+  }
+  if (rows.length === 0) {
+    return res.status(400).json({ error: 'No sections could be read. Use one section per line as JSON (JSONL), or a single JSON array.' });
+  }
+
+  const prepared = [];
+  let skipped = unreadable;
+  for (const row of rows) {
+    const clean = normalizeStatuteRow(row);
+    if (clean) prepared.push(clean); else skipped++;
+  }
+  if (prepared.length === 0) {
+    return res.status(400).json({ error: 'No sections could be read from that file. Each one needs a code such as "EDC 44932" and its text.' });
+  }
+  if (req.body.dryRun) {
+    return res.json({ ok: true, dryRun: true, found: prepared.length, skipped, samples: prepared.slice(0, 5).map(r => ({ code: r.code, title: r.title, preview: r.text.slice(0, 220) })) });
+  }
+
+  let saved = 0;
+  for (let i = 0; i < prepared.length; i += 400) {
+    const batch = prepared.slice(i, i + 400);
+    const values = [];
+    const params = [];
+    batch.forEach((row, n) => {
+      values.push(`($${n * 3 + 1}, $${n * 3 + 2}, $${n * 3 + 3}, now())`);
+      params.push(row.code, row.title, row.text);
+    });
+    await pool.query(
+      `INSERT INTO statutes (code, title, statute_text, updated_at) VALUES ${values.join(', ')}
+       ON CONFLICT (code) DO UPDATE SET title = EXCLUDED.title, statute_text = EXCLUDED.statute_text, updated_at = now()`,
+      params
+    );
+    saved += batch.length;
+  }
+  res.json({ ok: true, saved, skipped, samples: prepared.slice(0, 5).map(r => ({ code: r.code, title: r.title, preview: r.text.slice(0, 220) })) });
+});
 
 app.post('/api/admin/statutes/import', async (req, res) => {
   if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
