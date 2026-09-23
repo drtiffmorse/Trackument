@@ -37,6 +37,8 @@ function loadCitationRules() {
     situationWords[0],
     genericStems[0],
     (html.match(/const CLASSIFIED_STATUTES = \{[\s\S]*?\n\};\n/) || [''])[0],
+    (html.match(/const CATEGORY_CORE_WORDS = \{[\s\S]*?\n\};\n/) || [''])[0],
+    fn('generalStemsNow'),
     fn('situationVocabulary'),
     fn('relevanceKeywords'),
     fn('wordStem'),
@@ -76,6 +78,7 @@ function loadCitationRules() {
   const selectedSituations = new Set(['safety']);
   const rules = new Function('window', 'document', 'selectedSituations', source)(window, document, selectedSituations);
   rules.fields = fields;
+  rules.selectedSituations = selectedSituations;
   rules.window = window;
   return rules;
 }
@@ -311,5 +314,43 @@ describe('Statutes that authorize a document are never listed as citations', () 
     rules.window._statuteLibrary = [{ code: 'EDC 44938', statute_text: '(b) The governing board of any school district shall not act upon any charges of unsatisfactory performance unless it acts in accordance with the provisions of paragraph (1) or (2): (1) At least 90 calendar days prior to the date of the filing, the board or its authorized representative has given the employee written notice of the unsatisfactory performance.' }];
     const kept = rules.verifyStatuteCitations([{ code: 'Ed Code § 44938(b)', desc: 'the board or its authorized representative has given the employee written notice of the unsatisfactory performance', why: 'Your performance was unsatisfactory.' }], 'cert-perm');
     assert.deepEqual(kept, []);
+  });
+});
+
+describe('A third demo on 23 September: a bus driver late three times, nothing was cited', () => {
+  // Run a case with its own facts and categories, then put the shared page
+  // back the way the other tests expect it.
+  const withCase = (situations, facts, title, fn) => {
+    const saved = { facts: rules.fields.factDescription, title: rules.fields.employeeTitle, situations: [...rules.selectedSituations] };
+    rules.selectedSituations.clear(); situations.forEach(x => rules.selectedSituations.add(x));
+    rules.fields.factDescription = facts; rules.fields.employeeTitle = title;
+    try { fn(); } finally {
+      rules.fields.factDescription = saved.facts; rules.fields.employeeTitle = saved.title;
+      rules.selectedSituations.clear(); saved.situations.forEach(x => rules.selectedSituations.add(x));
+    }
+  };
+  const tardy = (fn) => withCase(['attendance'], 'Bus driver is late three times in two weeks, causing delayed routes.', 'Bus Driver', fn);
+  const why = 'You reported late to work three times in two weeks, which delayed your bus routes.';
+  const eyeRule = 'Employees shall wear eye safety devices whenever they are engaged in or observing an activity involving hazards or hazardous substances likely to cause eye injury.';
+
+  const attendanceDuties = [
+    'Employees shall report to work at their scheduled starting time.',
+    'An employee who will be absent or late shall notify the immediate supervisor as soon as possible before the start of the shift.',
+    'Unit members are expected to be punctual and to be at their assigned work location at the beginning of their assigned hours.',
+    'Bus drivers shall arrive in time to complete the pre-trip inspection and depart on their routes on schedule.',
+  ];
+  for (const duty of attendanceDuties) {
+    test('keeps the attendance duty: ' + duty.slice(0, 50), () => tardy(() => assert.equal(rules.citationFitsThisCase(duty, why), true, duty)));
+  }
+  test('still drops rules that have nothing to do with being late', () => tardy(() => {
+    assert.equal(rules.citationFitsThisCase(eyeRule, why), false);
+    assert.equal(rules.citationFitsThisCase('Employees shall maintain the confidentiality of pupil records.', why), false);
+  }));
+  test('attendance words do not make an attendance rule fit a stop sign case', () => {
+    withCase(['safety'], 'The bus driver ran a stop sign at Olive and Glenoaks with fourteen students aboard.', 'Bus Driver', () => {
+      assert.equal(rules.citationFitsThisCase('Employees shall report to work at their scheduled starting time.', 'You drove through a stop sign without stopping.'), false);
+      assert.equal(rules.citationFitsThisCase(eyeRule, 'Running a stop sign while operating a school bus is a violation of safe work practices.'), false);
+      assert.equal(rules.citationFitsThisCase('Bus drivers shall obey all traffic laws and shall stop at every stop sign.', 'You drove through a stop sign without stopping.'), true);
+    });
   });
 });
