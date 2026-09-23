@@ -1,4 +1,4 @@
-// BUILD: 2026-09-23-r5
+// BUILD: 2026-09-23-r7
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -608,7 +608,7 @@ async function reportDriveFailure({ email, districtDomain, filename, detail, sta
   else if (/insufficient|scope|permission/i.test(detail)) hint = 'Add the drive.file scope to the OAuth consent screen, then have them reconnect Google Drive.';
   else if (/invalid_grant|unauthorized/i.test(detail)) hint = 'Their Google Drive connection is no longer valid, so they need to reconnect it.';
   await sendNotificationEmail({
-    to: SALES_NOTIFY_EMAIL,
+    to: ERROR_NOTIFY_EMAIL,
     subject: 'Google Drive save failed: ' + (districtDomain || email),
     text: [
       'A Save to Google Drive attempt failed, and the administrator saw only a short apology.',
@@ -786,6 +786,9 @@ async function initDb() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `);
+  // Searching the statute library by wording needs an index once a whole code
+  // is loaded.
+  await pool.query(`CREATE INDEX IF NOT EXISTS statutes_text_search ON statutes USING GIN (to_tsvector('english', coalesce(title, '') || ' ' || statute_text));`).catch(err => console.error('Could not create the statute search index:', err.message));
   // Who may change district-wide settings (district information, board
   // policies, agreements, document types, handbooks).
   await pool.query(`ALTER TABLE district_settings ADD COLUMN IF NOT EXISTS managers JSONB DEFAULT '[]'::jsonb;`);
@@ -931,6 +934,10 @@ async function recordInvoiceRequest(info) {
 // flow triggered it -- a missing notification email should never block
 // someone from paying or block a contact form from confirming success.
 const SALES_NOTIFY_EMAIL = process.env.SALES_NOTIFY_EMAIL || 'sales@trackument.com';
+// Things that need fixing rather than selling: server errors, Drive failures,
+// and statute sections with no text. Set ERROR_NOTIFY_EMAIL in Railway to send
+// these somewhere other than sales.
+const ERROR_NOTIFY_EMAIL = process.env.ERROR_NOTIFY_EMAIL || SALES_NOTIFY_EMAIL;
 const TRAINING_NOTIFY_EMAIL = process.env.TRAINING_NOTIFY_EMAIL || 'tiffany@trackument.com';
 const FEEDBACK_NOTIFY_EMAIL = process.env.FEEDBACK_NOTIFY_EMAIL || 'tiffany@trackument.com';
 
@@ -3019,7 +3026,7 @@ app.post('/api/statutes/missing', requireAppAccess, async (req, res) => {
   const list = [...missingStatutes];
   missingStatutes.clear();
   sendNotificationEmail({
-    to: SALES_NOTIFY_EMAIL,
+    to: ERROR_NOTIFY_EMAIL,
     subject: 'Statute text to load: ' + list.slice(0, 5).join(', ') + (list.length > 5 ? ' and more' : ''),
     text: [
       'These Education Code sections were cited in writeups, but Trackument has no text for them, so nothing was quoted.',
@@ -3042,6 +3049,33 @@ app.post('/api/statutes/lookup', requireAppAccess, async (req, res) => {
     res.json({ statutes: [] });
   }
 });
+
+// The sections that match these facts, ranked by Postgres full text search.
+// A full code is tens of megabytes, so the app never loads all of it.
+app.post('/api/statutes/search', requireAppAccess, asyncRoute(async (req, res) => {
+  const terms = String(req.body.terms || '').replace(/[^a-zA-Z0-9 ]+/g, ' ').trim().split(/\s+/).filter(w => w.length > 3).slice(0, 25).join(' ');
+  const limit = Math.min(Math.max(Number(req.body.limit) || 12, 1), 25);
+  if (!terms) return res.json({ statutes: [] });
+  // A certificated employee is governed by the 44000 series and a classified
+  // employee by the 45000 series, so the other series is not even offered.
+  const classification = String(req.body.classification || '');
+  const excludeSeries = classification.startsWith('cert') || classification === 'mgmt' ? '45' : classification.startsWith('class') ? '44' : '';
+  try {
+    const { rows } = await pool.query(
+      `SELECT code, title, left(statute_text, 4000) AS statute_text
+         FROM statutes
+        WHERE ($2 = '' OR code !~ ('^[A-Z]+ ' || $2))
+          AND to_tsvector('english', coalesce(title, '') || ' ' || statute_text) @@ plainto_tsquery('english', $1)
+        ORDER BY ts_rank(to_tsvector('english', coalesce(title, '') || ' ' || statute_text), plainto_tsquery('english', $1)) DESC
+        LIMIT $3`,
+      [terms, excludeSeries, limit]
+    );
+    res.json({ statutes: rows });
+  } catch (err) {
+    console.error('Statute search failed:', err.message);
+    res.json({ statutes: [] });
+  }
+}));
 
 app.get('/api/statutes', async (req, res) => {
   try {
@@ -3917,7 +3951,7 @@ async function reportServerError({ where, message, stack, method, url }) {
     errorEmailSentAt.set(key, Date.now());
     errorEmailsThisHour++;
     await sendNotificationEmail({
-      to: SALES_NOTIFY_EMAIL,
+      to: ERROR_NOTIFY_EMAIL,
       subject: 'Trackument error: ' + String(message).slice(0, 80),
       text: [
         'Something failed on the Trackument server.',
