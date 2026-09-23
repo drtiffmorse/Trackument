@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-23-r5 -->
+<!-- BUILD: 2026-09-23-r6 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3965,6 +3965,11 @@ async function analyzeAndSuggestCitations() {
         ? 'EMPLOYEE HANDBOOK EXCERPTS (the sections most related to these facts). Quote only the single most relevant sentence per applicable section, word for word:\n\n' + handbookExcerpts.map(h => '--- ' + h.name + ' ---\n' + h.text).join('\n\n')
         : 'Employee handbook(s) on file: ' + handbookLibrary.map(h => h.name + (h.sourceType === 'link' ? ' (available at ' + h.sourceData + ' — no document uploaded, so cite section types typically applicable)' : '')).join('; '));
 
+  // The words of these facts, used to search statutes and to pick board
+  // policies. This has to exist before the statute search below runs, or the
+  // search fails and no Education Code section is ever offered.
+  const citeKeywords = relevanceKeywords([pseudoFacts, employeeTitle, docType, [...selectedSituations].join(' '), situationVocabulary(selectedSituations)].join(' '));
+
   // Statute text Trackument has loaded, so the model quotes rather than
   // paraphrases. Without it, section numbers are cited with no wording.
   // The sections whose wording matches these facts, for this classification.
@@ -3981,7 +3986,6 @@ async function analyzeAndSuggestCitations() {
     : 'NO STATUTE TEXT IS ON FILE, so return an empty "edcode" array. Never cite a section number without its text.';
 
   // Only the board policies related to these facts go into the request.
-  const citeKeywords = relevanceKeywords([pseudoFacts, employeeTitle, docType, [...selectedSituations].join(' '), situationVocabulary(selectedSituations)].join(' '));
   const relevantPolicies = selectRelevantBoardPolicies(window._realBoardPolicies, citeKeywords, classification);
   const bpInstruction = relevantPolicies.length > 0
     ? `DISTRICT BOARD POLICY — REAL, ADOPTED TEXT. These are the policies from this district most related to these facts. Cite only these policy numbers, exactly as numbered below, and for each one copy the applicable language word for word. Never paraphrase, summarize, or describe a policy in your own words. Cite every policy below whose language the employee's conduct violates, and leave out any policy where no sentence applies.
@@ -6032,9 +6036,12 @@ function verifyQuotedFromSource(citations, sourceText) {
 // The words of this writeup, kept so a citation can be checked against what
 // actually happened rather than against its policy's general subject.
 function factsVocabulary() {
+  // Only what the administrator wrote about this employee counts here. The
+  // category vocabulary (safety, hazard, injury, and so on) helps the search
+  // find candidates, but letting it vouch for a citation is how an eye
+  // protection rule got attached to a bus driver who ran a stop sign.
   const facts = (document.getElementById('factDescription')?.value || '') + ' '
-    + (document.getElementById('employeeTitle')?.value || '') + ' '
-    + situationVocabulary(selectedSituations);
+    + (document.getElementById('employeeTitle')?.value || '');
   return new Set(relevanceKeywords(facts));
 }
 // "driver", "driving" and "drive" are the same idea, so words are compared by
@@ -6043,11 +6050,17 @@ function factsVocabulary() {
 function wordStem(word) {
   return String(word || '').toLowerCase().replace(/(ing|ies|ed|es|s)$/, '').replace(/([a-z])\1$/, '$1');
 }
+// Words so general that nearly every safety or conduct rule contains them.
+// Sharing one of these with the facts says nothing about whether the rule fits.
+const GENERIC_CONCERN_STEMS = new Set(['safe', 'safety', 'unsafe', 'hazard', 'hazardou', 'danger', 'dangerou', 'injury', 'injur', 'conduct', 'work', 'practice', 'dutie', 'duty', 'standard', 'policy', 'policie', 'behavior', 'professional', 'performance', 'procedure', 'require', 'requirement', 'appropriate', 'proper', 'properly'].map(wordStem));
 function touchesTheseFacts(sentence, vocabulary) {
   const stems = new Set((String(sentence || '').toLowerCase().match(/[a-z][a-z'-]{3,}/g) || []).map(wordStem));
-  let shared = 0;
-  vocabulary.forEach(word => { if (stems.has(wordStem(word))) shared++; });
-  return shared >= 2;
+  const shared = new Set();
+  vocabulary.forEach(word => {
+    const stem = wordStem(word);
+    if (stems.has(stem) && !GENERIC_CONCERN_STEMS.has(stem)) shared.add(stem);
+  });
+  return shared.size >= 2;
 }
 
 function verifyBoardPolicyCitations(citations) {
