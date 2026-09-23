@@ -1,4 +1,4 @@
-// BUILD: 2026-09-23-r10
+// BUILD: 2026-09-23-r12
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -1936,6 +1936,14 @@ app.get('/api/admin/managers', async (req, res) => {
     <input type="text" id="districtName" placeholder="e.g. Bass Lake Joint Union Elementary School District">
     <button type="button" id="saveName">Save district name</button>
 
+    <label for="classifiedSystem">Classified Personnel System</label>
+    <select id="classifiedSystem">
+      <option value="">Not chosen yet</option>
+      <option value="non-merit">Non-merit: the governing board adopts the classified service rules (EC 45113)</option>
+      <option value="merit">Merit system: a Personnel Commission adopts the classified service rules (EC 45240 and following)</option>
+    </select>
+    <button type="button" id="saveSystem">Save classified personnel system</button>
+
     <label for="list">District Settings Managers, one email per line</label>
     <textarea id="list" rows="6" style="width:100%;box-sizing:border-box;font:inherit;padding:12px;border:1px solid #d9d4e8;border-radius:8px;"></textarea>
     <button type="button" id="save">Save District Settings Managers</button>
@@ -1950,11 +1958,18 @@ app.get('/api/admin/managers', async (req, res) => {
         if (!ok) { msg.textContent = data.error || 'Could not load.'; return; }
         document.getElementById('list').value = (data.managers || []).join('\\n');
         document.getElementById('districtName').value = data.districtName || '';
+        document.getElementById('classifiedSystem').value = data.classifiedSystem || '';
         msg.textContent = data.named ? 'These District Settings Managers were named by the district.' : 'None named yet, so the purchasing contact is the manager.';
       };
       document.getElementById('saveName').onclick = async () => {
         const { ok, data } = await api('POST', { key: document.getElementById('key').value, domain: document.getElementById('domain').value, districtName: document.getElementById('districtName').value });
         msg.textContent = ok ? 'District name saved.' : (data.error || 'Could not save the district name.');
+      };
+      document.getElementById('saveSystem').onclick = async () => {
+        const choice = document.getElementById('classifiedSystem').value;
+        if (!choice) { msg.textContent = 'Choose Merit or Non-merit first.'; return; }
+        const { ok, data } = await api('POST', { key: document.getElementById('key').value, domain: document.getElementById('domain').value, classifiedSystem: choice });
+        msg.textContent = ok ? 'Classified personnel system saved. Administrators will see it the next time they load Trackument.' : (data.error || 'Could not save the classified personnel system.');
       };
       document.getElementById('save').onclick = async () => {
         const managers = document.getElementById('list').value.split(/\\s+/).filter(Boolean);
@@ -1972,16 +1987,30 @@ app.get('/api/admin/managers/data', async (req, res) => {
   const purchaseName = await pool.query('SELECT district_name FROM districts WHERE domain = $1 LIMIT 1', [domain]);
   const districtName = (savedName.rows[0] && savedName.rows[0].district_name)
     || (purchaseName.rows[0] && purchaseName.rows[0].district_name) || '';
-  const { rows } = await pool.query('SELECT managers FROM district_settings WHERE domain = $1', [domain]);
+  const { rows } = await pool.query('SELECT managers, classified_system FROM district_settings WHERE domain = $1', [domain]);
   const named = (rows[0] && rows[0].managers) || [];
-  if (named.length) return res.json({ managers: named, named: true, districtName });
+  const classifiedSystem = (rows[0] && rows[0].classified_system) || '';
+  if (named.length) return res.json({ managers: named, named: true, districtName, classifiedSystem });
   const d = await pool.query('SELECT contact_email FROM districts WHERE domain = $1 LIMIT 1', [domain]);
-  res.json({ managers: d.rows[0] && d.rows[0].contact_email ? [d.rows[0].contact_email] : [], named: false, districtName });
+  res.json({ managers: d.rows[0] && d.rows[0].contact_email ? [d.rows[0].contact_email] : [], named: false, districtName, classifiedSystem });
 });
 app.post('/api/admin/managers/data', async (req, res) => {
   if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
   const domain = String(req.body.domain || '').trim().toLowerCase();
   if (!domain) return res.status(400).json({ error: 'Enter a district domain.' });
+
+  // Setting a district's classified personnel system for it, for a demo or a
+  // district whose managers are not yet signed in. The version goes up so
+  // every browser takes the new value on its next load.
+  if (req.body.classifiedSystem !== undefined) {
+    const classifiedSystem = String(req.body.classifiedSystem || '');
+    if (!['merit', 'non-merit'].includes(classifiedSystem)) return res.status(400).json({ error: 'Choose merit or non-merit.' });
+    await pool.query(`
+      INSERT INTO district_settings (domain, classified_system, updated_at) VALUES ($1, $2, now())
+      ON CONFLICT (domain) DO UPDATE SET classified_system = EXCLUDED.classified_system, version = district_settings.version + 1, updated_at = now()
+    `, [domain, classifiedSystem]);
+    return res.json({ ok: true, classifiedSystem });
+  }
 
   // Saving just the district name, which is what appears at the top of every
   // document a district generates.
@@ -3133,7 +3162,7 @@ app.get('/api/admin/statutes', async (req, res) => {
     <label for="key">Admin key</label>
     <input type="password" id="key" autocomplete="off">
     <button type="button" id="look">Show what is loaded</button>
-    <div id="list" style="margin-top:20px;"></div>
+    <div id="summary" style="margin-top:12px;font-size:0.9rem;"></div>
     <label>Load statutes from a file</label>
     <p style="font-size:0.85rem;color:#605d54;">The surest way to fill the library. Choose a file of sections, one per line as JSON (JSONL) or a single JSON array, with a code such as "EDC 44932" and the section text. Dry run reads it and reports what it found without saving.</p>
     <input type="file" id="statuteFile" accept=".jsonl,.json,.txt">
@@ -3178,6 +3207,11 @@ app.get('/api/admin/statutes', async (req, res) => {
     <textarea id="text" rows="8" style="width:100%;box-sizing:border-box;font:inherit;padding:12px;border:1px solid #d9d4e8;border-radius:8px;"></textarea>
     <button type="button" id="save">Save this statute</button>
     <p id="msg"></p>
+
+    <h2 style="margin-top:40px;">What is loaded</h2>
+    <p style="font-size:0.85rem;color:#605d54;">Type a section number or a word from its title to find it. Up to 200 matches show at a time.</p>
+    <input type="text" id="listFilter" placeholder="e.g. 22450, or stop sign">
+    <div id="list" style="margin-top:12px;"></div>
     <script>
       const el = (id) => document.getElementById(id);
       const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -3185,15 +3219,32 @@ app.get('/api/admin/statutes', async (req, res) => {
       const refresh = async () => {
         const { ok, data } = await post('/api/admin/statutes/list');
         if (!ok) { el('msg').textContent = data.error || 'Could not load.'; return; }
-        const rows = data.statutes || [];
-        el('list').innerHTML = rows.length
-          ? '<p><strong>' + rows.length + ' loaded:</strong><br>' + rows.map(r => esc(r.code) + (r.title ? ', ' + esc(r.title) : '') + ' <button type="button" class="rm" data-c="' + encodeURIComponent(r.code) + '" style="background:none;border:none;color:#c80204;text-decoration:underline;cursor:pointer;padding:0 0 0 8px;font-size:0.85rem;margin:0;">Remove</button>').join('<br>') + '</p>'
-          : '<p>No statutes loaded yet, so writeups will cite no Ed Code sections.</p>';
+        loaded = data.statutes || [];
+        // A short count per code sits at the top of the page. The full list is
+        // at the bottom, so the loading controls never scroll out of reach.
+        const perCode = {};
+        loaded.forEach(r => { const law = String(r.code || '').split(' ')[0]; perCode[law] = (perCode[law] || 0) + 1; });
+        el('summary').innerHTML = loaded.length
+          ? '<strong>' + loaded.length.toLocaleString() + ' sections loaded:</strong> ' + Object.keys(perCode).sort().map(law => esc(law) + ' ' + perCode[law].toLocaleString()).join(' &middot; ') + ' <a href="#listFilter">Find a section</a>'
+          : 'No statutes loaded yet, so writeups will cite no statutes.';
+        showList();
+      };
+      let loaded = [];
+      const showList = () => {
+        const wanted = el('listFilter').value.trim().toLowerCase();
+        const matches = wanted ? loaded.filter(r => (String(r.code) + ' ' + String(r.title || '')).toLowerCase().includes(wanted)) : [];
+        el('list').innerHTML = !wanted
+          ? '<p style="color:#605d54;">Type above to find a section.</p>'
+          : matches.length
+            ? '<p><strong>' + matches.length.toLocaleString() + ' match' + (matches.length === 1 ? '' : 'es') + (matches.length > 200 ? ', first 200 shown' : '') + ':</strong><br>'
+              + matches.slice(0, 200).map(r => esc(r.code) + (r.title ? ', ' + esc(r.title) : '') + ' <button type="button" class="rm" data-c="' + encodeURIComponent(r.code) + '" style="background:none;border:none;color:#c80204;text-decoration:underline;cursor:pointer;padding:0 0 0 8px;font-size:0.85rem;margin:0;">Remove</button>').join('<br>') + '</p>'
+            : '<p>No loaded section matches that.</p>';
         document.querySelectorAll('.rm').forEach(b => b.onclick = async () => {
           await post('/api/admin/statutes/remove', { code: decodeURIComponent(b.dataset.c) });
           refresh();
         });
       };
+      el('listFilter').oninput = showList;
       el('testSearch').onclick = async () => {
         el('testResult').textContent = 'Searching...';
         const { ok, data } = await post('/api/admin/statutes/test-search', { terms: el('testFacts').value, classification: el('testClass').value });

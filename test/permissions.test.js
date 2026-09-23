@@ -407,3 +407,29 @@ describe('The classified personnel system setting', () => {
     assert.equal(res.status, 400);
   });
 });
+
+describe('Trackument can set a district\'s classified personnel system from the admin page', () => {
+  test('the admin key sets it, and the district reads it back', async () => {
+    const { domain, cookies } = await districtWithStaff();
+    const res = await server.post('/api/admin/managers/data', { json: { key: server.adminKey, domain, classifiedSystem: 'non-merit' } });
+    assert.equal(res.status, 200, res.text);
+    assert.equal((await loadSettings(cookies.teacherA, domain)).classifiedSystem, 'non-merit');
+    const shown = await server.get('/api/admin/managers/data?key=' + encodeURIComponent(server.adminKey) + '&domain=' + domain);
+    assert.equal(shown.json.classifiedSystem, 'non-merit');
+  });
+
+  test('a wrong key or an unknown value is refused', async () => {
+    const { domain } = await districtWithStaff();
+    assert.equal((await server.post('/api/admin/managers/data', { json: { key: 'wrong', domain, classifiedSystem: 'merit' } })).status, 403);
+    assert.equal((await server.post('/api/admin/managers/data', { json: { key: server.adminKey, domain, classifiedSystem: 'both' } })).status, 400);
+  });
+
+  test('a manager\'s next save does not undo it when their page was loaded before the change', async () => {
+    const { domain, cookies } = await districtWithStaff();
+    await saveSettings(cookies.manager, domain, { districtName: 'Demo USD', classifiedSystem: 'merit' });
+    const before = await loadSettings(cookies.manager, domain);
+    await server.post('/api/admin/managers/data', { json: { key: server.adminKey, domain, classifiedSystem: 'non-merit' } });
+    await saveSettings(cookies.manager, domain, { districtName: 'Demo USD', classifiedSystem: 'merit', baseVersion: before.version });
+    assert.equal((await loadSettings(cookies.manager, domain)).classifiedSystem, 'non-merit');
+  });
+});

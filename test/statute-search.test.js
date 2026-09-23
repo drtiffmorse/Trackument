@@ -84,3 +84,17 @@ test('the Health and Safety Code import keeps only the Retail Food Code', () => 
   assert.equal(keep('VEH', '22450'), true, 'other codes are kept whole');
   assert.equal(keep('EDC', '44932'), true);
 });
+
+test('the statute library page keeps its controls above the list of loaded sections', async () => {
+  const res = await server.get('/api/admin/statutes');
+  assert.equal(res.status, 200);
+  const html = res.text;
+  for (const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) {
+    assert.doesNotThrow(() => new Function(m[1]), 'the page script has a syntax error');
+  }
+  const list = html.indexOf('id="list"');
+  for (const control of ['id="fileDryRun"', 'id="dryRun"', 'id="loadAll"', 'id="codeHSC"', 'id="testSearch"', 'id="fetch"', 'id="save"', 'id="summary"']) {
+    const at = html.indexOf(control);
+    assert.ok(at > 0 && at < list, control + ' is below the list of loaded sections');
+  }
+});
