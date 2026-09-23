@@ -90,6 +90,7 @@ const ACCESS = {
   'GET /api/statutes': PUBLIC,
   'POST /api/statutes/lookup': SESSION,
   'POST /api/statutes/missing': SESSION,
+  'POST /api/admin/statutes/upload': ADMIN_KEY,
   'POST /api/admin/statutes/import': ADMIN_KEY,
   'GET /api/admin/statutes/import/status': ADMIN_KEY,
 };
