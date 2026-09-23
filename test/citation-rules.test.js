@@ -30,9 +30,13 @@ function loadCitationRules() {
   const stopWords = html.match(/const RELEVANCE_STOP_WORDS[\s\S]*?\.split\(' '\)\);/);
   const situationWords = html.match(/const SITUATION_KEYWORDS = \{[\s\S]*?\n\};/);
   if (!stopWords || !situationWords) throw new Error('public/app.html no longer defines the relevance word lists.');
+  const genericStems = html.match(/const GENERIC_CONCERN_STEMS = [^\n]*;/);
+  if (!genericStems) throw new Error('public/app.html no longer defines GENERIC_CONCERN_STEMS.');
   const source = [
     stopWords[0],
     situationWords[0],
+    genericStems[0],
+    (html.match(/const CLASSIFIED_STATUTES = \{[\s\S]*?\n\};\n/) || [''])[0],
     fn('situationVocabulary'),
     fn('relevanceKeywords'),
     fn('wordStem'),
@@ -47,12 +51,15 @@ function loadCitationRules() {
     fn('wordStem'),
     fn('touchesTheseFacts'),
     fn('statuteFitsClassification'),
+    fn('whyMatchesQuote'),
+    fn('citationFitsThisCase'),
+    fn('verifyStatuteCitations'),
     fn('verifyBoardPolicyCitations'),
     fn('verifyQuotedFromSource'),
     fn('articleNumberFromQuote'),
     fn('citationNumbersIn'),
     fn('sameCitation'),
-    'return { statesEmployeeDuty, stripPageMarkers, touchesTheseFacts, wordStem, factsVocabulary, completeQuote, touchesTheseFacts, factsVocabulary, statuteFitsClassification, verifyBoardPolicyCitations, verifyQuotedFromSource, articleNumberFromQuote, citationNumbersIn, sameCitation };',
+    'return { whyMatchesQuote, citationFitsThisCase, verifyStatuteCitations, statesEmployeeDuty, stripPageMarkers, touchesTheseFacts, wordStem, factsVocabulary, completeQuote, touchesTheseFacts, factsVocabulary, statuteFitsClassification, verifyBoardPolicyCitations, verifyQuotedFromSource, articleNumberFromQuote, citationNumbersIn, sameCitation };',
   ].join('\n\n');
   // The page globals these functions read.
   const window = { _realBoardPolicies: [], _bpDropped: 0 };
@@ -232,5 +239,77 @@ describe('The finished document may not add citations of its own', () => {
     const approved = ['BP 4119.21 - Professional Standards', 'Ed Code § 44932 - grounds'].flatMap(rules.citationNumbersIn);
     const extra = rules.citationNumbersIn(memo).filter(found => !approved.some(ok => rules.sameCitation(ok, found)));
     assert.deepEqual(extra, []);
+  });
+});
+
+describe('A demo on 23 September: bus driver, stop sign, Safety Violations checked', () => {
+  const eyeRule = 'Employees shall wear eye safety devices whenever they are engaged in or observing an activity involving hazards or hazardous substances likely to cause eye injury.';
+  test('the category words alone never make a rule fit these facts', () => {
+    // Safety, hazard, and injury come from the Safety Violations category,
+    // not from anything this driver did.
+    assert.equal(rules.touchesTheseFacts(eyeRule, rules.factsVocabulary()), false);
+  });
+  test('an eye protection rule is not cited against a driver who ran a stop sign', () => {
+    rules.window._realBoardPolicies = [{ policy_number: 'AR 4257', title: 'Employee Safety', policy_text: 'Safe work practices. ' + eyeRule }];
+    const kept = rules.verifyBoardPolicyCitations([{ code: 'AR 4257', desc: eyeRule, why: 'Running a stop sign while operating a school bus is a violation of safe work practices.' }]);
+    assert.deepEqual(kept, []);
+  });
+  test('facts that mention safety still do not make the eye rule fit', () => {
+    const vocabulary = new Set(['driver', 'stop', 'sign', 'safety', 'hazard', 'students']);
+    assert.equal(rules.touchesTheseFacts(eyeRule, vocabulary), false);
+  });
+  test('a traffic rule for drivers still fits', () => {
+    assert.equal(rules.touchesTheseFacts('Bus drivers shall obey all traffic laws and stop at every stop sign.', rules.factsVocabulary()), true);
+  });
+});
+
+describe('The Education Code search can actually run', () => {
+  test('the search terms exist before the statute search uses them', () => {
+    // On r5 the search referred to citeKeywords before it was declared. The
+    // error was swallowed, the library came back empty, and no Ed Code
+    // section was ever offered.
+    const html = fs.readFileSync(APP_HTML, 'utf8');
+    const declared = html.indexOf('const citeKeywords');
+    const used = html.indexOf("fetchWithDeadline('/api/statutes/search'");
+    assert.ok(declared > 0 && used > 0, 'could not find the statute search in app.html');
+    assert.ok(declared < used, 'citeKeywords is used by the statute search before it is declared');
+  });
+});
+
+describe('A second demo on 23 September: the same bus driver, tested harder', () => {
+  const eyeRule = 'Employees shall wear eye safety devices whenever they are engaged in or observing an activity involving hazards or hazardous substances likely to cause eye injury.';
+  const eyeWhy = 'Running a stop sign while operating a school bus is a violation of safe work practices for which disciplinary action is authorized.';
+  test('narrative words such as observed and caused do not make the eye rule fit', () => {
+    const vocabulary = new Set(['observed', 'caused', 'whenever', 'likely', 'driver', 'stop', 'sign']);
+    assert.equal(rules.touchesTheseFacts(eyeRule, vocabulary), false);
+  });
+  test('a why that has nothing to do with the quote sinks the citation', () => {
+    assert.equal(rules.whyMatchesQuote(eyeRule, eyeWhy), false);
+    assert.equal(rules.citationFitsThisCase(eyeRule, eyeWhy), false);
+  });
+  test('the stop sign section and its why still fit', () => {
+    const cvc = 'The driver of any vehicle approaching a stop sign at the entrance to, or within, an intersection shall stop at a limit line, if marked, otherwise before entering the crosswalk on the near side of the intersection.';
+    assert.equal(rules.citationFitsThisCase(cvc, 'You operated a district school bus and failed to stop at a stop sign as required by this section.'), true);
+  });
+  test('the AR 4257 page, heading and all, yields no citation', () => {
+    rules.window._realBoardPolicies = [{ policy_number: 'AR 4257', title: 'Employee Safety', policy_text: 'Safe work practices. 29 CFR 1910.95) Eye Safety Devices ' + eyeRule }];
+    assert.deepEqual(rules.verifyBoardPolicyCitations([{ code: 'AR 4257', desc: eyeRule, why: eyeWhy }]), []);
+  });
+  test('Ed Code 39831.3 is the district\'s duty and is never cited against a driver', () => {
+    rules.window._statuteLibrary = [{ code: 'EDC 39831.3', statute_text: '(a) The county superintendent of schools, the superintendent of a school district, a charter school, or the owner or operator of a private school that provides transportation to or from a school or school activity shall prepare a transportation safety plan containing procedures for school personnel to follow to ensure the safe transport of pupils. The plan shall be revised as required. (b) A current copy of a plan prepared pursuant to subdivision (a) shall be retained by each school subject to the plan and made available upon request to an officer of the Department of the California Highway Patrol.' }];
+    const kept = rules.verifyStatuteCitations([{ code: 'Ed Code § 39831.3', desc: 'A school bus driver shall not operate a school bus in a manner that would constitute reckless driving', why: 'You ran a stop sign while driving the school bus.' }], 'class-perm');
+    assert.deepEqual(kept, []);
+  });
+  test('the prompt no longer teaches an invented 39831.3 quote', () => {
+    const html = fs.readFileSync(APP_HTML, 'utf8');
+    assert.equal(html.includes('reckless driving'), false);
+  });
+});
+
+describe('Statutes that authorize a document are never listed as citations', () => {
+  test('EC 44938 and the classified framework sections are dropped from the citation list', () => {
+    rules.window._statuteLibrary = [{ code: 'EDC 44938', statute_text: '(b) The governing board of any school district shall not act upon any charges of unsatisfactory performance unless it acts in accordance with the provisions of paragraph (1) or (2): (1) At least 90 calendar days prior to the date of the filing, the board or its authorized representative has given the employee written notice of the unsatisfactory performance.' }];
+    const kept = rules.verifyStatuteCitations([{ code: 'Ed Code § 44938(b)', desc: 'the board or its authorized representative has given the employee written notice of the unsatisfactory performance', why: 'Your performance was unsatisfactory.' }], 'cert-perm');
+    assert.deepEqual(kept, []);
   });
 });

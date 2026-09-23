@@ -1,4 +1,4 @@
-// BUILD: 2026-09-23-r8
+// BUILD: 2026-09-23-r9
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -799,6 +799,9 @@ async function initDb() {
   // the save re-reads and re-merges. This is what stops two people saving at
   // the same time from overwriting each other (see updateDistrictSettings).
   await pool.query(`ALTER TABLE district_settings ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 0;`);
+  // 'merit' or 'non-merit'. Classified employees in the two systems are
+  // governed by different Education Code sections, so the choice is explicit.
+  await pool.query(`ALTER TABLE district_settings ADD COLUMN IF NOT EXISTS classified_system TEXT;`);
   // Uploaded agreements and handbooks belong to one district.
   await pool.query(`ALTER TABLE documents ADD COLUMN IF NOT EXISTS domain TEXT;`);
   // Text pulled out of each PDF once, so the app can send the relevant
@@ -2026,6 +2029,7 @@ app.get('/api/district-settings', requireAppAccess, async (req, res) => {
       bpURL: row.bp_url,
       county: row.county,
       docTypes: row.doc_types || [],
+      classifiedSystem: row.classified_system || '',
       cbaLibrary: row.cba_library || [],
       handbookLibrary: row.handbook_library || [],
       schoolSites: row.school_sites || [],
@@ -2073,10 +2077,13 @@ app.post('/api/district-settings', requireAppAccess, async (req, res) => {
   for (const field of ['docTypes', 'cbaLibrary', 'handbookLibrary', 'schoolSites', 'deletedKeys']) {
     if (req.body[field] != null && !Array.isArray(req.body[field])) return res.status(400).json({ error: field + ' must be a list.' });
   }
+  if (req.body.classifiedSystem != null && !['', 'merit', 'non-merit'].includes(req.body.classifiedSystem)) {
+    return res.status(400).json({ error: 'classifiedSystem must be merit or non-merit.' });
+  }
   const domain = (req.body.domain || '').trim().toLowerCase();
   if (!domain) return res.status(400).json({ error: 'Missing domain.' });
   if (!canAccessDistrict(req, domain)) return res.status(403).json({ error: 'Not allowed for this district.' });
-  const { districtName, bpURL, county, docTypes } = req.body;
+  const { districtName, bpURL, county, docTypes, classifiedSystem } = req.body;
 
   // A district sharing its board policy link is a to-do for Trackument staff:
   // the policies still have to be loaded from that site by hand.
@@ -2164,10 +2171,13 @@ app.post('/api/district-settings', requireAppAccess, async (req, res) => {
     const finalBpUrl = keep(bpURL, stored && stored.bp_url);
     const finalCounty = keep(county, stored && stored.county);
     const finalDocTypes = keep(docTypes, stored && stored.doc_types);
+    // A page from before this setting existed sends nothing for it, which must
+    // never erase a district's choice.
+    const finalClassifiedSystem = classifiedSystem === undefined ? (stored && stored.classified_system) : keep(classifiedSystem, stored && stored.classified_system);
     if (!role.isManager && stored) {
       // Only a value this browser actually sent, and that differs, counts as an attempted change.
       const changed = (a, b) => a !== undefined && !(Array.isArray(a) && a.length === 0) && JSON.stringify(a || '') !== JSON.stringify(b || '');
-      if (changed(districtName, stored.district_name) || changed(bpURL, stored.bp_url) || changed(docTypes, stored.doc_types)) ignored.district = true;
+      if (changed(districtName, stored.district_name) || changed(bpURL, stored.bp_url) || changed(docTypes, stored.doc_types) || changed(classifiedSystem, stored.classified_system || undefined)) ignored.district = true;
     }
     return {
       columns: {
@@ -2175,6 +2185,7 @@ app.post('/api/district-settings', requireAppAccess, async (req, res) => {
         bp_url: finalBpUrl || '',
         county: finalCounty || '',
         doc_types: JSON.stringify(finalDocTypes || []),
+        classified_system: finalClassifiedSystem || '',
         cba_library: JSON.stringify(cbaLibrary || []),
         handbook_library: JSON.stringify(handbookLibrary || []),
         school_sites: JSON.stringify(schoolSites || []),

@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-23-r6 -->
+<!-- BUILD: 2026-09-23-r15 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1259,6 +1259,14 @@
 
       <input type="hidden" id="setupCounty" name="county">
 
+      <label>Classified Personnel System *</label>
+      <select id="setupClassifiedSystem" name="classifiedSystem" onchange="classifiedSystemChanged()">
+        <option value="">Choose one</option>
+        <option value="non-merit">Non-merit: the governing board adopts the classified service rules (Education Code § 45113)</option>
+        <option value="merit">Merit system: a Personnel Commission adopts the classified service rules (Education Code § 45240 and following)</option>
+      </select>
+      <div class="setup-section-sub" style="margin-top:4px;">This decides which Education Code sections Trackument names for classified employees. The two systems follow different statutes, so Trackument uses only the one you choose.</div>
+
       </div>
 
       <div class="setup-card">
@@ -1781,6 +1789,7 @@ document.addEventListener('keydown', function(e){
             <option value="Written Warning">Written Warning</option>
             <option value="Letter of Reprimand">Letter of Reprimand</option>
             <option value="Notice of Unsatisfactory Performance">Notice of Unsatisfactory Performance</option>
+            <option value="Notice of Unprofessional Conduct">Notice of Unprofessional Conduct</option>
             <option value="other">Other</option>
           </select>
           <input type="text" id="docTypeOther" placeholder="Enter document type..." style="display:none; margin-top:8px;">
@@ -2254,7 +2263,7 @@ document.addEventListener('keydown', function(e){
           <span class="auto-tag" style="margin-left:4px;">Based on document type</span>
         </label>
         <div id="fileNoticeDisplay" contenteditable="true" spellcheck="true" style="padding:16px; font-size:0.88rem; line-height:1.7; color:var(--text); background:var(--field); outline:none; min-height:44px; white-space:pre-wrap; word-wrap:break-word;"></div>
-        <select id="fileNotice" style="display:none;" onchange="document.getElementById('fileNoticeDisplay').innerText = this.options[this.selectedIndex].text;">
+        <select id="fileNotice" style="display:none;" onchange="document.getElementById('fileNoticeDisplay').innerText = this.options[this.selectedIndex].text; updateRespondDisplay();">
           <option value="conference-summary">A copy of this conference summary memo will not be placed in your official personnel file. It will be retained in the administrator's working file only. Should the concerns continue, this memo may be referenced in any subsequent formal disciplinary action.</option>
           <option value="supervisor-file">This document will be maintained in the administrator's working file and may be placed in your official personnel file if the conduct described herein recurs or escalates.</option>
           <option value="personnel-file">This document will be placed in your official personnel file maintained by the District.</option>
@@ -2270,7 +2279,7 @@ document.addEventListener('keydown', function(e){
         </label>
         <div id="respondRightDisplay" contenteditable="true" spellcheck="true" style="padding:16px; font-size:0.88rem; line-height:1.7; color:var(--text); background:var(--field); outline:none; min-height:60px; white-space:pre-wrap; word-wrap:break-word;"></div>
         <select id="respondRight" onchange="updateRespondDisplay()" style="display:none;">
-          <option value="10-calendar">10 calendar days (EC § 45113)</option>
+          <option value="10-calendar">10 calendar days (EC § 44031)</option>
           <option value="other">Other — specify below</option>
         </select>
         <textarea id="respondRightOther" placeholder="Describe the applicable timeline per your CBA or district practice..." style="display:none; margin:0 14px 14px; min-height:50px;" oninput="updateRespondDisplay()"></textarea>
@@ -2419,140 +2428,10 @@ document.addEventListener('keydown', function(e){
 
 <script>
 // ─── Citation Database ───────────────────────────────────────────────────────
-
-const CITATIONS = {
-  edcode: {
-    // CERTIFICATED
-    'cert-attendance': [
-    ],
-    'cert-performance': [
-          ],
-    'cert-conduct': [
-
-      { code: 'Ed Code § 44933', desc: 'Authorizes suspension without pay for unprofessional conduct for permanent certificated employees.' },
-    ],
-    'cert-safety': [
-      { code: 'Ed Code § 44807', desc: 'Duty of certificated employees to hold pupils to strict account for conduct on school premises and on the way to and from school.' },
-      { code: 'Ed Code § 49001', desc: 'Prohibition on corporal punishment and other unsafe physical conduct toward students.' },
-    ],
-    'cert-alcohol': [
-
-      { code: 'Ed Code § 44940', desc: 'Mandatory leave of absence upon criminal charges involving controlled substances or moral turpitude.' },
-    ],
-    'cert-dishonesty': [
-    ],
-
-    // CLASSIFIED
-    'class-attendance': [
-      { code: 'Ed Code § 45123', desc: 'Unauthorized absence without leave — basis for disciplinary action for classified employees.' },
-    ],
-    'class-performance': [
-          ],
-    'class-conduct': [
-    ],
-    'class-safety': [
-      { code: 'Ed Code § 44807', desc: 'All employees have duty to maintain safe environment for students on school grounds and in transit.' },
-    ],
-    'class-alcohol': [
-      { code: 'Ed Code § 44940', desc: 'Mandatory leave of absence provisions applicable to classified employees charged with qualifying offenses.' },
-    ],
-    'class-dishonesty': [
-    ],
-
-    // MANAGEMENT/CONFIDENTIAL
-    'mgmt-attendance': [
-      { code: 'Gov. Code § 3511.1', desc: 'Employer rights regarding management and confidential employees not covered by EERA collective bargaining.' },
-    ],
-    'mgmt-performance': [
-      { code: 'Ed Code § 44951', desc: 'District may reassign or non-reelect management employees per contract and board policy.' },
-    ],
-    'mgmt-conduct': [
-    ],
-    'mgmt-safety': [
-      { code: 'Ed Code § 44807', desc: 'All employees including management share duty to maintain student safety.' },
-    ],
-    'mgmt-alcohol': [
-      { code: 'Ed Code § 44940 (by reference)', desc: 'Mandatory leave provisions; applicable to management employees by board policy.' },
-    ],
-    'mgmt-dishonesty': [
-    ],
-  },
-
-  boardpolicy: {
-    // Certificated staff (4100 series)
-    'cert-attendance': [
-      { code: 'BP 4161.1', desc: 'Personal Illness/Injury Leave — certificated leave reporting requirements and expectations for timely notification of absence.' },
-    ],
-    'cert-performance': [
-    ],
-    'cert-conduct': [
-      { code: 'BP 4119.21', desc: 'Professional Standards — establishes the district\'s expectations for certificated employee conduct and professional behavior.' },
-    ],
-    'cert-professional': [
-      { code: 'BP 4119.21', desc: 'Professional Standards — establishes the district\'s expectations for certificated employee conduct and professional behavior.' },
-    ],
-    'cert-safety': [
-      { code: 'BP 4157', desc: 'Employee Safety — establishes certificated employee responsibilities for maintaining a safe work environment.' },
-    ],
-    'cert-alcohol': [
-      { code: 'BP 4020', desc: 'Drug and Alcohol-Free Workplace — prohibitions and district expectations for certificated employees.' },
-    ],
-    'cert-dishonesty': [
-      { code: 'BP 4119.1', desc: 'Duty to Report — certificated employee obligation to report suspected fraud or dishonest conduct.' },
-    ],
-    // Classified staff (4200 series)
-    'class-attendance': [
-      { code: 'BP 4261.1', desc: 'Personal Illness/Injury Leave — classified employee leave reporting requirements and expectations for timely notification of absence.' },
-    ],
-    'class-performance': [
-    ],
-    'class-conduct': [
-      { code: 'BP 4219.21', desc: 'Professional Standards — establishes the district\'s expectations for classified employee conduct and professional behavior.' },
-    ],
-    'class-professional': [
-      { code: 'BP 4219.21', desc: 'Professional Standards — establishes the district\'s expectations for classified employee conduct and professional behavior.' },
-    ],
-    'class-safety': [
-      { code: 'BP 4257', desc: 'Employee Safety — establishes classified employee responsibilities for maintaining a safe work environment.' },
-    ],
-    'class-alcohol': [
-      { code: 'BP 4020', desc: 'Drug and Alcohol-Free Workplace — prohibitions and district expectations for classified employees.' },
-    ],
-    'class-dishonesty': [
-      { code: 'BP 4219.1', desc: 'Duty to Report — classified employee obligation to report suspected fraud or dishonest conduct.' },
-    ],
-    // Management/Confidential (4300 series)
-    'mgmt-attendance': [
-      { code: 'BP 4361.1', desc: 'Personal Illness/Injury Leave — management/confidential employee leave reporting requirements.' },
-    ],
-    'mgmt-performance': [
-    ],
-    'mgmt-conduct': [
-      { code: 'BP 4319.21', desc: 'Professional Standards — establishes the district\'s expectations for management employee conduct.' },
-    ],
-    'mgmt-professional': [
-      { code: 'BP 4319.21', desc: 'Professional Standards — establishes the district\'s expectations for management employee conduct.' },
-    ],
-    'mgmt-safety': [
-      { code: 'BP 4357', desc: 'Employee Safety — management employee responsibilities for maintaining a safe work environment.' },
-    ],
-    'mgmt-alcohol': [
-      { code: 'BP 4020', desc: 'Drug and Alcohol-Free Workplace — prohibitions and expectations for management employees.' },
-    ],
-    'mgmt-dishonesty': [
-      { code: 'BP 4319.1', desc: 'Duty to Report — management employee obligation to report suspected fraud or dishonest conduct.' },
-    ],
-  },
-
-  adminreg: {
-    'attendance': [],
-    'performance': [],
-    'conduct': [],
-    'safety': [],
-    'alcohol': [],
-    'dishonesty': [],
-  },
-};
+// There is no built-in list of statutes or policies. Every citation comes from
+// text Trackument has on file and has checked. A hand-written list used to
+// fill the Ed Code box with paraphrased descriptions, one of which offered
+// Ed Code 45123 (employment after a sex offense conviction) for tardiness.
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
@@ -2598,18 +2477,8 @@ function updateCitations(options) {
   else if (classification.startsWith('class')) prefix = 'class';
   else prefix = 'mgmt';
 
-  // Ed Code
-  const edcodeSet = new Map();
-  selectedSituations.forEach(sit => {
-    const key = `${prefix}-${sit}`;
-    (CITATIONS.edcode[key] || []).forEach(c => { if (!edcodeSet.has(c.code)) edcodeSet.set(c.code, c); });
-  });
-
-  // Board policy citations come only from the district's own uploaded policy
-  // text, so the built-in model-policy list is never used as a suggestion.
-  // The built-in Ed Code list describes sections rather than quoting them, so
-  // it is left out whenever a writeup expects quoted law.
-  if (!(options && options.skipEdCode)) renderCitations('edcodeList', Array.from(edcodeSet.values()));
+  // Citations are never filled in from a built-in list. They come from the
+  // Analyze Facts step, where every quote is checked against text on file.
 
   // Auto-populate CBA reference from active agreement
   updateCBARef();
@@ -2814,6 +2683,116 @@ function prevStep(from) {
 
 // ─── Generate ─────────────────────────────────────────────────────────────────
 
+// ─── Classified discipline statutes ──────────────────────────────────────────
+// Tiffany Morse's guidelines, 23 September 2026. EC 45113 and EC 44031 are the
+// two primary classified discipline statutes; the rest surface only when the
+// facts fit. Non-merit districts follow EC 45113, and merit districts follow
+// EC 45240 and after, so the wrong framework is always suppressed.
+// These describe when a section applies. They are summaries for the
+// administrator, never quotations, and none is ever listed as a rule the
+// employee broke.
+const CLASSIFIED_STATUTES = {
+  '45113': { system: 'non-merit', summary: 'The core classified discipline statute for non-merit districts. Permanent employees may be disciplined only for cause, with written charges and hearing procedures, and it sets the probationary limit of six months or 130 days of paid service.' },
+  '44031': { system: 'both', summary: 'Applies whenever a reprimand, warning, evaluation, or other derogatory information is placed in the personnel file. The employee must receive notice and an opportunity to review and comment.' },
+  '45301': { system: 'merit', summary: 'Probationary and permanent status in merit districts. The probationary period is generally six months or 130 days of paid service, whichever is longer.' },
+  '45302': { system: 'merit', summary: 'Permanent employees in merit districts may be demoted or removed only for reasonable cause established by Personnel Commission rule.' },
+  '45304': { system: 'merit', summary: 'Suspension, demotion, and dismissal in merit districts, including written charges and compulsory leave for certain criminal charges.' },
+  '45305': { system: 'merit', summary: 'Appeal rights after suspension, demotion, or dismissal in merit districts, generally within 14 days.' },
+  '45306': { system: 'merit', summary: 'Hearing rights in merit districts, including the right to appear and defend against the charges.' },
+  '45260': { system: 'merit', summary: 'The Personnel Commission\'s authority to set binding classified service rules in merit districts, subject to bargaining agreements.' },
+  '45123': { system: 'both', summary: 'Employees convicted of specified sex offenses or controlled substance offenses. It can bar continued employment.' },
+  '45122.1': { system: 'both', summary: 'Serious or violent felony convictions, with specific consequences for temporary, substitute, and probationary classified employees.' },
+  '44010': { system: 'both', summary: 'Defines the sex offenses referred to by other Education Code employment sections.' },
+  '44011': { system: 'both', summary: 'Defines controlled substance offense, including for EC 45123.' },
+  '44940': { system: 'merit', summary: 'Defines the criminal charges that lead to mandatory or optional leave. EC 45304 uses these definitions for classified employees in merit districts.' },
+};
+
+// The district's choice, from its saved profile or the setup form.
+function classifiedSystemOf() {
+  return (window._districtProfile && window._districtProfile.classifiedSystem)
+    || document.getElementById('setupClassifiedSystem')?.value || '';
+}
+
+function classifiedSystemChanged() {
+  if (window._districtProfile) window._districtProfile.classifiedSystem = document.getElementById('setupClassifiedSystem')?.value || '';
+  const cls = document.getElementById('employeeClass')?.value;
+  if (cls) updateDueProcess(cls);
+}
+
+// The conviction statutes (45122.1, 45123, 44010, 44011, 44940) are rare and
+// belong mostly to Skelly cases (Tiffany Morse, 23 September 2026). They
+// surface only when the facts state a conviction, a plea, or a criminal
+// charge. An arrest, a police report, or a mention of drugs or alcohol is
+// common in ordinary writeups and is not enough.
+const CRIMINAL_FACTS = /\b(?:convicted|conviction|pleaded (?:guilty|no contest|nolo contendere)|pled (?:guilty|no contest)|plea of (?:guilty|no contest|nolo contendere)|criminally charged|criminal charges? (?:was|were|has been|have been) (?:filed|brought)|charged with (?:an? |the )?(?:\w+ ){0,3}(?:felony|misdemeanor|crime|offense|DUI|driving under the influence|possession|assault|battery|theft|burglary|robbery|lewd))/i;
+
+// Which statutes to show the administrator, and in what situation. Returns
+// section numbers in the order they should appear.
+function classifiedStatutesToSurface({ classKey, system, docType, facts, action }) {
+  if (!String(classKey || '').startsWith('class') || !system) return [];
+  const merit = system === 'merit';
+  const out = [];
+  const add = (code) => { if (CLASSIFIED_STATUTES[code] && !out.includes(code) && (CLASSIFIED_STATUTES[code].system === 'both' || CLASSIFIED_STATUTES[code].system === system)) out.push(code); };
+  if (/suspen|demot|dismiss|terminat/i.test(String(action || '') + ' ' + String(docType || ''))) {
+    if (merit) ['45302', '45304', '45305', '45306'].forEach(add); else add('45113');
+  } else if (classKey === 'class-prob') {
+    add(merit ? '45301' : '45113');
+  } else {
+    if (merit) add('45260'); else add('45113');
+  }
+  add('44031');
+  if (CRIMINAL_FACTS.test(String(facts || ''))) {
+    ['45122.1', '45123', '44010', '44011'].forEach(add);
+    if (merit) { add('45304'); add('44940'); }
+  }
+  return out;
+}
+
+// ─── Statutory authority for the document ────────────────────────────────────
+// The statute that authorizes a document is stated once, in its opening, by
+// Trackument's own template. It is never listed as a citation, because the
+// employee did not break it. Decided with Tiffany Morse, 23 September 2026:
+//   Permanent certificated: EC 44938(b) on a Notice of Unsatisfactory
+//     Performance and EC 44938(a) on a Notice of Unprofessional Conduct.
+//   Classified: EC 45113 and the district's classified service rules on every
+//     document except a conference summary, in non-merit districts. Merit
+//     districts name EC 45260 and the Personnel Commission's rules. The choice
+//     is required on the District tab of District Settings. (Revised 23 September: 45302
+//     governs demotion and removal, so it does not belong on a warning.)
+//   Everyone else, and every conference summary: no statute.
+const NOTICE_TYPES = ['Notice of Unsatisfactory Performance', 'Notice of Unprofessional Conduct'];
+function statutoryAuthorityFor(docType, classKey, isMeritDistrict) {
+  const type = String(docType || '');
+  if (/conference/i.test(type)) return '';
+  if (classKey === 'cert-perm') {
+    if (type === 'Notice of Unsatisfactory Performance') return 'This Notice of Unsatisfactory Performance is issued to you pursuant to Education Code § 44938(b).';
+    if (type === 'Notice of Unprofessional Conduct') return 'This Notice of Unprofessional Conduct is issued to you pursuant to Education Code § 44938(a).';
+    return '';
+  }
+  if (String(classKey || '').startsWith('class')) {
+    // The system is 'merit', 'non-merit', or '' when the district has not
+    // chosen yet. Unknown names nothing, so the wrong framework never appears.
+    if (isMeritDistrict === 'merit') return 'This ' + type + ' is issued pursuant to Education Code § 45260 and the rules of the Personnel Commission.';
+    if (isMeritDistrict === 'non-merit') return 'This ' + type + ' is issued pursuant to Education Code § 45113 and the District\'s rules governing the classified service.';
+    return '';
+  }
+  return '';
+}
+
+// A notice under EC 44938 exists only for permanent certificated employees.
+function noticeTypeMismatch(docType, classKey) {
+  if (!NOTICE_TYPES.includes(docType) || classKey === 'cert-perm') return '';
+  return 'A ' + docType + ' under Education Code § 44938 applies only to permanent certificated employees. For this employee, '
+    + 'choose Written Warning or Letter of Reprimand, or continue and Trackument will draft the notice without citing Education Code § 44938.';
+}
+
+// The finished document must carry the authority sentence word for word.
+function authorityMissing(memoText, authority) {
+  if (!authority) return false;
+  const squeeze = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9§()]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return !squeeze(memoText).includes(squeeze(authority));
+}
+
 async function generateMemo() {
   const data = collectData();
 
@@ -2828,6 +2807,10 @@ async function generateMemo() {
     jumpToStep(1);
     return;
   }
+
+  const mismatch = noticeTypeMismatch(data.docType, data.employeeClassKey);
+  if (mismatch && !confirm(mismatch + '\n\nClick OK to continue, or Cancel to change the document type.')) return;
+  data.authoritySentence = statutoryAuthorityFor(data.docType, data.employeeClassKey, classifiedSystemOf());
 
   // Pseudonymize before sending to API -- real names never leave the browser
   const { pseudoData, map: pseudoMap } = pseudonymizeData(data);
@@ -2899,8 +2882,10 @@ async function generateMemo() {
 
     document.getElementById('loading').style.display = 'none';
     hideStatus();
-    renderMemo(text, data);
-    checkMemoCitations(text, data);
+    // Compare the document to what was approved and entered before showing it.
+    const checked = checkMemoAgainstSources(text, data);
+    renderMemo(checked.text, data);
+    checkMemoCitations(checked.text, data, checked);
 
   } catch (err) {
     document.getElementById('loading').style.display = 'none';
@@ -2926,11 +2911,13 @@ function collectData() {
   const respondRightOther = document.getElementById('respondRightOther')?.value.trim() || '';
   const respondRightChk = document.getElementById('chk-respond');
   const labels = {
-    '10-calendar': 'You have the right to respond to this document in writing within ten (10) calendar days of receipt, pursuant to EC § 45113.',
+    '10-calendar': 'You have the right to respond to this document in writing, pursuant to EC § 44031. Please submit your response within ten (10) calendar days of receipt.',
     'other': respondRightOther || 'Right to respond per CBA or district practice.',
   };
-  const respondRight = (respondRightChk && !respondRightChk.checked) ? '' :
+  let respondRight = (respondRightChk && !respondRightChk.checked) ? '' :
     (document.getElementById('respondRightDisplay')?.innerText?.trim() || labels[respondRightVal] || labels['10-calendar']);
+  // Never name EC 44031 on a document that stays out of the personnel file.
+  if (!placedInPersonnelFile()) respondRight = respondRight.replace(/,?\s*pursuant to (?:EC|Education Code) § 44031/g, '').replace(/^You have the right to respond/, 'You may respond');
 
   const author = getSelectedAuthor() || {};
   const authorSalutation = author.salutation || '';
@@ -2953,6 +2940,7 @@ function collectData() {
     employeeSalutation: document.getElementById('employeeSalutation').value,
     employeeDisplayName: [document.getElementById('employeeSalutation').value, document.getElementById('employeeName').value].filter(Boolean).join(' '),
     employeeClass: classLabels[classVal] || classVal,
+    employeeClassKey: classVal,
     employeeTitle: document.getElementById('employeeTitle').value,
     supervisorName,
     docType: document.getElementById('docType').value === 'other'
@@ -3055,6 +3043,8 @@ STUDY THESE TEMPLATE PATTERNS CAREFULLY:
 Opening for CONFERENCE SUMMARIES: "This is to summarize our meeting on [date]. Present at this meeting were [administrator name, employee name, and any others from the othersPresent list below]. This document will serve as a Conference Summary regarding your conduct."
 
 Opening for ALL OTHER DOCUMENT TYPES (Written Warning, Letter of Reprimand, Notice of Unsatisfactory Performance, etc.): Do NOT reference a meeting in the opening. Use: "This [document type] is to address concerns regarding your conduct and performance." Then go directly into the facts paragraph. There was no "meeting" -- this is a formal disciplinary letter.
+
+${d.authoritySentence ? 'STATUTORY AUTHORITY: Immediately after the opening sentence, write this sentence exactly as given, with no changes: "' + d.authoritySentence + '" Name no other statute as the authority for this document, and never list this statute in the citations section.' : 'STATUTORY AUTHORITY: Do not name any statute as the authority for this document. Never write "pursuant to Education Code" in the opening.'}
 
 ${includeGoalsSection ? 'Goals section (CONFERENCE SUMMARIES ONLY): Write this paragraph verbatim: "This conference summary is meant to support improvement in performance and conduct. It outlines clear expectations and goals to help you be successful moving forward. The goals of this letter are to improve the quality of your work, increase awareness of the changes needed, and clarify the consequences if sufficient improvement does not occur."' : 'Goals section: DO NOT include any goals section — no CBA discipline content was provided for this writeup.'}
 
@@ -3181,19 +3171,189 @@ function sameCitation(a, b) {
   const key = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9.]+/g, '');
   return key(a) === key(b) || key(a).includes(key(b)) || key(b).includes(key(a));
 }
-function checkMemoCitations(memoText, data) {
+// ─── Checking the finished document against its sources ─────────────────────
+// Nothing reaches the administrator unless it can be traced to a source.
+// The citation step checks every quote before it is approved, but the
+// document is written afterward, and the model can still change a word in a
+// quote or add a date, a time, a count, or a name nobody entered. These
+// checks compare the finished document to what was actually approved and
+// typed in.
+
+const NUMBER_WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20, thirty: 30, forty: 40, 'forty-five': 45, fifty: 50, sixty: 60, ninety: 90 };
+const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+
+function sourceNormalize(text) {
+  return String(text || '').toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/[^a-z0-9' ]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+// The approved citation quotes, one per checked citation. getCheckedCitations
+// joins the code and the quote with " — ".
+function approvedQuotesFrom(data) {
+  return [].concat(data.edCodeCitations || [], data.cvcCitations || [], data.otherCitations || [],
+                   data.bpCitations || [], data.cbaRef || [], data.handbookRef || [])
+    .join('\n').split('\n')
+    .map(line => { const at = line.indexOf(' \u2014 '); return at >= 0 ? line.slice(at + 3).trim() : ''; })
+    .filter(quote => quote.length > 0);
+}
+
+// Everything the administrator typed in or approved, which the document is
+// allowed to repeat.
+function enteredText(data) {
+  const fields = ['factDescription', 'incidentDates', 'incidentTimes', 'othersPresent', 'priorDoc', 'directives',
+    'ruleNotes', 'impactStudents', 'impactStudentHint', 'supportOffered', 'closingNotes', 'consequences',
+    'fileNotice', 'respondRight', 'unionRights', 'employeeName', 'employeeDisplayName', 'employeeTitle',
+    'authorName', 'supervisorName', 'districtName', 'schoolName', 'docType', 'memoDate', 'authoritySentence'];
+  return fields.map(f => data[f] || '').join('\n');
+}
+
+// Words the document writes from its own template. They may appear in quotes.
+const TEMPLATE_PHRASES = [
+  'This conference summary is meant to support improvement in performance and conduct. It outlines clear expectations and goals to help you be successful moving forward. The goals of this letter are to improve the quality of your work, increase awareness of the changes needed, and clarify the consequences if sufficient improvement does not occur.',
+  'Your conduct violates the following policies and provisions:',
+  'Effective immediately, the following directives are in effect:',
+  'your conduct negatively impacted the working operations of our school inasmuch as',
+];
+
+function checkQuotesInMemo(memoText, data) {
+  const approved = approvedQuotesFrom(data);
+  const allowed = sourceNormalize([approved.join('\n'), enteredText(data), TEMPLATE_PHRASES.join('\n')].join('\n'));
+  const fixed = [], unsupported = [];
+  let text = String(memoText || '');
+  const quotes = [...text.matchAll(/["\u201C]([^"\u201D\n]{25,}?)["\u201D]/g)];
+  quotes.forEach(match => {
+    const quoted = match[1];
+    const pieces = quoted.split(/\s*(?:\.\.\.|\u2026)\s*/).map(sourceNormalize).filter(piece => piece.length > 8);
+    if (pieces.length > 0 && pieces.every(piece => allowed.includes(piece))) return;
+    // Close to an approved quote: put the approved wording back.
+    const quotedWords = sourceNormalize(quoted).split(' ').filter(w => w.length > 2);
+    let best = null, bestShare = 0;
+    approved.forEach(candidate => {
+      const words = new Set(sourceNormalize(candidate).split(' '));
+      const share = quotedWords.filter(w => words.has(w)).length / Math.max(1, quotedWords.length);
+      if (share > bestShare) { bestShare = share; best = candidate; }
+    });
+    if (best && bestShare >= 0.6) {
+      text = text.split(match[0]).join(match[0].charAt(0) + best + match[0].charAt(match[0].length - 1));
+      fixed.push({ was: quoted, now: best });
+    } else {
+      unsupported.push(quoted);
+    }
+  });
+  return { text, fixed, unsupported };
+}
+
+// Dates as month and day, so "September 3", "Sept. 3, 2026", "9/3/26" and
+// "2026-09-03" all compare equal.
+function datesIn(text) {
+  const found = [];
+  const source = String(text || '');
+  source.replace(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?\b/gi, (m, mon, day) => {
+    const month = MONTHS.findIndex(name => name.startsWith(mon.toLowerCase().slice(0, 3))) + 1;
+    if (month > 0) found.push({ key: month + '-' + Number(day), shown: m.trim() });
+    return m;
+  });
+  source.replace(/\b(\d{1,2})\/(\d{1,2})(?:\/\d{2,4})?\b/g, (m, month, day) => {
+    if (Number(month) >= 1 && Number(month) <= 12) found.push({ key: Number(month) + '-' + Number(day), shown: m });
+    return m;
+  });
+  source.replace(/\b\d{4}-(\d{2})-(\d{2})\b/g, (m, month, day) => { found.push({ key: Number(month) + '-' + Number(day), shown: m }); return m; });
+  return found;
+}
+
+function timesIn(text) {
+  const found = [];
+  String(text || '').replace(/\b(\d{1,2})(?::(\d{2}))?\s*([ap])\.?\s?m\b\.?/gi, (m, hour, minute, half) => {
+    found.push({ key: Number(hour) + ':' + (minute || '00') + half.toLowerCase(), shown: m.trim() });
+    return m;
+  });
+  return found;
+}
+
+// Every number in the document, written as digits or words, other than those
+// inside dates and times. "One" is left out because it is too common in
+// ordinary sentences to mean a count.
+const NUMBER_PATTERN = new RegExp('\\b(\\d+(?:\\.\\d+)?|' + Object.keys(NUMBER_WORDS).filter(w => w !== 'one').join('|') + ')\\b', 'gi');
+function numbersIn(text) {
+  const withoutDatesAndTimes = String(text || '')
+    .replace(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?\b/gi, ' ')
+    .replace(/\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/g, ' ')
+    .replace(/\b\d{4}-\d{2}-\d{2}\b/g, ' ')
+    .replace(/\b\d{1,2}(?::\d{2})?\s*[ap]\.?\s?m\b\.?/gi, ' ');
+  const found = [];
+  withoutDatesAndTimes.replace(NUMBER_PATTERN, (m, amount, offset, whole) => {
+    // List numbering such as "2." or "3)" at the start of a line is layout.
+    const lineStart = whole.lastIndexOf('\n', offset - 1) + 1;
+    if (/^[\s\u2022*-]*$/.test(whole.slice(lineStart, offset)) && /^[.)]/.test(whole.slice(offset + m.length))) return m;
+    const value = /^\d/.test(amount) ? Number(amount) : NUMBER_WORDS[amount.toLowerCase()];
+    const context = whole.slice(offset, offset + 40).split(/\s+/).slice(0, 3).join(' ').replace(/[.,;:]+$/, '');
+    found.push({ key: String(value), shown: context });
+    return m;
+  });
+  return found;
+}
+
+function namesIn(text) {
+  const found = [];
+  String(text || '').replace(/\b(Mr|Mrs|Ms|Mx|Dr|Miss)\.?\s+([A-Z][A-Za-z'\-]+)/g, (m, title, surname) => {
+    found.push({ key: surname.toLowerCase(), shown: m.trim() });
+    return m;
+  });
+  return found;
+}
+
+// Anything specific in the document that nobody entered.
+function newFactsInMemo(memoText, data) {
+  const citations = [data.edCodeCitations, data.cvcCitations, data.otherCitations, data.bpCitations, data.cbaRef, data.handbookRef].filter(Boolean).join('\n');
+  const sources = enteredText(data) + '\n' + citations + '\n' + TEMPLATE_PHRASES.join('\n') + '\n' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const lowerSources = sources.toLowerCase();
+  const added = [];
+  const seen = new Set();
+  const note = (kind, item) => { const id = kind + item.key; if (!seen.has(id)) { seen.add(id); added.push({ kind, shown: item.shown }); } };
+  const known = (list) => new Set(list.map(item => item.key));
+  const knownDates = known(datesIn(sources)), knownTimes = known(timesIn(sources)), knownNumbers = known(numbersIn(sources));
+  datesIn(memoText).forEach(item => { if (!knownDates.has(item.key)) note('date', item); });
+  timesIn(memoText).forEach(item => { if (!knownTimes.has(item.key)) note('time', item); });
+  numbersIn(memoText).forEach(item => { if (!knownNumbers.has(item.key)) note('number', item); });
+  namesIn(memoText).forEach(item => { if (!lowerSources.includes(item.key)) note('name', item); });
+  return added;
+}
+
+function checkMemoAgainstSources(memoText, data) {
+  const quotes = checkQuotesInMemo(memoText, data);
+  return { text: quotes.text, fixedQuotes: quotes.fixed, unsupportedQuotes: quotes.unsupported, newFacts: newFactsInMemo(quotes.text, data) };
+}
+
+function checkMemoCitations(memoText, data, checked) {
   const approved = []
     .concat(data.edCodeCitations || [], data.cvcCitations || [], data.otherCitations || [],
-            data.bpCitations || [], data.cbaRef || [], data.handbookRef || [])
+            data.bpCitations || [], data.cbaRef || [], data.handbookRef || [], data.authoritySentence || [])
     .flatMap(entry => citationNumbersIn(entry));
   const unapproved = citationNumbersIn(memoText).filter(found => !approved.some(ok => sameCitation(ok, found)));
   const warning = document.getElementById('memoCitationWarning');
   if (!warning) return unapproved;
-  if (unapproved.length === 0) { warning.style.display = 'none'; warning.innerHTML = ''; return unapproved; }
+  const items = [];
+  if (unapproved.length) {
+    items.push('This document names ' + unapproved.map(bpEscape).join(', ') + ', which ' + (unapproved.length === 1 ? 'was' : 'were')
+      + ' not among the citations you approved. Remove ' + (unapproved.length === 1 ? 'it' : 'them') + ' or go back and add '
+      + (unapproved.length === 1 ? 'it' : 'them') + ' on the Citations step first.');
+  }
+  const c = checked || { fixedQuotes: [], unsupportedQuotes: [], newFacts: [] };
+  if (authorityMissing(memoText, data.authoritySentence)) {
+    items.push('The opening should include this sentence exactly as written. Add it before sending: \u201C' + bpEscape(data.authoritySentence) + '\u201D');
+  }
+  c.fixedQuotes.forEach(q => items.push('A quote was reworded while the document was written, so Trackument put back the approved wording: \u201C'
+    + bpEscape(q.now) + '\u201D'));
+  c.unsupportedQuotes.forEach(q => items.push('This quote does not match any citation you approved or anything you entered. Check it or remove it: \u201C'
+    + bpEscape(q) + '\u201D'));
+  const labels = { date: 'date', time: 'time', number: 'number', name: 'name' };
+  if (c.newFacts.length) {
+    items.push('This document mentions details you did not enter. Confirm each one is accurate or remove it: '
+      + c.newFacts.map(f => bpEscape(f.shown) + ' (' + labels[f.kind] + ')').join(', ') + '.');
+  }
+  if (items.length === 0) { warning.style.display = 'none'; warning.innerHTML = ''; return unapproved; }
   warning.style.display = 'block';
-  warning.innerHTML = '<strong>Check before sending:</strong> this document names ' + unapproved.map(bpEscape).join(', ')
-    + ', which ' + (unapproved.length === 1 ? 'was' : 'were') + ' not among the citations you approved on the Citations step. Remove '
-    + (unapproved.length === 1 ? 'it' : 'them') + ' or go back and add ' + (unapproved.length === 1 ? 'it' : 'them') + ' there first.';
+  warning.innerHTML = '<strong>Check before sending:</strong><ul style="margin:6px 0 0 18px; padding:0;">'
+    + items.map(item => '<li style="margin-bottom:4px;">' + item + '</li>').join('') + '</ul>';
   return unapproved;
 }
 
@@ -3755,8 +3915,45 @@ const DUE_PROCESS = {
   }
 };
 
+// Classified guidance and consequences depend on the district's system.
+function dueProcessFor(classification, system) {
+  const base = DUE_PROCESS[classification];
+  if (!base || !String(classification).startsWith('class')) return base;
+  const dp = { ...base };
+  const choose = 'Choose merit or non-merit under Classified Personnel System in District Settings, so Trackument can name the right Education Code sections for classified employees.';
+  if (classification === 'class-prob') {
+    dp.adminNote = system === 'merit'
+      ? 'In a merit district, EC § 45301 sets the classified probationary period, generally six months or 130 days of paid service, whichever is longer. Check the Personnel Commission\'s rules for the exact period and release procedures. Document performance and conduct concerns carefully.'
+      : system === 'non-merit'
+        ? 'Probationary classified employees may be released from probation at any time during the probationary period (not to exceed six months or 130 days of paid service) without the procedures required for permanent employees (EC § 45113). Document performance and conduct concerns carefully.'
+        : choose;
+  }
+  if (classification === 'class-perm') {
+    if (system === 'merit') {
+      dp.consequences = 'Further violations may result in escalating progressive discipline up to and including suspension without pay, demotion, or dismissal under the rules of the Personnel Commission.';
+      dp.adminNote = 'In a merit district, permanent classified employees may be demoted or removed only for reasonable cause established by Personnel Commission rule (EC § 45302). Suspension, demotion, and dismissal follow EC § 45304, the employee may appeal, generally within 14 days (EC § 45305), and has the right to a hearing to answer the charges (EC § 45306). A Skelly meeting is required before discipline takes effect. Contact HR before initiating formal discipline.';
+    } else if (system === 'non-merit') {
+      dp.adminNote = 'Under EC § 45113, permanent classified employees may be disciplined only for cause, with written charges and a hearing. A Skelly meeting is required before any suspension without pay, demotion, or dismissal takes effect. Contact HR before initiating formal discipline.';
+    } else {
+      dp.consequences = 'Further violations may result in escalating progressive discipline up to and including suspension without pay, demotion, or dismissal.';
+      dp.adminNote = choose;
+    }
+  }
+  return dp;
+}
+
+// Criminal conduct in the facts adds the conviction statutes to the guidance,
+// for the administrator only. They never appear in the document.
+function criminalGuidanceFor(classification, system, facts) {
+  if (!String(classification || '').startsWith('class') || !CRIMINAL_FACTS.test(String(facts || ''))) return '';
+  const codes = classifiedStatutesToSurface({ classKey: classification, system: system || 'non-merit', facts })
+    .filter(code => ['45122.1', '45123', '44010', '44011', '45304', '44940'].includes(code));
+  return '<div style="margin-top:12px;"><strong>These facts describe a criminal conviction or charge.</strong> A case like this usually belongs in the Skelly process rather than a pre-disciplinary document. Consult HR or legal counsel before continuing. These sections may apply:<ul style="margin:6px 0 0 18px; padding:0;">'
+    + codes.map(code => '<li>EC § ' + code + ': ' + CLASSIFIED_STATUTES[code].summary + '</li>').join('') + '</ul></div>';
+}
+
 function updateDueProcess(classification) {
-  const dp = DUE_PROCESS[classification];
+  const dp = dueProcessFor(classification, classifiedSystemOf());
   if (!dp) return;
 
   const el = document.getElementById('dueProcessContent');
@@ -3764,7 +3961,9 @@ function updateDueProcess(classification) {
 
   const consEl = document.getElementById('consequences');
   const consDisplay = document.getElementById('consequencesDisplay');
-  if (consEl && !consEl.value.trim()) consEl.value = dp.consequences;
+  const writtenByTrackument = (text) => Object.keys(DUE_PROCESS).some(key => [DUE_PROCESS[key].consequences, (dueProcessFor(key, 'merit') || {}).consequences, (dueProcessFor(key, 'non-merit') || {}).consequences, (dueProcessFor(key, '') || {}).consequences].includes(String(text || '').trim()));
+  if (consEl && (!consEl.value.trim() || writtenByTrackument(consEl.value))) consEl.value = dp.consequences;
+  if (consDisplay && writtenByTrackument(consDisplay.innerText)) consDisplay.innerText = dp.consequences;
   if (consDisplay && !consDisplay.innerText?.trim().includes('Complete')) {
     // already edited, don't overwrite
   } else if (consDisplay) {
@@ -3775,7 +3974,7 @@ function updateDueProcess(classification) {
   if (repEl) repEl.innerHTML = dp.representation;
 
   const guidEl = document.getElementById('adminGuidanceNotes');
-  if (guidEl) guidEl.innerHTML = dp.adminNote;
+  if (guidEl) guidEl.innerHTML = dp.adminNote + criminalGuidanceFor(classification, classifiedSystemOf(), document.getElementById('factDescription')?.value || '');
 
   // Populate draft meeting email -- always refresh so employee name is current
   const empName = [document.getElementById('employeeSalutation')?.value, document.getElementById('employeeName')?.value].filter(Boolean).join(' ') || '[Employee Name]';
@@ -3846,11 +4045,33 @@ function updateRespondDisplay() {
   const otherBox = document.getElementById('respondRightOther');
   if (otherBox) otherBox.style.display = val === 'other' ? 'block' : 'none';
   const labels = {
-    '10-calendar': 'You have the right to respond to this document in writing within ten (10) calendar days of receipt, pursuant to Education Code § 45113.',
+    '10-calendar': 'You have the right to respond to this document in writing, pursuant to Education Code § 44031. Please submit your response within ten (10) calendar days of receipt.',
     'other': otherText || 'You have the right to respond to this document in writing per the timeline specified in the applicable collective bargaining agreement or district policy.',
   };
   const display = document.getElementById('respondRightDisplay');
-  if (display) display.textContent = labels[val] || labels['10-calendar'];
+  if (!display) return;
+  // Only replace text Trackument wrote, never the administrator's own edits.
+  const generated = Object.values(respondRightLabels(true)).concat(Object.values(respondRightLabels(false)));
+  const current = (display.textContent || '').trim();
+  if (current && !generated.includes(current) && current !== (labels[val] || '')) return;
+  const own = respondRightLabels(placedInPersonnelFile());
+  display.textContent = (val === 'other' ? labels.other : own['10-calendar']);
+}
+
+// EC 44031 applies when derogatory material goes into the personnel file.
+// A conference summary kept in the administrator's working file invites a
+// response without naming the statute.
+function placedInPersonnelFile() {
+  const chk = document.getElementById('chk-filenotice');
+  if (chk && !chk.checked) return false;
+  return document.getElementById('fileNotice')?.value === 'personnel-file';
+}
+function respondRightLabels(inFile) {
+  return {
+    '10-calendar': inFile
+      ? 'You have the right to respond to this document in writing, pursuant to Education Code § 44031. Please submit your response within ten (10) calendar days of receipt.'
+      : 'You may respond to this document in writing. Please submit your response within ten (10) calendar days of receipt.',
+  };
 }
 
 function autoSetFileNotice() {
@@ -3864,6 +4085,8 @@ function autoSetFileNotice() {
     select.value = 'personnel-file';
   }
   const text = select.options[select.selectedIndex]?.text || '';
+  // Whether EC 44031 is named depends on where the document is filed.
+  try { updateRespondDisplay(); } catch (e) {}
   if (display) {
     display.innerText = text;
     // The box grows with its own content, so no height is forced here. The old
@@ -3878,6 +4101,7 @@ function autoSetFileNotice() {
 }
 
 async function analyzeAndSuggestCitations() {
+  try { const cls = document.getElementById('employeeClass')?.value; if (cls) updateDueProcess(cls); } catch (e) {}
   const facts = document.getElementById('factDescription')?.value.trim();
   const classification = document.getElementById('employeeClass')?.value;
   const docType = document.getElementById('docType')?.value;
@@ -4045,8 +4269,8 @@ AUTOMATIC EXCLUSIONS — exclude immediately without further analysis:
 - Any provision where the subject is "The District", "The governing board", "The Superintendent", "Management", or "The commission" — these are institutional obligations, not employee conduct standards
 - Ed Code 44932, 44939, 44940, 45113, 45302, 45304, 45101 — dismissal and suspension grounds, never in pre-disciplinary documentation
 - Ed Code 44660 through 44665 — the evaluation system, a separate process from discipline. Never cite these.
-- Ed Code 44938 — cite ONLY on a Notice of Unprofessional Conduct or a Notice of Unsatisfactory Performance, where it is the authority for the notice itself. Never on a conference summary, warning, or letter of reprimand.
-- Conduct statutes that the facts actually implicate ARE welcome, whatever the series. Examples: Ed Code 39831.3 for school bus driver conduct, Ed Code 49001 for corporal punishment, Ed Code 49076 for student record confidentiality, Ed Code 45123 for unauthorized absence, Penal Code 11166 for mandated reporting, Vehicle Code sections for driving, and California Retail Food Code sections for food service. Cite these when the employee's own conduct violates them.
+- Ed Code 44938, 45113, 44031, 45260, 45301 through 45306, 45122.1, 45123, 44010, 44011, and 44940 — procedure, authority, and rights sections that Trackument handles itself. Never list them as citations.
+- Conduct statutes that the facts actually implicate ARE welcome, whatever the series. Examples: Ed Code 49001 for corporal punishment, Ed Code 49076 for student record confidentiality, Penal Code 11166 for mandated reporting, Vehicle Code sections for driving, and California Retail Food Code sections for food service. Cite these when the employee's own conduct violates them.
 - Ed Code 45020 — defines classified service structure, not an employee conduct standard
 - Ed Code 39800 — authorizes districts to provide transportation, not an employee driving standard
 - Board Policies in the 3000 series — district operations
@@ -4059,20 +4283,20 @@ AUTOMATIC EXCLUSIONS — exclude immediately without further analysis:
 - Any citation not directly tied to the specific conduct in the facts
 
 GOOD EXAMPLES for a bus driver running stop signs:
-- Ed Code § 39831.3: "A school bus driver shall not operate a school bus in a manner that would constitute reckless driving" ✓ (employee obligation, directly relevant)
-- CVC § 22450: "The driver of any vehicle approaching a stop sign shall stop" ✓ (employee obligation, directly violated)
+- CVC § 22450, which requires a driver to stop at a stop sign ✓ (employee obligation, directly violated)
 - BP 4219.21: Professional Standards — classified employees ✓ (employee conduct standard)
 - CBA article requiring employees to comply with all applicable laws while on duty ✓
 
 BAD EXAMPLES for bus driver — exclude these:
 - Ed Code § 45020: classified service structure — NOT an employee conduct standard ✗
 - Ed Code § 39800: district may provide transportation — district obligation ✗
+- Ed Code § 39831.3: directs the district to prepare a transportation safety plan — district obligation ✗
+- For a classified bus driver, the driving duties usually live in the Vehicle Code and board policy. An empty "edcode" array is the correct answer when no Education Code text on file places a duty on the driver.
 - CVC § 21200: bicycle/pedicab rights — irrelevant to bus driving ✗
 - Article 3 — District Rights: district authority — NOT an employee conduct standard ✗
-- Article 11.7: "The District will comply with health and safety regulations" — district obligation ✗
+- A bargaining agreement article in which the District promises to comply with health and safety regulations — district obligation ✗
 
 GOOD EXAMPLES for an attendance/tardiness issue (classified employee):
-- Ed Code § 45123: unauthorized absence without leave — employee obligation ✓
 - BP 4261.1: leave reporting requirements — employee notification obligation ✓
 - CBA article stating employees shall notify their supervisor before or as soon as possible when absent ✓
 - CBA article specifying the procedure for calling out (time frame, who to call) ✓
@@ -4085,19 +4309,20 @@ BAD EXAMPLES for attendance — exclude these:
 - Any article about FMLA/CFRA leave entitlements — these are employee rights, not conduct obligations ✗
 
 GOOD EXAMPLES for interpersonal behavior/unprofessional conduct (certificated or classified):
-- BP 4119.21 (certificated) or BP 4219.21 (classified): Professional Standards — "employees are expected to maintain the highest ethical standards, follow district policies and regulations, and exercise good judgment when interacting with students and other staff" ✓
+- The district's Professional Standards policy (often BP 4119.21 for certificated or BP 4219.21 for classified), quoted only from the text on file ✓
 - Ed Code § 44932(a)(2) — NO, this is a dismissal ground — Skelly only ✗ (see below)
 - CBA article stating employees shall treat colleagues, students, and community members with respect and professionalism ✓
 - CBA article prohibiting harassment, bullying, or intimidating conduct in the workplace ✓
 
 BAD EXAMPLES for interpersonal behavior — exclude these:
 - Ed Code § 44932: dismissal grounds — Skelly only, never in pre-discipline ✗
-- Ed Code § 44938: 45-day notice before dismissal — Skelly only ✗
+- Ed Code § 44938: the written notice a board gives before filing charges — stated in the opening of a formal notice, never a citation ✗
 - Any article about the District's obligation to investigate complaints — district obligation ✗
 - CBA Management Rights or District Rights articles — NEVER, regardless of conduct type ✗
 
 FORBIDDEN citations — never include these regardless of relevance:
-- Ed Code 44932, 44938, 44939 (dismissal grounds for certificated) — Skelly only
+- Ed Code 44932 and 44939 (certificated dismissal and suspension) — Skelly only
+- Ed Code 44938 (the notice procedure before charges) — stated in the opening of a formal notice, never a citation
 - Ed Code 45113, 45302, 45304 (discipline/suspension/dismissal procedures for classified) — Skelly only
 - Ed Code 45101 ("cause" definition) — Skelly only
 - Any Ed Code section that describes what the DISTRICT may do, not what the EMPLOYEE must do
@@ -4108,11 +4333,10 @@ FORBIDDEN citations — never include these regardless of relevance:
 
 REQUIRED citations for driving/transportation violations:
 - California Vehicle Code sections that the employee actually violated (e.g. CVC § 22450 for stop signs, CVC § 22349 for speeding). Only cite a CVC section number you are confident is accurate and directly applicable to the specific violation described. If you are not certain a specific section number is correct, do not invent one — describe the violation in plain language instead (e.g. in the "notes" field) rather than attaching an unverified or approximate code section.
-- Ed Code transportation safety sections if applicable (e.g. § 39800 series)
-- BP 4218 (classified) for general conduct standards
+- The district's own board policy sentences that place a driving or safety duty on the employee, if any are on file
 
 REQUIRED citations for food service/nutrition/cafeteria violations (food handling, sanitation, temperature control, allergen handling, expired product, certification lapses):
-- California Retail Food Code sections the employee actually violated (California Health & Safety Code, Division 104, Part 7 — e.g. § 113996 for food handler card requirements, § 113953 for time/temperature control, § 113947 for handwashing). Only cite sections you can quote verbatim and accurately; if uncertain of the exact text, omit the citation rather than guess.
+- California Retail Food Code sections the employee actually violated (California Health & Safety Code, Division 104, Part 7). Cite only sections whose text is on file, and quote only that text.
 - Do NOT cite or mention county health ordinances or county Environmental Health departments. Cite only the state California Retail Food Code sections described above.
 - Ed Code performance/conduct sections and BP citations as usual, if the facts support them.
 
@@ -4888,7 +5112,7 @@ const FORM_FIELDS = [
 ];
 
 // District fields saved separately so writeup saves don't overwrite them
-const DISTRICT_FIELDS = ['setupDistrictName', 'setupBPURL'];
+const DISTRICT_FIELDS = ['setupDistrictName', 'setupBPURL', 'setupClassifiedSystem'];
 
 async function saveDistrictFields() {
   const state = {};
@@ -5411,6 +5635,13 @@ async function saveDistrictProfile() {
     alert('Please enter your district name to continue.');
     return false;
   }
+  // Only a District Settings Manager can set this, so only they are asked.
+  const choosingManager = !window._perms || window._perms.isManager !== false;
+  if (choosingManager && !document.getElementById('setupClassifiedSystem')?.value) {
+    alert('Please choose Merit or Non-merit under Classified Personnel System. Trackument uses it to name the right Education Code sections for classified employees.');
+    document.getElementById('setupClassifiedSystem')?.focus();
+    return false;
+  }
   const domain = document.getElementById('setupDistrictDomain').value.trim().toLowerCase();
   const profile = {
     name,
@@ -5418,6 +5649,7 @@ async function saveDistrictProfile() {
     domain,
     bpURL: document.getElementById('setupBPURL').value.trim(),
     county: document.getElementById('setupCounty').value.trim(),
+    classifiedSystem: document.getElementById('setupClassifiedSystem')?.value || '',
     docTypes: getCheckedDocTypes()
   };
   try {
@@ -5429,7 +5661,8 @@ async function saveDistrictProfile() {
       setupDistrictName: profile.name || '',
       setupDistrictDomain: profile.domain || '',
       setupBPURL: profile.bpURL || '',
-      setupCounty: profile.county || ''
+      setupCounty: profile.county || '',
+      setupClassifiedSystem: profile.classifiedSystem || ''
     }));
     // Also force direct localStorage write
     try {
@@ -5528,6 +5761,7 @@ async function pushDistrictSettings() {
         districtName: document.getElementById('setupDistrictName')?.value.trim() || window._districtProfile?.name || '',
         bpURL: document.getElementById('setupBPURL')?.value.trim() || '',
         county: document.getElementById('setupCounty')?.value.trim() || '',
+        classifiedSystem: document.getElementById('setupClassifiedSystem')?.value || window._districtProfile?.classifiedSystem || '',
         docTypes,
         cbaLibrary,
         handbookLibrary,
@@ -5587,6 +5821,7 @@ async function pullDistrictSettings(domain) {
       domain,
       bpURL: data.bpURL || '',
       county: data.county || '',
+      classifiedSystem: data.classifiedSystem || '',
       docTypes: data.docTypes || []
     };
     await store.set('district:profile', JSON.stringify(profile));
@@ -5857,7 +6092,11 @@ function verifyStatuteCitations(citations, classification) {
   // Compare on the section number itself, so 'Ed. Code § 44932(a)(2)' and
   // the stored 'EDC 44932' are recognized as the same section.
   const digitsOf = (t) => ((String(t || '').match(/\d{3,6}(?:\.\d+)?/) || [])[0] || '');
-  return (citations || []).filter(c => statuteFitsClassification(c.code, classification)).map(c => {
+  // Statutes that authorize a document are stated in its opening and are
+  // never listed as a rule the employee broke.
+  const AUTHORITY_ONLY = ['44938'].concat(Object.keys(CLASSIFIED_STATUTES));
+  return (citations || []).filter(c => statuteFitsClassification(c.code, classification))
+    .filter(c => !AUTHORITY_ONLY.includes(digitsOf(c.code))).map(c => {
     const match = library.find(st => normalize(st.code) === normalize(c.code))
       || library.find(st => digitsOf(st.code) && digitsOf(st.code) === digitsOf(c.code));
     if (!match) return { code: c.code, desc: '', why: c.why || '', unverified: true };
@@ -5866,10 +6105,15 @@ function verifyStatuteCitations(citations, classification) {
     if (full.trim().length < 120 || /^education code\b[^.]{0,40}\.?$/i.test(full.trim())) {
       return { code: c.code, desc: '', why: c.why || '', unverified: true };
     }
-    if (normalize(c.desc).length > 25 && normalize(full).includes(normalize(c.desc))) return { code: c.code, desc: c.desc, why: c.why || '' };
+    // A statute is held to the same test as a board policy. Ed Code 39831.3
+    // tells the district to write a transportation safety plan, so it is not
+    // a rule a bus driver broke, however closely its subject matches.
+    if (normalize(c.desc).length > 25 && normalize(full).includes(normalize(c.desc)) && citationFitsThisCase(c.desc, c.why)) return { code: c.code, desc: c.desc, why: c.why || '' };
     // Not word for word, so take the part of the statute the citation points
     // at. Subdivisions such as (a)(2) are matched first, then wording.
-    const pieces = full.split(/(?=\(\w{1,3}\)\s)|(?<=[.;:])\s+/).map(x => x.trim()).filter(x => x.length > 12);
+    const pieces = full.split(/(?=\(\w{1,3}\)\s)|(?<=[.;:])\s+/).map(x => x.trim()).filter(x => x.length > 12)
+      .filter(piece => citationFitsThisCase(piece, c.why));
+    if (pieces.length === 0) return null;
     const subdivisions = (String(c.code).match(/\(([A-Za-z0-9]{1,3})\)/g) || []);
     const lastSubdivision = subdivisions.length ? subdivisions[subdivisions.length - 1] : '';
     const wanted = new Set(normalize(c.desc).split(' ').filter(w => w.length > 4));
@@ -5881,8 +6125,8 @@ function verifyStatuteCitations(citations, classification) {
       wanted.forEach(w => { if (words.has(w)) score++; });
       if (score > bestScore) { bestScore = score; best = piece; }
     });
-    return { code: c.code, desc: completeQuote(bestScore > 0 ? best : (pieces[0] || ''), full), why: c.why || '' };
-  });
+    return { code: c.code, desc: completeQuote(bestScore > 0 ? best : pieces[0], full), why: c.why || '' };
+  }).filter(Boolean);
 }
 
 // A quote that stops at "including, but not limited to:" tells an employee
@@ -5960,8 +6204,14 @@ function statesEmployeeDuty(sentence) {
     // Look at the words just before the duty verb. Whichever comes last, a
     // person or a thing, is what the duty belongs to. "The plan ... shall be
     // in effect" is the plan's duty, not the employee's.
-    const before = text.slice(Math.max(0, match.index - 90), match.index);
-    const words = before.split(/[^A-Za-z]+/).filter(Boolean).slice(-8);
+    // Read back to the start of this sentence. Statutes often put a long
+    // phrase between the subject and "shall", as in "The driver of any vehicle
+    // approaching a stop sign ... shall stop", so a short window missed the
+    // driver entirely.
+    const sentenceSoFar = text.slice(0, match.index);
+    const sentenceStart = Math.max(sentenceSoFar.lastIndexOf('. '), sentenceSoFar.lastIndexOf('; '), sentenceSoFar.lastIndexOf(': ')) + 1;
+    const before = sentenceSoFar.slice(sentenceStart);
+    const words = before.split(/[^A-Za-z]+/).filter(Boolean).slice(-30);
     const PREPOSITIONS = /^(to|for|of|with|by|from|among|upon|between|toward|towards|about|within)$/i;
     const FILLER = /^(all|the|any|each|every|its|their|new|other)$/i;
     // Work backwards from the duty verb to the noun that owns it. A noun
@@ -6008,15 +6258,14 @@ function verifyQuotedFromSource(citations, sourceText) {
   (citations || []).forEach(c => {
     const quoted = String(c.desc || '');
     const vocabulary = factsVocabulary();
-    if (normalize(quoted).length > 25 && flat.includes(normalize(quoted)) && statesEmployeeDuty(quoted) && touchesTheseFacts(quoted, vocabulary)) {
+    if (normalize(quoted).length > 25 && flat.includes(normalize(quoted)) && citationFitsThisCase(quoted, c.why)) {
       const text = completeQuote(quoted, source);
       verified.push({ ...c, code: articleNumberFromQuote(text, c.code), desc: text });
       return;
     }
     // Find the closest sentence in the real text that states a duty.
     const sentences = source.split(/(?<=[.;:])\s+/).map(x => x.trim()).filter(x => x.length > 40)
-      .filter(statesEmployeeDuty)
-      .filter(sentence => touchesTheseFacts(sentence, vocabulary));
+      .filter(sentence => citationFitsThisCase(sentence, c.why));
     const wanted = new Set(normalize(quoted + ' ' + (c.why || '')).split(' ').filter(w => w.length > 4));
     let best = null, bestScore = 0;
     sentences.forEach(sentence => {
@@ -6048,11 +6297,28 @@ function factsVocabulary() {
 // their stem. Without this, a policy about driving safely failed to match facts
 // about a driver who drove unsafely.
 function wordStem(word) {
-  return String(word || '').toLowerCase().replace(/(ing|ies|ed|es|s)$/, '').replace(/([a-z])\1$/, '$1');
+  // A final e is dropped too, so "drive" and "driving" meet at "driv".
+  return String(word || '').toLowerCase().replace(/(ing|ies|ed|es|s)$/, '').replace(/e$/, '').replace(/([a-z])\1$/, '$1');
 }
 // Words so general that nearly every safety or conduct rule contains them.
 // Sharing one of these with the facts says nothing about whether the rule fits.
-const GENERIC_CONCERN_STEMS = new Set(['safe', 'safety', 'unsafe', 'hazard', 'hazardou', 'danger', 'dangerou', 'injury', 'injur', 'conduct', 'work', 'practice', 'dutie', 'duty', 'standard', 'policy', 'policie', 'behavior', 'professional', 'performance', 'procedure', 'require', 'requirement', 'appropriate', 'proper', 'properly'].map(wordStem));
+const GENERIC_CONCERN_STEMS = new Set(['safe', 'safety', 'unsafe', 'hazard', 'hazardous', 'danger', 'dangerous', 'injury', 'injuries', 'conduct', 'work', 'practices', 'duties', 'duty', 'standard', 'policy', 'policies', 'behavior', 'professional', 'performance', 'procedure', 'require', 'required', 'requirement', 'appropriate', 'proper', 'properly', 'violation', 'violate', 'violated', 'comply', 'compliance', 'failed', 'failure', 'observed', 'observing', 'witnessed', 'reported', 'report', 'caused', 'cause', 'likely', 'whenever', 'activity', 'activities', 'involving', 'involved', 'engaged', 'incident', 'occurred', 'time', 'times', 'date', 'day', 'section', 'authorized', 'action', 'disciplinary', 'discipline'].map(wordStem));
+// The "why" has to be about the same thing as the quote. An eye protection
+// rule with a why about running a stop sign shares nothing but the word
+// "safe", which is how a bad citation looked defensible on the screen.
+function whyMatchesQuote(quote, why) {
+  const stemsOf = (text) => new Set(relevanceKeywords(text).map(wordStem).filter(stem => !GENERIC_CONCERN_STEMS.has(stem)));
+  const quoteStems = stemsOf(quote);
+  let shared = 0;
+  stemsOf(why).forEach(stem => { if (quoteStems.has(stem)) shared++; });
+  return shared >= 1;
+}
+// Every citation, whatever its source, passes the same three tests: it places
+// a duty on this employee, it is about these facts, and its why connects the
+// two.
+function citationFitsThisCase(sentence, why) {
+  return statesEmployeeDuty(sentence) && touchesTheseFacts(sentence, factsVocabulary()) && whyMatchesQuote(sentence, why);
+}
 function touchesTheseFacts(sentence, vocabulary) {
   const stems = new Set((String(sentence || '').toLowerCase().match(/[a-z][a-z'-]{3,}/g) || []).map(wordStem));
   const shared = new Set();
@@ -6081,7 +6347,7 @@ function verifyBoardPolicyCitations(citations) {
     if (!policy) { window._bpDropped++; return; }
     const c = { ...rawCitation, code: policy.policy_number };
     const fullText = policy.policy_text || '';
-    if (normalize(fullText).includes(normalize(c.desc)) && normalize(c.desc).length > 25 && statesEmployeeDuty(c.desc) && touchesTheseFacts(c.desc, factsVocabulary())) {
+    if (normalize(fullText).includes(normalize(c.desc)) && normalize(c.desc).length > 25 && citationFitsThisCase(c.desc, c.why)) {
       if (!String(c.why || '').trim()) { window._bpDropped++; return; }
       verified.push({ ...c, desc: completeQuote(c.desc, fullText) });
       return;
@@ -6091,8 +6357,7 @@ function verifyBoardPolicyCitations(citations) {
     // facts are candidates.
     const vocabulary = factsVocabulary();
     const sentences = fullText.split(/(?<=[.;:])\s+/).filter(x => x.trim().length > 40)
-      .filter(statesEmployeeDuty)
-      .filter(sentence => touchesTheseFacts(sentence, vocabulary));
+      .filter(sentence => citationFitsThisCase(sentence, c.why));
     const wanted = new Set(normalize(c.desc).split(' ').filter(w => w.length > 4));
     let best = null, bestScore = 0;
     sentences.forEach(sentence => {
@@ -6151,7 +6416,15 @@ async function showBuildVersion() {
     if (!res.ok) return;
     const v = await res.json();
     const when = new Date(v.deployedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-    el.textContent = 'Version: app ' + v.app + ', server ' + v.server + ', deployed ' + when;
+    // The server reports the newest app.html on disk. This page may be an
+    // older copy still held by the browser, so compare the two.
+    const buildComment = [...document.childNodes].find(node => node.nodeType === 8 && /BUILD:/.test(node.nodeValue));
+    const running = buildComment ? ((String(buildComment.nodeValue).match(/BUILD:\s*(\S+)/) || [])[1] || '') : '';
+    el.textContent = 'Version: app ' + (running || v.app) + ', server ' + v.server + ', deployed ' + when;
+    if (running && v.app && running !== v.app) {
+      el.textContent += '. This page is an older copy (' + running + ' is running, ' + v.app + ' is deployed). Reload the page to use the newest version, or email help@trackument.com if this message stays.';
+      el.style.color = 'var(--red)';
+    }
   } catch (e) {}
 }
 
@@ -6410,6 +6683,7 @@ function switchTab(tab) {
         const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
         set('setupDistrictName', p.name);
         set('setupBPURL', p.bpURL);
+        set('setupClassifiedSystem', p.classifiedSystem);
       } catch(e) {}
     });
     // Also restore from district:fields as backup
@@ -7806,6 +8080,9 @@ async function loadMeritRulesList() {
         if (r?.value) entries.push(JSON.parse(r.value));
       } catch (e) {}
     }
+    // A district with Personnel Commission Rules on file is a merit district,
+    // which changes the statute named in classified documents.
+    window._hasMeritRules = entries.length > 0;
     if (entries.length === 0) { list.innerHTML = ''; return; }
     list.innerHTML = entries.map(e => `
       <div class="cba-card" style="margin-bottom:8px;">

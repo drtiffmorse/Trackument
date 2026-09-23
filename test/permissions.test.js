@@ -379,3 +379,31 @@ describe('Admin tools', () => {
     }
   });
 });
+
+describe('The classified personnel system setting', () => {
+  test('a manager\'s choice of merit or non-merit is saved and read back', async () => {
+    const { domain, cookies } = await districtWithStaff();
+    assert.equal((await saveSettings(cookies.manager, domain, { districtName: 'Merit USD', classifiedSystem: 'merit' })).status, 200);
+    assert.equal((await loadSettings(cookies.teacherA, domain)).classifiedSystem, 'merit');
+  });
+
+  test('a page from before the setting existed never erases it', async () => {
+    const { domain, cookies } = await districtWithStaff();
+    await saveSettings(cookies.manager, domain, { districtName: 'Non-merit USD', classifiedSystem: 'non-merit' });
+    await saveSettings(cookies.manager, domain, { districtName: 'Non-merit USD' });
+    assert.equal((await loadSettings(cookies.manager, domain)).classifiedSystem, 'non-merit');
+  });
+
+  test('only a manager can change it', async () => {
+    const { domain, cookies } = await districtWithStaff();
+    await saveSettings(cookies.manager, domain, { districtName: 'District', classifiedSystem: 'non-merit' });
+    await saveSettings(cookies.teacherA, domain, { districtName: 'District', classifiedSystem: 'merit' });
+    assert.equal((await loadSettings(cookies.manager, domain)).classifiedSystem, 'non-merit');
+  });
+
+  test('anything other than merit or non-merit is refused', async () => {
+    const { domain, cookies } = await districtWithStaff();
+    const res = await saveSettings(cookies.manager, domain, { districtName: 'District', classifiedSystem: 'both' });
+    assert.equal(res.status, 400);
+  });
+});
