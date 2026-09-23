@@ -89,6 +89,9 @@ const ACCESS = {
   'POST /api/admin/statutes/remove': ADMIN_KEY,
   'GET /api/statutes': PUBLIC,
   'POST /api/statutes/lookup': SESSION,
+  'POST /api/statutes/missing': SESSION,
+  'POST /api/admin/statutes/import': ADMIN_KEY,
+  'GET /api/admin/statutes/import/status': ADMIN_KEY,
 };
 
 function apiRoutes() {
