@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-23-r3 -->
+<!-- BUILD: 2026-09-23-r5 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -4217,7 +4217,7 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
       } else if (window._realBoardPolicies && window._realBoardPolicies.length > 0) {
         // Saying "verified" above an empty list is worse than saying nothing.
         bpFlagEl.style.borderLeftColor = 'var(--gold)';
-        bpFlagEl.innerHTML = `<strong>Note:</strong> None of your district's board policies on file matched these facts closely enough to quote`
+        bpFlagEl.innerHTML = `<strong>Note:</strong> None of your district's board policies on file places a duty these facts break`
           + (window._bpDropped ? `, and ${window._bpDropped} suggested ${window._bpDropped === 1 ? 'policy was' : 'policies were'} left out because ${window._bpDropped === 1 ? 'it is' : 'they are'} not among your uploaded board policies` : '')
           + `. Add a board policy number below if you know one, or try Re-analyze. For assistance, email help@trackument.com.`;
       } else {
@@ -5884,6 +5884,12 @@ function verifyStatuteCitations(citations, classification) {
 // A quote that stops at "including, but not limited to:" tells an employee
 // nothing. When the chosen sentence ends in a colon, the list it introduces
 // comes with it, and a stub too short to stand alone is grown the same way.
+// Page markers such as "-- 4 of 8 --" come from reading a PDF and are not part
+// of the policy, so they never appear inside a quote.
+function stripPageMarkers(text) {
+  return String(text || '').replace(/--+\s*\d+\s*of\s*\d+\s*--+/gi, ' ').replace(/\s{2,}/g, ' ').trim();
+}
+
 function completeQuote(sentence, fullText) {
   let quote = String(sentence || '').trim();
   const source = String(fullText || '');
@@ -5904,7 +5910,7 @@ function completeQuote(sentence, fullText) {
       if (quote.length > 420) break;
     }
   }
-  return quote.replace(/\s+/g, ' ').trim();
+  return stripPageMarkers(quote.replace(/\s+/g, ' ').trim());
 }
 
 // A quoted sentence has to place a duty on the employee. Sentences that tell
@@ -5917,9 +5923,18 @@ function completeQuote(sentence, fullText) {
 //   rather than requiring something of them ("shall not be required to work
 //   under unsafe conditions" protects the employee, it does not bind them).
 const DUTY_VERBS = /\b(shall not|shall|must not|must|may not|are expected|is expected|are required|is required|are prohibited|is prohibited)\b/gi;
-const PERSON_WORDS = /\b(employees?|staff|personnel|unit members?|members?|drivers?|teachers?|administrators?|principals?|supervisors?|workers?|he|she|they|you)\b/i;
+const GENERAL_PERSON_WORDS = 'employees?|staff|personnel|unit members?|members?|workers?|he|she|they|you';
+// Roles that usually supervise the person being written up. They only count as
+// the subject when this employee actually holds that role.
+const SUPERVISORY_WORDS = /\b(supervisors?|principals?|administrators?|superintendents?|managers?|directors?)\b/i;
+function personWordsForThisEmployee() {
+  const title = String(document.getElementById('employeeTitle')?.value || '').toLowerCase();
+  const fromTitle = title.split(/[^a-z]+/).filter(word => word.length > 3).slice(0, 4);
+  return new RegExp('\\b(' + [GENERAL_PERSON_WORDS, ...fromTitle.map(w => w + 's?')].join('|') + ')\\b', 'i');
+}
+let PERSON_WORDS = new RegExp('\\b(' + GENERAL_PERSON_WORDS + ')\\b', 'i');
 const THING_WORDS = /\b(plan|program|policy|policies|regulation|procedures?|records?|report|reports|training|notice|notices|agreement|section|article|district|board|superintendent|department|committee|office|fund|guidelines?|materials?|equipment|premises|forms?|list)\b/i;
-const EMPLOYEE_RIGHTS = /\b(shall not be required|shall not be compelled|shall be entitled|shall have the right|shall be provided|shall be granted|shall be given|shall receive|may request|may elect|at no cost to)\b/i;
+const EMPLOYEE_RIGHTS = /\b(shall not be required|shall not be compelled|shall be entitled|shall have the right|shall have the ability|shall have access|shall be able|shall be provided|shall be granted|shall be given|shall receive|shall be afforded|may request|may elect|at no cost to)\b/i;
 
 // "The Board expects employees to maintain professional standards" places a
 // duty on employees even though the sentence opens with the Board.
@@ -5928,6 +5943,10 @@ const EXPECTS_OF_EMPLOYEES = /\b(expects?|requires?|directs?)\b[^.]{0,60}\b(empl
 function statesEmployeeDuty(sentence) {
   const text = String(sentence || '');
   if (!text.trim()) return false;
+  // Words naming this employee, including their own job title, so a duty on a
+  // supervisor is not read as a duty on them.
+  PERSON_WORDS = (typeof document !== 'undefined' && document.getElementById) ? personWordsForThisEmployee() : PERSON_WORDS;
+  if (SUPERVISORY_WORDS.test(text) && !PERSON_WORDS.test(text.replace(SUPERVISORY_WORDS, ' '))) return false;
   // A sentence that protects the employee is not a rule they broke.
   if (EMPLOYEE_RIGHTS.test(text)) return false;
   if (EXPECTS_OF_EMPLOYEES.test(text)) return true;
@@ -5984,13 +6003,16 @@ function verifyQuotedFromSource(citations, sourceText) {
   const verified = [];
   (citations || []).forEach(c => {
     const quoted = String(c.desc || '');
-    if (normalize(quoted).length > 25 && flat.includes(normalize(quoted)) && statesEmployeeDuty(quoted)) {
+    const vocabulary = factsVocabulary();
+    if (normalize(quoted).length > 25 && flat.includes(normalize(quoted)) && statesEmployeeDuty(quoted) && touchesTheseFacts(quoted, vocabulary)) {
       const text = completeQuote(quoted, source);
       verified.push({ ...c, code: articleNumberFromQuote(text, c.code), desc: text });
       return;
     }
     // Find the closest sentence in the real text that states a duty.
-    const sentences = source.split(/(?<=[.;:])\s+/).map(x => x.trim()).filter(x => x.length > 40).filter(statesEmployeeDuty);
+    const sentences = source.split(/(?<=[.;:])\s+/).map(x => x.trim()).filter(x => x.length > 40)
+      .filter(statesEmployeeDuty)
+      .filter(sentence => touchesTheseFacts(sentence, vocabulary));
     const wanted = new Set(normalize(quoted + ' ' + (c.why || '')).split(' ').filter(w => w.length > 4));
     let best = null, bestScore = 0;
     sentences.forEach(sentence => {
@@ -6005,6 +6027,27 @@ function verifyQuotedFromSource(citations, sourceText) {
     }
   });
   return verified;
+}
+
+// The words of this writeup, kept so a citation can be checked against what
+// actually happened rather than against its policy's general subject.
+function factsVocabulary() {
+  const facts = (document.getElementById('factDescription')?.value || '') + ' '
+    + (document.getElementById('employeeTitle')?.value || '') + ' '
+    + situationVocabulary(selectedSituations);
+  return new Set(relevanceKeywords(facts));
+}
+// "driver", "driving" and "drive" are the same idea, so words are compared by
+// their stem. Without this, a policy about driving safely failed to match facts
+// about a driver who drove unsafely.
+function wordStem(word) {
+  return String(word || '').toLowerCase().replace(/(ing|ies|ed|es|s)$/, '').replace(/([a-z])\1$/, '$1');
+}
+function touchesTheseFacts(sentence, vocabulary) {
+  const stems = new Set((String(sentence || '').toLowerCase().match(/[a-z][a-z'-]{3,}/g) || []).map(wordStem));
+  let shared = 0;
+  vocabulary.forEach(word => { if (stems.has(wordStem(word))) shared++; });
+  return shared >= 2;
 }
 
 function verifyBoardPolicyCitations(citations) {
@@ -6025,14 +6068,18 @@ function verifyBoardPolicyCitations(citations) {
     if (!policy) { window._bpDropped++; return; }
     const c = { ...rawCitation, code: policy.policy_number };
     const fullText = policy.policy_text || '';
-    if (normalize(fullText).includes(normalize(c.desc)) && normalize(c.desc).length > 25 && statesEmployeeDuty(c.desc)) {
+    if (normalize(fullText).includes(normalize(c.desc)) && normalize(c.desc).length > 25 && statesEmployeeDuty(c.desc) && touchesTheseFacts(c.desc, factsVocabulary())) {
       if (!String(c.why || '').trim()) { window._bpDropped++; return; }
       verified.push({ ...c, desc: completeQuote(c.desc, fullText) });
       return;
     }
     // Find the sentence in the real policy that best matches what came back.
-    // Only sentences that place a duty on the employee are candidates.
-    const sentences = fullText.split(/(?<=[.;:])\s+/).filter(x => x.trim().length > 40).filter(statesEmployeeDuty);
+    // Only sentences that place a duty on the employee AND speak to these
+    // facts are candidates.
+    const vocabulary = factsVocabulary();
+    const sentences = fullText.split(/(?<=[.;:])\s+/).filter(x => x.trim().length > 40)
+      .filter(statesEmployeeDuty)
+      .filter(sentence => touchesTheseFacts(sentence, vocabulary));
     const wanted = new Set(normalize(c.desc).split(' ').filter(w => w.length > 4));
     let best = null, bestScore = 0;
     sentences.forEach(sentence => {

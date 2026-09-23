@@ -27,21 +27,48 @@ function loadCitationRules() {
   };
   const constants = html.match(/const DUTY_VERBS[\s\S]*?const EXPECTS_OF_EMPLOYEES = [^;]*;/);
   if (!constants) throw new Error('public/app.html no longer defines the duty word lists.');
+  const stopWords = html.match(/const RELEVANCE_STOP_WORDS[\s\S]*?\.split\(' '\)\);/);
+  const situationWords = html.match(/const SITUATION_KEYWORDS = \{[\s\S]*?\n\};/);
+  if (!stopWords || !situationWords) throw new Error('public/app.html no longer defines the relevance word lists.');
   const source = [
+    stopWords[0],
+    situationWords[0],
+    fn('situationVocabulary'),
+    fn('relevanceKeywords'),
+    fn('wordStem'),
+    fn('touchesTheseFacts'),
+    fn('factsVocabulary'),
     constants[0],
     fn('statesEmployeeDuty'),
+    fn('stripPageMarkers'),
     fn('completeQuote'),
+    fn('personWordsForThisEmployee'),
+    fn('factsVocabulary'),
+    fn('wordStem'),
+    fn('touchesTheseFacts'),
     fn('statuteFitsClassification'),
     fn('verifyBoardPolicyCitations'),
     fn('verifyQuotedFromSource'),
     fn('articleNumberFromQuote'),
     fn('citationNumbersIn'),
     fn('sameCitation'),
-    'return { statesEmployeeDuty, completeQuote, statuteFitsClassification, verifyBoardPolicyCitations, verifyQuotedFromSource, articleNumberFromQuote, citationNumbersIn, sameCitation };',
+    'return { statesEmployeeDuty, stripPageMarkers, touchesTheseFacts, wordStem, factsVocabulary, completeQuote, touchesTheseFacts, factsVocabulary, statuteFitsClassification, verifyBoardPolicyCitations, verifyQuotedFromSource, articleNumberFromQuote, citationNumbersIn, sameCitation };',
   ].join('\n\n');
   // The page globals these functions read.
   const window = { _realBoardPolicies: [], _bpDropped: 0 };
-  const rules = new Function('window', 'document', source)(window, { createElement: () => ({ set textContent(v) { this._v = v; }, get innerHTML() { return String(this._v || ''); } }) });
+  // The page globals these functions read. The facts decide whether a citation
+  // touches this writeup, so the tests supply a real set of facts.
+  const fields = {
+    factDescription: 'The bus driver ran a stop sign while driving a school bus with students on board, which was unsafe operation of the vehicle in traffic.',
+    employeeTitle: 'Bus Driver',
+  };
+  const document = {
+    getElementById: (id) => (id in fields ? { value: fields[id] } : null),
+    createElement: () => ({ set textContent(v) { this._v = v; }, get innerHTML() { return String(this._v || ''); } }),
+  };
+  const selectedSituations = new Set(['safety']);
+  const rules = new Function('window', 'document', 'selectedSituations', source)(window, document, selectedSituations);
+  rules.fields = fields;
   rules.window = window;
   return rules;
 }
@@ -107,13 +134,19 @@ describe('Quotes are complete, not fragments', () => {
 
 describe('Board policy citations', () => {
   const policies = [
-    { policy_number: 'BP 4119.21', title: 'Professional Standards', policy_text: 'The Governing Board expects district employees to maintain the highest ethical standards. Employees shall not use district property for personal gain.' },
+    { policy_number: 'BP 4119.21', title: 'Professional Standards', policy_text: 'The Governing Board expects district employees to maintain the highest ethical standards. Employees who drive a school bus shall obey all traffic laws and shall operate the vehicle safely at all times.' },
     { policy_number: 'AR 4257', title: 'Employee Safety', policy_text: 'The district shall maintain an injury and illness prevention program. A system for ensuring that employees comply with safe and healthful work practices, which may include, but are not limited to: informing workers of the program.' },
   ];
   const verify = (citations) => {
     rules.window._realBoardPolicies = policies;
     return rules.verifyBoardPolicyCitations(citations);
   };
+
+  test('a duty that has nothing to do with these facts is dropped', () => {
+    // From a demo: a real duty sentence, about a radio system, cited against a
+    // bus driver who ran a stop sign.
+    assert.deepEqual(verify([{ code: 'AR 4257', desc: 'The communication system or the employees using the system shall have the ability to direct emergency services to the location of the injured employee.', why: 'The employee failed to follow safe work practices.' }]), []);
+  });
 
   test('a policy number the district never uploaded is dropped', () => {
     assert.deepEqual(verify([{ code: 'BP 9999', desc: 'Anything at all that sounds right.', why: 'It seemed relevant.' }]), []);
@@ -124,18 +157,38 @@ describe('Board policy citations', () => {
   });
 
   test('a citation with no explanation of what the employee did is dropped', () => {
-    assert.deepEqual(verify([{ code: 'BP 4119.21', desc: 'Employees shall not use district property for personal gain.', why: '' }]), []);
+    assert.deepEqual(verify([{ code: 'BP 4119.21', desc: 'Employees who drive a school bus shall obey all traffic laws and shall operate the vehicle safely at all times.', why: '' }]), []);
   });
 
   test('a paraphrase is replaced with the district\'s own wording', () => {
-    const [citation] = verify([{ code: 'BP 4119.21', desc: 'Staff should not use school property for themselves.', why: 'He used the district truck for a side job.' }]);
-    assert.equal(citation.desc, 'Employees shall not use district property for personal gain.');
+    const [citation] = verify([{ code: 'BP 4119.21', desc: 'Drivers are supposed to follow the rules of the road.', why: 'She ran a stop sign while driving the school bus.' }]);
+    assert.match(citation.desc, /shall obey all traffic laws/);
   });
 
   test('a real duty, quoted and explained, is kept with the district\'s own numbering', () => {
-    const [citation] = verify([{ code: 'AR 4119.21', desc: 'Employees shall not use district property for personal gain.', why: 'He used the district truck for a side job.' }]);
+    const [citation] = verify([{ code: 'AR 4119.21', desc: 'Employees who drive a school bus shall obey all traffic laws and shall operate the vehicle safely at all times.', why: 'She ran a stop sign while driving the school bus.' }]);
     assert.equal(citation.code, 'BP 4119.21', 'matched to the number this district actually uses');
-    assert.match(citation.desc, /shall not use district property/);
+    assert.match(citation.desc, /obey all traffic laws/);
+  });
+});
+
+describe('A citation must be about these facts, and about this employee', () => {
+  test('a duty on a supervisor is not a rule this employee broke', () => {
+    assert.equal(rules.statesEmployeeDuty('4.2.4 Upon completion of any written performance evaluation report, the immediate supervisor shall present it to the employee and a conference will be held.'), false);
+  });
+  test('a capability is not a duty', () => {
+    assert.equal(rules.statesEmployeeDuty('The communication system or the employees using the system shall have the ability to direct emergency services to the location of the injured or ill employee.'), false);
+  });
+  test('a real duty on this employee is kept', () => {
+    assert.equal(rules.statesEmployeeDuty('Bus drivers shall obey all traffic laws and shall not operate a school bus in an unsafe manner.'), true);
+  });
+  test('a duty about something else entirely does not touch these facts', () => {
+    const vocabulary = rules.factsVocabulary();
+    assert.equal(rules.touchesTheseFacts('The communication system shall direct emergency services to the injured employee.', vocabulary), false);
+    assert.equal(rules.touchesTheseFacts('Bus drivers shall obey all traffic laws while operating a school bus.', vocabulary), true);
+  });
+  test('page markers from a PDF never appear inside a quote', () => {
+    assert.equal(rules.stripPageMarkers('to the location of the -- 4 of 8 -- injured or ill employee.'), 'to the location of the injured or ill employee.');
   });
 });
 
@@ -150,10 +203,17 @@ describe('A citation is labelled with the part it quotes', () => {
 });
 
 describe('Agreement and handbook quotes come from the real text', () => {
-  const agreement = 'ARTICLE 15 DISCIPLINE. 15.3 No unit member shall be disciplined without just cause. 15.4 The district shall provide written notice of the charges.';
+  const agreement = 'ARTICLE 17 SAFETY. 17.2 Unit members who drive a school bus shall obey all traffic laws and operate the vehicle safely while transporting students. 17.3 School personnel shall not be required to work under proven unsafe conditions.';
   test('a quote that is not in the agreement is replaced by one that is', () => {
-    const [citation] = rules.verifyQuotedFromSource([{ code: 'Article 15.3', desc: 'Members can only be disciplined for good reasons.', why: 'Just cause is required.' }], agreement);
-    assert.match(citation.desc, /No unit member shall be disciplined without just cause/);
+    const [citation] = rules.verifyQuotedFromSource([{ code: 'Article 17.2', desc: 'Drivers are supposed to drive safely.', why: 'She ran a stop sign while driving the school bus.' }], agreement);
+    assert.match(citation.desc, /shall obey all traffic laws/);
+  });
+
+  test('a protection for the employee is never quoted against them', () => {
+    // From a demo: 17.3 protects the employee, so citing it as a broken duty
+    // is backwards.
+    const kept = rules.verifyQuotedFromSource([{ code: 'Article 17.3', desc: 'School personnel shall not be required to work under proven unsafe conditions.', why: 'The conditions were unsafe.' }], agreement);
+    assert.ok(kept.every(c => !/shall not be required/.test(c.desc)), 'a protection was quoted as a broken duty');
   });
   test('nothing is returned when no agreement text was sent', () => {
     assert.deepEqual(rules.verifyQuotedFromSource([{ code: 'Article 12', desc: 'Something.', why: 'Because.' }], ''), []);

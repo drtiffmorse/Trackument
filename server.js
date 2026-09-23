@@ -1,4 +1,4 @@
-// BUILD: 2026-09-23-r7
+// BUILD: 2026-09-23-r8
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -2413,7 +2413,11 @@ function parsePolicyText(raw) {
   // cross-reference line ("BP 4119.21 Professional Standards" under a Cross
   // References heading) picks up the separator as its "text" and overwrites the
   // real policy. Drop those separator lines before parsing.
-  raw = String(raw || '').replace(/^\s*-+\s*\d+\s+of\s+\d+\s*-+\s*$/gm, '');
+  raw = String(raw || '')
+    .replace(/^\s*-+\s*\d+\s+of\s+\d+\s*-+\s*$/gm, '')
+    // The same separator can land inside a line when a PDF's line breaks are
+    // lost, which is how "-- 4 of 8 --" ended up inside a quoted policy.
+    .replace(/-{2,}\s*\d+\s+of\s+\d+\s*-{2,}/g, ' ');
   const markerRegex = /^(?:[A-Z][A-Za-z/&]*\s+){0,2}((?:BP|AR|BB|E)\s*\d{3,5}(?:\.\d+)?)\b(.*)$/gm;
   const matches = [...raw.matchAll(markerRegex)];
   const policies = [];
