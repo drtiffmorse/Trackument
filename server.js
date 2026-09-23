@@ -1,4 +1,4 @@
-// BUILD: 2026-09-22-r20
+// BUILD: 2026-09-22-r21
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -3060,7 +3060,19 @@ app.get('/api/admin/statutes', async (req, res) => {
     <input type="password" id="key" autocomplete="off">
     <button type="button" id="look">Show what is loaded</button>
     <div id="list" style="margin-top:20px;"></div>
-    <label for="fetchList">Fetch sections automatically</label>
+    <label>Load a whole code from the state's weekly download</label>
+    <p style="font-size:0.85rem;color:#605d54;">This is the dependable way to fill the library. California publishes its entire legal database once a week as one file. Open <a href="https://downloads.leginfo.legislature.ca.gov/" target="_blank" rel="noopener">downloads.leginfo.legislature.ca.gov</a>, copy the link to the newest pubinfo ZIP, and paste it here. Start with a dry run: it reads the file and reports what it found without saving anything.</p>
+    <input type="text" id="bulkUrl" placeholder="https://downloads.leginfo.legislature.ca.gov/pubinfo_2026.zip">
+    <label class="choice"><input type="checkbox" id="codeEDC" checked> Education Code</label>
+    <label class="choice"><input type="checkbox" id="codeVEH"> Vehicle Code</label>
+    <label class="choice"><input type="checkbox" id="codeGOV"> Government Code</label>
+    <label class="choice"><input type="checkbox" id="codeLAB"> Labor Code</label>
+    <label class="choice"><input type="checkbox" id="codePEN"> Penal Code</label>
+    <button type="button" id="dryRun">Dry run, save nothing</button>
+    <button type="button" id="loadAll" style="background:#048784;">Load these codes for real</button>
+    <div id="importStatus" style="margin-top:16px;font-size:0.9rem;"></div>
+
+    <label for="fetchList" style="margin-top:32px;">Or fetch a few sections one at a time</label>
     <input type="text" id="fetchList" placeholder="e.g. Ed Code 44932, 44939, 45113">
     <button type="button" id="fetch">Fetch from California Legislative Information</button>
     <p style="font-size:0.85rem;color:#605d54;">Trackument pulls the text from the state's own site and stores it. Check one against the website the first time, then it is reused for every district.</p>
@@ -3075,6 +3087,7 @@ app.get('/api/admin/statutes', async (req, res) => {
     <p id="msg"></p>
     <script>
       const el = (id) => document.getElementById(id);
+      const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
       const post = (path, body) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ key: el('key').value }, body || {})) }).then(async r => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
       const refresh = async () => {
         const { ok, data } = await post('/api/admin/statutes/list');
