@@ -1,4 +1,4 @@
-// BUILD: 2026-09-23-r1
+// BUILD: 2026-09-23-r2
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -3418,7 +3418,10 @@ function normalizeStatuteRow(row) {
   let title = String(row.title || row.heading || '').trim();
   // A "title" that only repeats the citation tells an administrator nothing.
   if (/^(california\s+)?[a-z ]*code\s*§?\s*[\d.]+$/i.test(title)) title = '';
-  return { code: code.replace(/\s+/g, ' ').toUpperCase(), title: title.slice(0, 300), text };
+  // "EDC 16194." and "EDC 16194" are the same section. Trailing punctuation
+  // from an export is stripped so the stored key is clean.
+  const cleanCode = code.replace(/\s+/g, ' ').replace(/[.,;:]+$/, '').trim().toUpperCase();
+  return { code: cleanCode, title: title.slice(0, 300), text };
 }
 
 app.post('/api/admin/statutes/upload', async (req, res) => {
