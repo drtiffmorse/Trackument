@@ -1,4 +1,4 @@
-// BUILD: 2026-09-22-r11
+// BUILD: 2026-09-22-r15
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -95,6 +95,28 @@ function parseCookies(cookieHeader) {
   }, {});
 }
 
+// A small in-memory rate limiter: allows at most `max` events for `key` within
+// `windowMs`, and returns false once that is exceeded. It is per-process, which
+// is enough to stop one server from flooding an inbox; a multi-instance
+// deployment should move this to the database or a shared store.
+const rateLimitBuckets = new Map();
+function allowRateLimited(key, max, windowMs) {
+  const now = Date.now();
+  const recent = (rateLimitBuckets.get(key) || []).filter(t => now - t < windowMs);
+  if (recent.length >= max) { rateLimitBuckets.set(key, recent); return false; }
+  recent.push(now);
+  rateLimitBuckets.set(key, recent);
+  return true;
+}
+// Keep the map from growing without bound on a long-running server.
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, times] of rateLimitBuckets) {
+    const recent = times.filter(t => now - t < 60 * 60 * 1000);
+    if (recent.length) rateLimitBuckets.set(key, recent); else rateLimitBuckets.delete(key);
+  }
+}, 60 * 60 * 1000).unref?.();
+
 async function checkBeta(req, res, next) {
   // Always allow: the public marketing site, login, and its supporting api routes/assets.
   // The admin policies page is open too: every action on it requires ADMIN_KEY.
@@ -178,6 +200,20 @@ function emailDomain(email) {
   return (email || '').toLowerCase().trim().split('@')[1] || '';
 }
 
+// A district is identified by its own email domain, and everyone at that domain
+// can sign in. A personal email provider must therefore never be accepted as a
+// district domain, or a self-serve purchase would hand access (and the shared
+// AI budget) to everyone with that kind of address.
+const PUBLIC_EMAIL_DOMAINS = new Set([
+  'gmail.com', 'googlemail.com', 'yahoo.com', 'ymail.com', 'outlook.com', 'hotmail.com',
+  'live.com', 'msn.com', 'icloud.com', 'me.com', 'mac.com', 'aol.com', 'proton.me',
+  'protonmail.com', 'gmx.com', 'mail.com', 'zoho.com', 'yandex.com', 'comcast.net',
+  'att.net', 'verizon.net', 'sbcglobal.net',
+]);
+function isPublicEmailDomain(domain) {
+  return PUBLIC_EMAIL_DOMAINS.has(String(domain || '').trim().toLowerCase());
+}
+
 async function findActiveDistrictByDomain(domain) {
   if (!domain) return null;
   const { rows } = await pool.query(
@@ -234,7 +270,7 @@ app.get('/login', (req, res) => {
     .login-logo{width:280px;max-width:100%;height:auto;display:block;margin:0 auto 24px;}
     .err{color:#dc2626;font-size:0.82rem;margin-bottom:14px;display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:10px 12px;}
     .notice{color:#15803d;font-size:0.82rem;margin-bottom:14px;display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:10px 12px;}
-    input{width:100%;padding:12px 14px;border:1.5px solid #e6e1f2;border-radius:8px;font-size:0.95rem;font-family:'Inter',sans-serif;margin-bottom:10px;text-align:center;color:#1a0256;transition:border-color .15s;}
+    input{width:100%;padding:12px 14px;border:1.5px solid #e6e1f2;border-radius:8px;font-size:0.95rem;font-family:'Inter',sans-serif;margin-bottom:10px;text-align:center;color:#1a0256;background:#eceaf6;transition:border-color .15s;}
     input:focus{outline:none;border-color:#1a0256;}
     button{width:100%;padding:13px;border:none;border-radius:8px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .15s;}
     button:hover{opacity:0.88;}
@@ -319,14 +355,18 @@ app.get('/login', (req, res) => {
 // active district -- this avoids letting someone probe which domains are paid
 // customers just by trying different emails and watching for a different reply.
 app.post('/api/auth/request-link', express.json(), async (req, res) => {
-  const email = (req.body.email || '').toLowerCase().trim();
+  // Coerce to a string first: a non-string email must be rejected, not crash.
+  const email = String(req.body.email || '').toLowerCase().trim();
   if (!email.includes('@')) return res.status(400).json({ error: 'Please enter a valid email address.' });
 
   try {
     const domain = emailDomain(email);
     const district = await findActiveDistrictByDomain(domain);
 
-    if (district) {
+    // Only a few sign-in emails to one address in a short window, so nobody can
+    // use this to flood an inbox from notifications@trackument.com. Someone who
+    // asked recently already has a working link (they last 15 minutes).
+    if (district && allowRateLimited('signin:' + email, 3, 15 * 60 * 1000)) {
       const token = crypto.randomBytes(32).toString('hex');
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
       await pool.query(
@@ -441,7 +481,15 @@ app.get('/api/auth/google/callback', async (req, res) => {
   }
 });
 
-app.get('/api/auth/logout', (req, res) => {
+app.get('/api/auth/logout', async (req, res) => {
+  // End the session on the server, not only in this browser. Clearing the
+  // cookie alone left the session row valid for 30 days, so a copy of the
+  // cookie kept working after sign-out.
+  const token = parseCookies(req.headers.cookie)[SESSION_COOKIE_NAME];
+  if (token) {
+    try { await pool.query('DELETE FROM sessions WHERE token = $1', [token]); }
+    catch (err) { console.error('Could not end session on sign-out:', err.message); }
+  }
   res.setHeader('Set-Cookie', `${SESSION_COOKIE_NAME}=; Path=/; HttpOnly; Max-Age=0`);
   res.redirect('/login');
 });
@@ -743,6 +791,11 @@ async function initDb() {
   await pool.query(`ALTER TABLE district_settings ADD COLUMN IF NOT EXISTS managers JSONB DEFAULT '[]'::jsonb;`);
   // Keys deleted on any computer, so a stale browser cannot bring them back.
   await pool.query(`ALTER TABLE district_settings ADD COLUMN IF NOT EXISTS deleted_keys JSONB DEFAULT '[]'::jsonb;`);
+  // Bumped on every change to this row. A save writes only if the row still
+  // has the version it read a moment earlier; if someone else saved in between,
+  // the save re-reads and re-merges. This is what stops two people saving at
+  // the same time from overwriting each other (see updateDistrictSettings).
+  await pool.query(`ALTER TABLE district_settings ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 0;`);
   // Uploaded agreements and handbooks belong to one district.
   await pool.query(`ALTER TABLE documents ADD COLUMN IF NOT EXISTS domain TEXT;`);
   // Text pulled out of each PDF once, so the app can send the relevant
@@ -833,26 +886,36 @@ async function recordInvoiceRequest(info) {
     VALUES ($1, $2, $3, $4, $5, $12, $6, now(), $7, $8, $9, $10, $11,
             $13, $14, $15, $16, $17, $18, 'invoiced', CASE WHEN $12 = 'active' THEN now() ELSE NULL END)
     ON CONFLICT (domain) DO UPDATE SET
-      district_name = EXCLUDED.district_name,
-      contact_name = EXCLUDED.contact_name,
-      contact_email = EXCLUDED.contact_email,
-      sites = EXCLUDED.sites,
+      -- /api/checkout is public and unauthenticated: anyone can post an invoice
+      -- request for any domain. For a district that is ALREADY active, that
+      -- request must not be able to rename it, replace its contact, or re-point
+      -- its billing at a different Stripe subscription -- otherwise an outsider
+      -- could take over a paying district's record, and voiding the resulting
+      -- junk subscription would cancel the real district. So identity and the
+      -- existing Stripe ids are preserved once a district is active; a genuine
+      -- change to those is an admin action, not a self-serve one.
+      district_name = CASE WHEN districts.status = 'active' THEN districts.district_name ELSE EXCLUDED.district_name END,
+      contact_name = CASE WHEN districts.status = 'active' THEN districts.contact_name ELSE EXCLUDED.contact_name END,
+      contact_email = CASE WHEN districts.status = 'active' THEN districts.contact_email ELSE EXCLUDED.contact_email END,
+      sites = CASE WHEN districts.status = 'active' THEN districts.sites ELSE EXCLUDED.sites END,
       status = CASE WHEN districts.status = 'active' THEN 'active' ELSE EXCLUDED.status END,
       activated_at = CASE WHEN districts.status = 'active' THEN districts.activated_at ELSE EXCLUDED.activated_at END,
-      total_due = EXCLUDED.total_due,
+      total_due = CASE WHEN districts.status = 'active' THEN districts.total_due ELSE EXCLUDED.total_due END,
       requested_at = now(),
-      tier_label = EXCLUDED.tier_label,
-      agreed_to_contract_at = EXCLUDED.agreed_to_contract_at,
+      tier_label = CASE WHEN districts.status = 'active' THEN districts.tier_label ELSE EXCLUDED.tier_label END,
+      agreed_to_contract_at = CASE WHEN districts.status = 'active' THEN districts.agreed_to_contract_at ELSE EXCLUDED.agreed_to_contract_at END,
       wants_training = EXCLUDED.wants_training,
-      contact_title = EXCLUDED.contact_title,
-      contact_phone = EXCLUDED.contact_phone,
+      contact_title = CASE WHEN districts.status = 'active' THEN districts.contact_title ELSE EXCLUDED.contact_title END,
+      contact_phone = CASE WHEN districts.status = 'active' THEN districts.contact_phone ELSE EXCLUDED.contact_phone END,
+      -- A new PO number is the one thing an active district may add this way.
       po_number = COALESCE(EXCLUDED.po_number, districts.po_number),
-      stripe_customer_id = COALESCE(EXCLUDED.stripe_customer_id, districts.stripe_customer_id),
-      stripe_subscription_id = COALESCE(EXCLUDED.stripe_subscription_id, districts.stripe_subscription_id),
-      stripe_invoice_id = COALESCE(EXCLUDED.stripe_invoice_id, districts.stripe_invoice_id),
-      invoice_url = COALESCE(EXCLUDED.invoice_url, districts.invoice_url),
-      renewal_date = COALESCE(EXCLUDED.renewal_date, districts.renewal_date),
-      payment_status = 'invoiced'
+      -- Existing Stripe ids win, so a public request can never replace them.
+      stripe_customer_id = COALESCE(districts.stripe_customer_id, EXCLUDED.stripe_customer_id),
+      stripe_subscription_id = COALESCE(districts.stripe_subscription_id, EXCLUDED.stripe_subscription_id),
+      stripe_invoice_id = COALESCE(districts.stripe_invoice_id, EXCLUDED.stripe_invoice_id),
+      invoice_url = COALESCE(districts.invoice_url, EXCLUDED.invoice_url),
+      renewal_date = COALESCE(districts.renewal_date, EXCLUDED.renewal_date),
+      payment_status = CASE WHEN districts.payment_status = 'paid' THEN 'paid' ELSE 'invoiced' END
   `, [info.districtDomain, info.districtName, info.contactName || null, info.contactEmail || null, info.sitesNum, info.totalDue, info.tierLabel, info.agreedAt, info.wantsTraining || false, info.contactTitle || null, info.contactPhone || null,
       info.status || 'pending_invoice', info.poNumber || null, info.stripeCustomerId || null, info.stripeSubscriptionId || null, info.stripeInvoiceId || null, info.invoiceUrl || null, info.renewalDate || null]);
 }
@@ -1299,7 +1362,22 @@ app.use(express.json({ limit: '30mb' }));
 app.use(checkBeta);
 
 // ─── Anthropic API proxy ──────────────────────────────────────────────────────
+// The app talks to Anthropic only through this route, on the server's key, so
+// it forwards only the shape of request the app makes: a known model, and a
+// capped output size. Otherwise any signed-in administrator could spend the
+// Anthropic budget on any model and any size. Keep ALLOWED_ANTHROPIC_MODELS in
+// step with the models public/app.html actually requests.
+const ALLOWED_ANTHROPIC_MODELS = new Set(['claude-sonnet-4-5']);
+const MAX_ANTHROPIC_OUTPUT_TOKENS = 8000;
 app.post('/api/anthropic', requireAppAccess, async (req, res) => {
+  const requested = req.body || {};
+  if (!ALLOWED_ANTHROPIC_MODELS.has(requested.model)) {
+    return res.status(400).json({ error: { message: 'This model is not available through Trackument.' } });
+  }
+  const forwardBody = {
+    ...requested,
+    max_tokens: Math.min(Math.max(1, Number(requested.max_tokens) || MAX_ANTHROPIC_OUTPUT_TOKENS), MAX_ANTHROPIC_OUTPUT_TOKENS),
+  };
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -1308,7 +1386,7 @@ app.post('/api/anthropic', requireAppAccess, async (req, res) => {
         'x-api-key': ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01'
       },
-      body: JSON.stringify(req.body),
+      body: JSON.stringify(forwardBody),
       timeout: 120000
     });
     const data = await response.json();
@@ -1388,19 +1466,30 @@ async function handleInvoicePurchase(info) {
     const { rows } = await pool.query(`SELECT status FROM districts WHERE domain = $1 LIMIT 1`, [info.districtDomain]);
     alreadyActive = !!(rows[0] && rows[0].status === 'active');
   } catch (err) { console.error('Could not check existing district status:', err.message); }
-  const activated = !!po || alreadyActive;
+  // The contact must be at the district's own domain before Trackument will
+  // automatically create a real Stripe invoice, attach the W-9, or activate a
+  // new district. Otherwise a stranger could make Trackument send its W-9 and a
+  // live invoice from Intentional Schools, LLC to any address they typed. A
+  // mismatch is still recorded and flagged for manual review, not acted on.
+  const contactAtDistrict = emailDomain(info.contactEmail) === info.districtDomain;
+  const activated = alreadyActive || (contactAtDistrict && !!po);
   const amountDollars = info.amountCents / 100;
 
   let inv = {};
   let invoiceError = null;
   // A second submission (double click, refresh, retry) must not create a second
-  // Stripe subscription and a second invoice for the same district.
+  // Stripe subscription and a second invoice for the same district. And a
+  // district that is already active with a subscription on file must never get
+  // a new subscription from a public request, or an outsider could make Stripe
+  // send a real invoice (and our W-9) for a paying district to any address they
+  // typed. In both cases we reuse what is already on file.
   let existing = null;
   try {
     const { rows } = await pool.query(
       `SELECT stripe_subscription_id, stripe_customer_id, invoice_url, renewal_date
        FROM districts WHERE domain = $1 AND stripe_subscription_id IS NOT NULL
-         AND payment_status IS NOT NULL AND (renewal_date IS NULL OR renewal_date > now())`,
+         AND (status = 'active'
+              OR (payment_status IS NOT NULL AND (renewal_date IS NULL OR renewal_date > now())))`,
       [info.districtDomain]
     );
     existing = rows[0] || null;
@@ -1414,6 +1503,8 @@ async function handleInvoicePurchase(info) {
       invoiceUrl: existing.invoice_url,
       renewalDate: existing.renewal_date,
     };
+  } else if (!contactAtDistrict) {
+    invoiceError = 'the contact email is not at the district domain, so no invoice was created automatically';
   } else if (stripe) {
     try {
       inv = await createInvoiceSubscription({
@@ -1448,15 +1539,21 @@ async function handleInvoicePurchase(info) {
     stripeInvoiceId: inv.stripeInvoiceId, invoiceUrl: inv.invoiceUrl, renewalDate: inv.renewalDate,
   });
 
-  const packet = await sendPurchasePacket({
-    districtName: info.districtName, contactName: info.contactName, contactEmail: info.contactEmail,
-    districtDomain: info.districtDomain, tierLabel: info.tierLabel, amountDollars,
-    poNumber: po, activated, alreadyActive, invoiceUrl: inv.invoiceUrl,
-  });
+  // The packet (invoice link + W-9 + agreement) goes only to a district-domain
+  // contact. A mismatched contact gets nothing automatically; Trackument is
+  // told to check it by hand.
+  const packet = contactAtDistrict
+    ? await sendPurchasePacket({
+        districtName: info.districtName, contactName: info.contactName, contactEmail: info.contactEmail,
+        districtDomain: info.districtDomain, tierLabel: info.tierLabel, amountDollars,
+        poNumber: po, activated, alreadyActive, invoiceUrl: inv.invoiceUrl,
+      })
+    : { w9Attached: false };
 
   const notes = [];
-  if (invoiceError) notes.push('ACTION NEEDED: the Stripe invoice could not be created automatically (' + invoiceError + '). Create and send it from the Stripe Dashboard.');
-  if (!packet.w9Attached) notes.push('ACTION NEEDED: no W-9 is on file, so it was not attached. Upload one at ' + BASE_URL + '/api/admin/w9-upload and send it to this district.');
+  if (!contactAtDistrict) notes.push('ACTION NEEDED: the contact email (' + info.contactEmail + ') is not at the district domain (' + info.districtDomain + '), so no invoice, W-9, or activation happened automatically. Confirm this request is genuine before acting on it.');
+  if (invoiceError && contactAtDistrict) notes.push('ACTION NEEDED: the Stripe invoice could not be created automatically (' + invoiceError + '). Create and send it from the Stripe Dashboard.');
+  if (contactAtDistrict && !packet.w9Attached) notes.push('ACTION NEEDED: no W-9 is on file, so it was not attached. Upload one at ' + BASE_URL + '/api/admin/w9-upload and send it to this district.');
 
   await sendNotificationEmail({
     to: SALES_NOTIFY_EMAIL,
@@ -1488,9 +1585,18 @@ app.post('/api/checkout', async (req, res) => {
   if (!districtName || !contactEmail || !districtDomain) return res.status(400).json({ error: 'Missing required fields.' });
   if (!agreedToContract) return res.status(400).json({ error: 'You must agree to the Service Agreement before continuing.' });
 
-  const tierIndex = PRICING_TIERS[tier] ? Number(tier) : 0;
+  // Only a real tier index (0..n-1) is honored; anything else -- including an
+  // array method name like "length" that used to crash the handler -- falls
+  // back to the first plan, matching the existing "unrecognized plan" behavior.
+  const tierNum = Number(tier);
+  const tierIndex = Number.isInteger(tierNum) && tierNum >= 0 && tierNum < PRICING_TIERS.length ? tierNum : 0;
   // Sign-in looks districts up by lowercase email domain, so store it that way.
   const normalizedDomain = String(districtDomain || '').trim().toLowerCase();
+  // A personal email provider is never a district. Blocking it here stops a
+  // self-serve purchase from turning, say, gmail.com into a shared account.
+  if (isPublicEmailDomain(normalizedDomain)) {
+    return res.status(400).json({ error: 'Please use your district\'s own email domain (for example, yourdistrict.k12.ca.us), not a personal email provider like Gmail or Yahoo.' });
+  }
   const selectedTier = PRICING_TIERS[tierIndex];
 
   // $1 test mode: opening /checkout?testkey=ADMIN_KEY lets Tiffany run the
@@ -1671,7 +1777,9 @@ function canEditSite(site, role) {
 // Saves a district's District Settings Managers after checking every address belongs to
 // the district, and emails anyone newly added so they know their role.
 async function saveDistrictManagers(domain, requested, addedByLabel) {
-  const list = [...new Set((requested || []).map(m => String(m).trim().toLowerCase()).filter(Boolean))];
+  // Anything that is not a list of addresses (e.g. a bare string) is treated as
+  // empty, which returns the "keep at least one" error rather than crashing.
+  const list = [...new Set((Array.isArray(requested) ? requested : []).map(m => String(m).trim().toLowerCase()).filter(Boolean))];
   if (list.length === 0) return { error: 'Keep at least one District Settings Manager.' };
   const invalid = list.filter(m => !/^[^@\s]+@[^@\s]+$/.test(m));
   if (invalid.length) return { error: 'Please check these email addresses: ' + invalid.join(', ') + '.' };
@@ -1692,7 +1800,7 @@ async function saveDistrictManagers(domain, requested, addedByLabel) {
 
   await pool.query(`
     INSERT INTO district_settings (domain, managers, updated_at) VALUES ($1, $2, now())
-    ON CONFLICT (domain) DO UPDATE SET managers = EXCLUDED.managers, updated_at = now()
+    ON CONFLICT (domain) DO UPDATE SET managers = EXCLUDED.managers, updated_at = now(), version = district_settings.version + 1
   `, [domain, JSON.stringify(list)]);
 
   const added = list.filter(m => !previous.includes(m));
@@ -1747,7 +1855,12 @@ async function purchaseFromSetupRequest(q) {
       const cs = await stripe.checkout.sessions.retrieve(String(q.sessionId));
       const ageHours = (Date.now() / 1000 - (cs.created || 0)) / 3600;
       const domain = String(cs.metadata && cs.metadata.districtDomain || '').toLowerCase();
-      if (domain && ageHours <= SETUP_PASS_HOURS) {
+      // A checkout session exists the moment /api/checkout is called, before any
+      // payment, and its id is handed back to whoever called it. Requiring the
+      // session to be PAID is what stops someone starting a checkout for another
+      // district's domain and using the unpaid session to name its managers.
+      const paid = cs.payment_status === 'paid' || cs.status === 'complete';
+      if (domain && paid && ageHours <= SETUP_PASS_HOURS) {
         return { domain, purchaser: String(cs.metadata.contactEmail || '').toLowerCase(), districtName: cs.metadata.districtName || domain };
       }
     } catch (err) { console.error('Setup lookup failed:', err.message); }
@@ -1761,6 +1874,21 @@ async function purchaseFromSetupRequest(q) {
   return null;
 }
 
+// Whether a district has already named its District Settings Managers. Once it
+// has, changing them is a privileged action that must go through a signed-in
+// manager (/api/district/managers), never the one-time post-purchase setup
+// link -- otherwise anyone who can obtain a setup proof could replace them.
+async function districtHasNamedManagers(domain) {
+  try {
+    const { rows } = await pool.query('SELECT managers FROM district_settings WHERE domain = $1', [domain]);
+    return !!(rows[0] && Array.isArray(rows[0].managers) && rows[0].managers.length);
+  } catch (err) {
+    console.error('Could not check existing managers:', err.message);
+    // Fail closed: if we cannot tell, do not allow the setup flow to overwrite.
+    return true;
+  }
+}
+
 app.get('/api/setup/managers', async (req, res) => {
   const purchase = await purchaseFromSetupRequest({ sessionId: req.query.session_id, domain: req.query.domain, pass: req.query.pass });
   if (!purchase) return res.status(403).json({ error: 'This setup link has expired. You can name District Settings Managers later in District Settings.' });
@@ -1772,6 +1900,13 @@ app.get('/api/setup/managers', async (req, res) => {
 app.post('/api/setup/managers', async (req, res) => {
   const purchase = await purchaseFromSetupRequest({ sessionId: req.body.sessionId, domain: req.body.domain, pass: req.body.pass });
   if (!purchase) return res.status(403).json({ error: 'This setup link has expired. You can name District Settings Managers later in District Settings.' });
+  // The setup link seeds managers once, right after purchase. If this district
+  // already has managers named, changing them must be done by a signed-in
+  // District Settings Manager, so a setup proof can never take over an
+  // established district.
+  if (await districtHasNamedManagers(purchase.domain)) {
+    return res.status(403).json({ error: 'This district already has District Settings Managers. Sign in with a district email address and change them in District Settings.' });
+  }
   const result = await saveDistrictManagers(purchase.domain, req.body.managers, purchase.purchaser || 'Your district');
   if (result.error) return res.status(400).json({ error: result.error });
   res.json(result);
@@ -1787,10 +1922,6 @@ app.get('/api/admin/managers', async (req, res) => {
     <label for="domain">District email domain</label>
     <input type="text" id="domain" placeholder="e.g. ouhsd.org">
     <button type="button" id="load">Load District Settings Managers</button>
-    <label for="districtName">District name, shown at the top of every document</label>
-    <input type="text" id="districtName" placeholder="e.g. Bass Lake Joint Union Elementary School District">
-    <button type="button" id="saveName">Save district name</button>
-
     <label for="list">District Settings Managers, one email per line</label>
     <textarea id="list" rows="6" style="width:100%;box-sizing:border-box;font:inherit;padding:12px;border:1px solid #d9d4e8;border-radius:8px;"></textarea>
     <button type="button" id="save">Save District Settings Managers</button>
@@ -1804,12 +1935,7 @@ app.get('/api/admin/managers', async (req, res) => {
         const { ok, data } = await api('GET');
         if (!ok) { msg.textContent = data.error || 'Could not load.'; return; }
         document.getElementById('list').value = (data.managers || []).join('\\n');
-        document.getElementById('districtName').value = data.districtName || '';
         msg.textContent = data.named ? 'These District Settings Managers were named by the district.' : 'None named yet, so the purchasing contact is the manager.';
-      };
-      document.getElementById('saveName').onclick = async () => {
-        const { ok, data } = await api('POST', { key: document.getElementById('key').value, domain: document.getElementById('domain').value, districtName: document.getElementById('districtName').value });
-        msg.textContent = ok ? 'District name saved.' : (data.error || 'Could not save the district name.');
       };
       document.getElementById('save').onclick = async () => {
         const managers = document.getElementById('list').value.split(/\\s+/).filter(Boolean);
@@ -1823,33 +1949,16 @@ app.get('/api/admin/managers/data', async (req, res) => {
   if (!adminKeyValid(req.query.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
   const domain = String(req.query.domain || '').trim().toLowerCase();
   if (!domain) return res.status(400).json({ error: 'Enter a district domain.' });
-  const savedName = await pool.query('SELECT district_name FROM district_settings WHERE domain = $1', [domain]);
-  const purchaseName = await pool.query('SELECT district_name FROM districts WHERE domain = $1 LIMIT 1', [domain]);
-  const districtName = (savedName.rows[0] && savedName.rows[0].district_name)
-    || (purchaseName.rows[0] && purchaseName.rows[0].district_name) || '';
   const { rows } = await pool.query('SELECT managers FROM district_settings WHERE domain = $1', [domain]);
   const named = (rows[0] && rows[0].managers) || [];
-  if (named.length) return res.json({ managers: named, named: true, districtName });
+  if (named.length) return res.json({ managers: named, named: true });
   const d = await pool.query('SELECT contact_email FROM districts WHERE domain = $1 LIMIT 1', [domain]);
-  res.json({ managers: d.rows[0] && d.rows[0].contact_email ? [d.rows[0].contact_email] : [], named: false, districtName });
+  res.json({ managers: d.rows[0] && d.rows[0].contact_email ? [d.rows[0].contact_email] : [], named: false });
 });
 app.post('/api/admin/managers/data', async (req, res) => {
   if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
   const domain = String(req.body.domain || '').trim().toLowerCase();
   if (!domain) return res.status(400).json({ error: 'Enter a district domain.' });
-
-  // Saving just the district name, which is what appears at the top of every
-  // document a district generates.
-  if (req.body.districtName !== undefined) {
-    const districtName = String(req.body.districtName || '').trim();
-    if (!districtName) return res.status(400).json({ error: 'Enter the district name.' });
-    await pool.query(`
-      INSERT INTO district_settings (domain, district_name, updated_at) VALUES ($1, $2, now())
-      ON CONFLICT (domain) DO UPDATE SET district_name = EXCLUDED.district_name, updated_at = now()
-    `, [domain, districtName]);
-    await pool.query('UPDATE districts SET district_name = $1 WHERE domain = $2', [districtName, domain]);
-    return res.json({ ok: true, districtName });
-  }
   const result = await saveDistrictManagers(domain, req.body.managers, 'Trackument');
   if (result.error) return res.status(400).json({ error: result.error });
   res.json(result);
@@ -1877,15 +1986,10 @@ app.get('/api/district-settings', requireAppAccess, async (req, res) => {
     const { rows } = await pool.query('SELECT * FROM district_settings WHERE domain = $1', [domain]);
     if (!rows[0]) return res.json({ found: false });
     const row = rows[0];
-    let districtName = row.district_name || '';
-    if (!districtName) {
-      const purchase = await pool.query('SELECT district_name FROM districts WHERE domain = $1 LIMIT 1', [domain]);
-      districtName = (purchase.rows[0] && purchase.rows[0].district_name) || '';
-    }
     res.json({
       found: true,
       domain: row.domain,
-      districtName,
+      districtName: row.district_name,
       bpURL: row.bp_url,
       county: row.county,
       docTypes: row.doc_types || [],
@@ -1894,13 +1998,48 @@ app.get('/api/district-settings', requireAppAccess, async (req, res) => {
       schoolSites: row.school_sites || [],
       deletedKeys: row.deleted_keys || [],
       updatedAt: row.updated_at,
+      version: Number(row.version) || 0,
     });
   } catch (err) {
     res.status(500).json({ found: false, error: 'Server error: ' + err.message });
   }
 });
 
+// Read-merge-write for the district_settings row that several administrators
+// share. It reads the row and its version, lets merge(stored) build the new
+// column values, then writes them only if the row still has that version. If
+// someone else saved first, the write changes no rows, and it re-reads and
+// re-merges against their result. No database lock is held, so simultaneous
+// saves never block one another, and none is silently overwritten. Every
+// writer of this row goes through here so the version stays meaningful.
+async function updateDistrictSettings(domain, merge, { attempts = 8 } = {}) {
+  await pool.query(`INSERT INTO district_settings (domain) VALUES ($1) ON CONFLICT (domain) DO NOTHING`, [domain]);
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const { rows } = await pool.query('SELECT * FROM district_settings WHERE domain = $1', [domain]);
+    const stored = rows[0] || null;
+    const version = (stored && Number(stored.version)) || 0;
+    const { columns, result } = await merge(stored);
+    const names = Object.keys(columns);
+    const assignments = names.map((name, i) => `${name} = $${i + 3}`).join(', ');
+    const { rowCount } = await pool.query(
+      `UPDATE district_settings SET ${assignments}, version = version + 1, updated_at = now() WHERE domain = $1 AND version = $2`,
+      [domain, version, ...names.map(n => columns[n])]
+    );
+    if (rowCount === 1) return { result, version: version + 1 };
+  }
+  // Only reachable if the row is being changed continuously by many people.
+  const err = new Error('The district settings were being changed by several people at once. Please try saving again.');
+  err.statusCode = 409;
+  throw err;
+}
+
 app.post('/api/district-settings', requireAppAccess, async (req, res) => {
+  // A wrong-typed field is a malformed request, not a server fault: reject it
+  // with 400 rather than letting a string method throw on it later.
+  if (req.body.domain != null && typeof req.body.domain !== 'string') return res.status(400).json({ error: 'Missing domain.' });
+  for (const field of ['docTypes', 'cbaLibrary', 'handbookLibrary', 'schoolSites', 'deletedKeys']) {
+    if (req.body[field] != null && !Array.isArray(req.body[field])) return res.status(400).json({ error: field + ' must be a list.' });
+  }
   const domain = (req.body.domain || '').trim().toLowerCase();
   if (!domain) return res.status(400).json({ error: 'Missing domain.' });
   if (!canAccessDistrict(req, domain)) return res.status(403).json({ error: 'Not allowed for this district.' });
@@ -1909,96 +2048,112 @@ app.post('/api/district-settings', requireAppAccess, async (req, res) => {
   // A district sharing its board policy link is a to-do for Trackument staff:
   // the policies still have to be loaded from that site by hand.
   let previousBpUrl = '';
-  let stored = null;
   try {
-    const { rows } = await pool.query('SELECT * FROM district_settings WHERE domain = $1', [domain]);
-    stored = rows[0] || null;
-    previousBpUrl = (stored && stored.bp_url) || '';
+    const { rows } = await pool.query('SELECT bp_url FROM district_settings WHERE domain = $1', [domain]);
+    previousBpUrl = (rows[0] && rows[0].bp_url) || '';
   } catch (err) { /* first save for this district */ }
+
+  const role = await districtRole(req, domain);
 
   // Every browser sends its whole copy of the sites, agreements, and handbooks.
   // Taking that copy as-is let an older browser erase newer work from another
-  // computer. Instead, merge item by item: the most recently edited version of
-  // each item wins, items this browser does not know about are kept, and items
-  // deleted anywhere stay deleted.
-  const role = await districtRole(req, domain);
-  const ignored = { district: false, sites: [] };
-
-  // Deletions: agreements and handbooks only from a manager, sites only from
-  // someone allowed to change that site.
-  const storedSites = new Map(((stored && stored.school_sites) || []).filter(e => e && e.key).map(e => [e.key, e]));
-  const requestedDeletes = (req.body.deletedKeys || []).filter(Boolean).filter(key => {
-    if (String(key).startsWith('school:')) {
-      const site = storedSites.get(key);
-      if (site && !canEditSite(site, role)) { ignored.sites.push(site.name); return false; }
+  // computer. Instead, merge item by item against whatever is stored right now
+  // (re-read on every attempt, see updateDistrictSettings): the most recently
+  // edited version of each item wins, items this browser does not know about
+  // are kept, and items deleted anywhere stay deleted.
+  const buildMerge = (stored) => {
+    const ignored = { district: false, sites: [] };
+    // Deletions: agreements and handbooks only from a manager, sites only from
+    // someone allowed to change that site.
+    const storedSites = new Map(((stored && stored.school_sites) || []).filter(e => e && e.key).map(e => [e.key, e]));
+    const requestedDeletes = (req.body.deletedKeys || []).filter(Boolean).filter(key => {
+      if (String(key).startsWith('school:')) {
+        const site = storedSites.get(key);
+        if (site && !canEditSite(site, role)) { ignored.sites.push(site.name); return false; }
+        return true;
+      }
+      if (!role.isManager) { ignored.district = true; return false; }
       return true;
-    }
-    if (!role.isManager) { ignored.district = true; return false; }
-    return true;
-  });
-  const tombstones = new Set([...(stored && stored.deleted_keys || []), ...requestedDeletes]);
-  const mergeLibrary = (existing, incoming, allowEdit) => {
-    const byKey = new Map();
-    (existing || []).forEach(e => { if (e && e.key) byKey.set(e.key, e); });
-    (incoming || []).forEach(e => {
-      if (!e || !e.key) return;
-      const prev = byKey.get(e.key);
-      if (prev && (Number(e.updatedAt) || 0) < (Number(prev.updatedAt) || 0)) return;
-      const next = allowEdit(e, prev);
-      if (next) byKey.set(e.key, next);
     });
-    return [...byKey.values()].filter(e => !tombstones.has(e.key));
-  };
-  const withoutOwner = (e) => { if (!e) return null; const { createdBy, ...rest } = e; return rest; };
-  const sameContent = (a, b) => JSON.stringify(withoutOwner(a)) === JSON.stringify(withoutOwner(b));
-  // Agreements and handbooks are district information.
-  const districtItemRule = (incoming, prev) => {
-    if (role.isManager) return incoming;
-    if (!sameContent(incoming, prev)) ignored.district = true;
-    return null;
-  };
-  // Sites: anyone can add one, and it records who did. Changing an existing
-  // site follows canEditSite, and nobody can reassign who created it.
-  const siteRule = (incoming, prev) => {
-    if (!prev) return { ...incoming, createdBy: role.email };
-    if (!canEditSite(prev, role)) {
-      if (!sameContent(incoming, prev)) ignored.sites.push(prev.name);
+    const tombstones = new Set([...(stored && stored.deleted_keys || []), ...requestedDeletes]);
+    // Items this save could not keep because a newer copy is already stored --
+    // usually a clock difference between computers. Reported back so the person
+    // is told, instead of the edit vanishing in silence.
+    const conflicts = [];
+    const mergeLibrary = (existing, incoming, allowEdit) => {
+      const byKey = new Map();
+      (existing || []).forEach(e => { if (e && e.key) byKey.set(e.key, e); });
+      (incoming || []).forEach(e => {
+        if (!e || !e.key) return;
+        const prev = byKey.get(e.key);
+        if (prev && (Number(e.updatedAt) || 0) < (Number(prev.updatedAt) || 0)) {
+          if (!sameContent(e, prev)) conflicts.push(prev.name || e.name || 'an item');
+          return;
+        }
+        const next = allowEdit(e, prev);
+        if (next) byKey.set(e.key, next);
+      });
+      return [...byKey.values()].filter(e => !tombstones.has(e.key));
+    };
+    const withoutOwner = (e) => { if (!e) return null; const { createdBy, ...rest } = e; return rest; };
+    const sameContent = (a, b) => JSON.stringify(withoutOwner(a)) === JSON.stringify(withoutOwner(b));
+    // Agreements and handbooks are district information.
+    const districtItemRule = (incoming, prev) => {
+      if (role.isManager) return incoming;
+      if (!sameContent(incoming, prev)) ignored.district = true;
       return null;
-    }
-    return { ...incoming, createdBy: prev.createdBy || incoming.createdBy || role.email };
-  };
-  const cbaLibrary = mergeLibrary(stored && stored.cba_library, req.body.cbaLibrary, districtItemRule);
-  const handbookLibrary = mergeLibrary(stored && stored.handbook_library, req.body.handbookLibrary, districtItemRule);
-  const schoolSites = mergeLibrary(stored && stored.school_sites, req.body.schoolSites, siteRule);
-  const deletedKeys = [...tombstones].slice(-500);
+    };
+    // Sites: anyone can add one, and it records who did. Changing an existing
+    // site follows canEditSite, and nobody can reassign who created it.
+    const siteRule = (incoming, prev) => {
+      if (!prev) return { ...incoming, createdBy: role.email };
+      if (!canEditSite(prev, role)) {
+        if (!sameContent(incoming, prev)) ignored.sites.push(prev.name);
+        return null;
+      }
+      return { ...incoming, createdBy: prev.createdBy || incoming.createdBy || role.email };
+    };
+    const cbaLibrary = mergeLibrary(stored && stored.cba_library, req.body.cbaLibrary, districtItemRule);
+    const handbookLibrary = mergeLibrary(stored && stored.handbook_library, req.body.handbookLibrary, districtItemRule);
+    const schoolSites = mergeLibrary(stored && stored.school_sites, req.body.schoolSites, siteRule);
+    const deletedKeys = [...tombstones].slice(-500);
 
-  // District fields change only for a manager; everyone else keeps what is saved.
-  const keep = (incomingValue, storedValue) => (role.isManager || !stored) ? incomingValue : storedValue;
-  const finalName = keep(districtName, stored && stored.district_name);
-  const finalBpUrl = keep(bpURL, stored && stored.bp_url);
-  const finalCounty = keep(county, stored && stored.county);
-  const finalDocTypes = keep(docTypes, stored && stored.doc_types);
-  if (!role.isManager && stored) {
-    // Only a value this browser actually sent, and that differs, counts as an attempted change.
-    const changed = (a, b) => a !== undefined && !(Array.isArray(a) && a.length === 0) && JSON.stringify(a || '') !== JSON.stringify(b || '');
-    if (changed(districtName, stored.district_name) || changed(bpURL, stored.bp_url) || changed(docTypes, stored.doc_types)) ignored.district = true;
-  }
+    // District fields change only for a manager; everyone else keeps what is
+    // saved. And a manager whose screen is out of date (the version it last
+    // read is older than what is stored now) keeps the stored fields too, so a
+    // stale tab saving something unrelated cannot put back an old district name
+    // or board policy link over a newer change. A save that sends no baseVersion
+    // (an older client) is treated as current, so nothing changes for it.
+    const clientBaseVersion = Number(req.body.baseVersion);
+    const clientIsCurrent = !stored || !Number.isInteger(clientBaseVersion) ? true : clientBaseVersion >= Number(stored.version || 0);
+    const keep = (incomingValue, storedValue) => ((role.isManager && clientIsCurrent) || !stored) ? incomingValue : storedValue;
+    const finalName = keep(districtName, stored && stored.district_name);
+    const finalBpUrl = keep(bpURL, stored && stored.bp_url);
+    const finalCounty = keep(county, stored && stored.county);
+    const finalDocTypes = keep(docTypes, stored && stored.doc_types);
+    if (!role.isManager && stored) {
+      // Only a value this browser actually sent, and that differs, counts as an attempted change.
+      const changed = (a, b) => a !== undefined && !(Array.isArray(a) && a.length === 0) && JSON.stringify(a || '') !== JSON.stringify(b || '');
+      if (changed(districtName, stored.district_name) || changed(bpURL, stored.bp_url) || changed(docTypes, stored.doc_types)) ignored.district = true;
+    }
+    return {
+      columns: {
+        district_name: finalName || '',
+        bp_url: finalBpUrl || '',
+        county: finalCounty || '',
+        doc_types: JSON.stringify(finalDocTypes || []),
+        cba_library: JSON.stringify(cbaLibrary || []),
+        handbook_library: JSON.stringify(handbookLibrary || []),
+        school_sites: JSON.stringify(schoolSites || []),
+        deleted_keys: JSON.stringify(deletedKeys),
+      },
+      result: { cbaLibrary, handbookLibrary, schoolSites, deletedKeys, ignored, finalBpUrl, conflicts: [...new Set(conflicts)] },
+    };
+  };
 
   try {
-    await pool.query(`
-      INSERT INTO district_settings (domain, district_name, bp_url, county, doc_types, cba_library, handbook_library, school_sites, deleted_keys, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now())
-      ON CONFLICT (domain) DO UPDATE SET
-        district_name = EXCLUDED.district_name,
-        bp_url = EXCLUDED.bp_url,
-        county = EXCLUDED.county,
-        doc_types = EXCLUDED.doc_types,
-        cba_library = EXCLUDED.cba_library,
-        handbook_library = EXCLUDED.handbook_library,
-        school_sites = EXCLUDED.school_sites,
-        deleted_keys = EXCLUDED.deleted_keys,
-        updated_at = now()
-    `, [domain, finalName || '', finalBpUrl || '', finalCounty || '', JSON.stringify(finalDocTypes || []), JSON.stringify(cbaLibrary || []), JSON.stringify(handbookLibrary || []), JSON.stringify(schoolSites || []), JSON.stringify(deletedKeys)]);
+    const { result, version } = await updateDistrictSettings(domain, buildMerge);
+    const { cbaLibrary, handbookLibrary, schoolSites, deletedKeys, ignored, finalBpUrl, conflicts } = result;
 
     const newBpUrl = (finalBpUrl || '').trim();
     if (newBpUrl && newBpUrl !== previousBpUrl) {
@@ -2021,9 +2176,9 @@ app.post('/api/district-settings', requireAppAccess, async (req, res) => {
       }).catch(err => console.error('Could not send board policy link notice:', err.message));
     }
 
-    res.json({ ok: true, cbaLibrary, handbookLibrary, schoolSites, deletedKeys, ignored: { district: ignored.district, sites: [...new Set(ignored.sites)] } });
+    res.json({ ok: true, version, cbaLibrary, handbookLibrary, schoolSites, deletedKeys, conflicts: conflicts || [], ignored: { district: ignored.district, sites: [...new Set(ignored.sites)] } });
   } catch (err) {
-    res.status(500).json({ error: 'Server error: ' + err.message });
+    res.status(err.statusCode || 500).json({ error: err.statusCode === 409 ? err.message : 'Server error: ' + err.message });
   }
 });
 
@@ -2034,7 +2189,7 @@ app.post('/api/district-settings', requireAppAccess, async (req, res) => {
 app.post('/api/documents', requireAppAccess, async (req, res) => {
   try {
     const { filename, contentType, dataBase64 } = req.body;
-    if (!filename || !dataBase64) return res.status(400).json({ error: 'Missing filename or file data.' });
+    if (typeof filename !== 'string' || typeof dataBase64 !== 'string' || !filename || !dataBase64) return res.status(400).json({ error: 'Missing filename or file data.' });
     const lower = filename.toLowerCase();
     const allowed = ['.pdf', '.doc', '.docx'].some(ext => lower.endsWith(ext));
     if (!allowed) return res.status(400).json({ error: 'Only PDF and Word documents are supported.' });
@@ -2088,8 +2243,15 @@ app.get('/api/documents/:id', requireAppAccess, async (req, res) => {
     // Knowing a document id is not permission to read it. Older uploads have no
     // district recorded, so those stay readable by any signed-in administrator.
     if (doc.domain && !canAccessDistrict(req, doc.domain)) return res.status(404).json({ error: 'Document not found.' });
-    res.setHeader('Content-Type', doc.content_type || 'application/octet-stream');
-    res.setHeader('Content-Disposition', `inline; filename="${doc.filename.replace(/"/g, '')}"`);
+    // These bytes were uploaded by a district administrator, so they are never
+    // trusted to be served as a web page. Only PDFs and images are shown in the
+    // browser; anything else (an uploaded text/html file, for example) is sent
+    // as a plain download, and nosniff stops the browser guessing a type of its
+    // own. Without this an upload could run script on trackument.com.
+    const { contentType, disposition } = safeDocumentServing(doc.content_type, doc.filename);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', disposition);
     res.send(doc.data);
   } catch (err) {
     res.status(500).json({ error: 'Could not retrieve document: ' + err.message });
@@ -2213,8 +2375,14 @@ app.delete('/api/admin/board-policies/:id', async (req, res) => {
 // for the signed-in district's domain only, alongside anything Trackument
 // staff added through the admin tool.
 function parsePolicyText(raw) {
+  // PDF text extraction inserts page separators like "-- 2 of 3 --" between
+  // pages. Left in, they attach to whichever policy they follow, so a bare
+  // cross-reference line ("BP 4119.21 Professional Standards" under a Cross
+  // References heading) picks up the separator as its "text" and overwrites the
+  // real policy. Drop those separator lines before parsing.
+  raw = String(raw || '').replace(/^\s*-+\s*\d+\s+of\s+\d+\s*-+\s*$/gm, '');
   const markerRegex = /^(?:[A-Z][A-Za-z/&]*\s+){0,2}((?:BP|AR|BB|E)\s*\d{3,5}(?:\.\d+)?)\b(.*)$/gm;
-  const matches = [...String(raw || '').matchAll(markerRegex)];
+  const matches = [...raw.matchAll(markerRegex)];
   const policies = [];
   for (let i = 0; i < matches.length; i++) {
     const m = matches[i];
@@ -2312,6 +2480,9 @@ app.delete('/api/district/board-policies/:id', requireAppAccess, async (req, res
 app.get('/api/board-policies', async (req, res) => {
   const domain = (req.query.domain || '').trim().toLowerCase();
   if (!domain) return res.status(400).json({ error: 'Missing domain.' });
+  // The signed-in district may only read its own policies. checkBeta has
+  // already required a session and set req.districtSession for this route.
+  if (!canAccessDistrict(req, domain)) return res.status(403).json({ error: 'Not allowed for this district.' });
   try {
     const { rows } = await pool.query(
       'SELECT policy_number, title, policy_text FROM board_policies WHERE domain = $1 ORDER BY policy_number',
@@ -2359,17 +2530,13 @@ function buildFooterText() {
 function adminPageShell(title, bodyHtml) {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${title} | Trackument</title><meta name="robots" content="noindex, nofollow">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  body{font-family:'Source Sans 3',Arial,sans-serif;background:#fbfaff;color:#1a0256;margin:0;padding:48px 24px;}
-  h1{font-family:'Playfair Display',Georgia,serif;}
+  body{font-family:Inter,Arial,sans-serif;background:#fbfaff;color:#1a0256;margin:0;padding:48px 24px;}
   .card{max-width:520px;margin:0 auto;background:#fff;border:1px solid #e4e0ef;border-radius:14px;padding:32px;box-shadow:0 2px 12px rgba(40,11,91,0.06);}
-  h1{font-size:1.5rem;margin:0 0 16px;} p{line-height:1.6;color:#3d3553;margin:0 0 16px;}
-  .show-key{display:flex;align-items:center;gap:8px;margin:8px 0 0;font-size:0.85rem;font-weight:400;text-transform:none;color:#3d3553;}
-  .show-key input{width:auto;margin:0;}
+  h1{font-size:1.4rem;margin:0 0 16px;} p{line-height:1.6;color:#3d3553;margin:0 0 16px;}
   label{display:block;font-size:0.8rem;font-weight:700;text-transform:uppercase;margin:24px 0 8px;}
   label:first-of-type{margin-top:0;}
-  input[type=text],input[type=password],input[type=email],input[type=file]{width:100%;box-sizing:border-box;padding:12px;border:1px solid #d9d4e8;border-radius:8px;font-size:1rem;margin-bottom:0;}
+  input[type=text],input[type=password],input[type=email],input[type=file],textarea{width:100%;box-sizing:border-box;padding:12px;border:1px solid #d9d4e8;border-radius:8px;font-size:1rem;margin-bottom:0;background:#eceaf6;font-family:inherit;}
   textarea{margin-bottom:0;}
   /* A checkbox and its wording sit on one line, with room before the button. */
   label.choice{display:flex;align-items:flex-start;gap:10px;margin:20px 0 0;font-size:0.9rem;font-weight:400;text-transform:none;line-height:1.5;color:#3d3553;}
@@ -2378,23 +2545,26 @@ function adminPageShell(title, bodyHtml) {
   .ok{background:#e9f6f5;border:1px solid #9fd6d3;color:#035e5c;padding:16px;border-radius:8px;}
   .err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:16px;border-radius:8px;}
   .build-footer{max-width:520px;margin:16px auto 0;font-size:0.75rem;color:#8d86a3;text-align:center;}
-</style></head><body><div class="card">${bodyHtml}</div><div class="build-footer">${buildFooterText()}</div>
-<script>
-  // Show the admin key while typing, so a mistyped key is easy to spot.
-  document.querySelectorAll('input[type=password]').forEach((field) => {
-    const row = document.createElement('label');
-    row.className = 'show-key';
-    row.innerHTML = '<input type="checkbox"> Show key';
-    field.insertAdjacentElement('afterend', row);
-    row.querySelector('input').addEventListener('change', (e) => {
-      field.type = e.target.checked ? 'text' : 'password';
-    });
-  });
-</script>
-</body></html>`;
+</style></head><body><div class="card">${bodyHtml}</div><div class="build-footer">${buildFooterText()}</div></body></html>`;
 }
 function escapeHtml(v) {
   return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// Decides how a stored upload may be handed back to the browser. Only PDFs and
+// images are shown inline; every other type is forced to a plain download so an
+// uploaded page can never run as script. The filename is also made safe for an
+// HTTP header: an ASCII fallback in quotes (a curly quote or dash in the name
+// used to crash the response), plus an RFC 5987 filename* for the real name.
+const INLINE_DOCUMENT_TYPES = new Set(['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']);
+function safeDocumentServing(storedType, filename) {
+  const type = String(storedType || '').split(';')[0].trim().toLowerCase();
+  const inline = INLINE_DOCUMENT_TYPES.has(type);
+  const contentType = inline ? type : 'application/octet-stream';
+  const name = String(filename || 'document');
+  const asciiName = name.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_') || 'document';
+  const disposition = `${inline ? 'inline' : 'attachment'}; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(name)}`;
+  return { contentType, disposition };
 }
 
 app.get('/api/admin/activate-district', async (req, res) => {
@@ -2518,6 +2688,172 @@ async function districtSummary(domain) {
   };
 }
 
+// ─── Loading a district's agreements and handbooks ──────────────────────────
+// Districts can upload these themselves in District Settings. This does the
+// same thing on their behalf, for districts that would rather email the file,
+// and for demos where everything is set up in advance.
+async function addDistrictLibraryEntry({ domain, kind, name, unit, filename, contentType, buffer }) {
+  const id = crypto.randomUUID();
+  await pool.query(
+    'INSERT INTO documents (id, filename, content_type, data, domain) VALUES ($1, $2, $3, $4, $5)',
+    [id, filename, contentType || 'application/pdf', buffer, domain]
+  );
+  // Pull the text out now, so the first writeup does not wait for it.
+  if (pdfParse && /pdf/i.test(contentType || '') ) {
+    try {
+      const parser = new pdfParse.PDFParse({ data: buffer });
+      const text = ((await parser.getText()).text || '').trim();
+      if (text) await pool.query('UPDATE documents SET text_content = $1 WHERE id = $2', [text, id]);
+    } catch (err) { console.error('Could not read text from', filename, err.message); }
+  }
+
+  const column = kind === 'handbook' ? 'handbook_library' : 'cba_library';
+  const entry = {
+    key: (kind === 'handbook' ? 'handbook:' : 'cba:') + Date.now() + Math.random().toString(36).slice(2),
+    name,
+    unit: unit || '',
+    sourceType: 'file',
+    sourceLabel: filename,
+    documentId: id,
+    savedAt: new Date().toLocaleDateString('en-US'),
+    updatedAt: Date.now(),
+  };
+  // Append through the shared compare-and-swap so a district administrator
+  // saving from their browser at the same moment does not lose this agreement,
+  // and this does not lose theirs.
+  await updateDistrictSettings(domain, (stored) => {
+    const library = [...((stored && stored[column]) || []), entry];
+    return { columns: { [column]: JSON.stringify(library) }, result: entry };
+  });
+  return entry;
+}
+
+app.get('/api/admin/district-documents', async (req, res) => {
+  res.send(adminPageShell('Load a district document', `
+    <h1>Load a district document</h1>
+    <p>Add a bargaining agreement or employee handbook to a district's District Settings on their behalf. Trackument reads the text right away, so writeups can quote the right article.</p>
+    <label for="key">Admin key</label>
+    <input type="password" id="key" autocomplete="off">
+    <label for="domain">District email domain</label>
+    <input type="text" id="domain" placeholder="e.g. basslakesd.org">
+    <button type="button" id="look">Show what is on file</button>
+    <div id="list" style="margin-top:20px;"></div>
+    <label for="kind">Document type</label>
+    <select id="kind" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #d9d4e8;border-radius:8px;font-size:1rem;">
+      <option value="cba">Collective bargaining agreement</option>
+      <option value="handbook">Employee handbook</option>
+    </select>
+    <label for="name">Name</label>
+    <input type="text" id="name" placeholder="e.g. BLTA Agreement 2024-2027">
+    <label for="unit">Applies to</label>
+    <select id="unit" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #d9d4e8;border-radius:8px;font-size:1rem;">
+      <option value="certificated">Certificated staff</option>
+      <option value="classified">Classified staff</option>
+      <option value="management">Management and confidential</option>
+      <option value="all">All staff</option>
+    </select>
+    <label for="file">PDF file</label>
+    <input type="file" id="file" accept="application/pdf,.pdf">
+    <button type="button" id="save">Add to this district</button>
+    <p id="msg"></p>
+    <script>
+      const el = (id) => document.getElementById(id);
+      const post = (path, body) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ key: el('key').value, domain: el('domain').value }, body || {})) }).then(async r => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
+      // Document names, units, and file labels come from the district, so they
+      // are placed as text nodes, never built into an HTML string. Otherwise a
+      // document named with an <img onerror> could run script on this admin
+      // page -- which holds the admin key.
+      const refresh = async () => {
+        const { ok, data } = await post('/api/admin/district-documents/list');
+        const list = el('list');
+        list.textContent = '';
+        if (!ok) { el('msg').textContent = data.error || 'Could not load.'; return; }
+        const rows = (data.entries || []);
+        const p = document.createElement('p');
+        if (!rows.length) { p.textContent = 'No agreements or handbooks on file for ' + data.domain + '.'; list.appendChild(p); return; }
+        const head = document.createElement('strong');
+        head.textContent = 'On file for ' + data.domain + ':';
+        p.appendChild(head);
+        rows.forEach(e => {
+          p.appendChild(document.createElement('br'));
+          p.appendChild(document.createTextNode(e.kindLabel + ': ' + e.name + (e.unit ? ' (' + e.unit + ')' : '') + ', ' + e.sourceLabel + ' '));
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'rm';
+          btn.textContent = 'Remove';
+          btn.dataset.k = e.key;
+          btn.style.cssText = 'background:none;border:none;color:#c80204;text-decoration:underline;cursor:pointer;padding:0 0 0 8px;font-size:0.85rem;margin:0;';
+          p.appendChild(btn);
+        });
+        list.appendChild(p);
+        list.querySelectorAll('.rm').forEach(btn => btn.onclick = async () => {
+          const r = await post('/api/admin/district-documents/remove', { entryKey: btn.dataset.k });
+          el('msg').textContent = r.ok ? 'Removed.' : (r.data.error || 'Could not remove.');
+          refresh();
+        });
+      };
+      el('look').onclick = () => { el('msg').textContent = ''; refresh(); };
+      el('save').onclick = async () => {
+        const file = el('file').files[0];
+        if (!file) { el('msg').textContent = 'Choose a PDF first.'; return; }
+        if (!el('name').value.trim()) { el('msg').textContent = 'Give the document a name.'; return; }
+        el('msg').textContent = 'Uploading ' + file.name + '...';
+        const dataBase64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result).split(',')[1]);
+          reader.onerror = () => reject(new Error('Could not read that file.'));
+          reader.readAsDataURL(file);
+        });
+        const { ok, data } = await post('/api/admin/district-documents/upload', {
+          kind: el('kind').value, name: el('name').value, unit: el('unit').value,
+          filename: file.name, dataBase64
+        });
+        el('msg').textContent = ok ? 'Added ' + data.entry.name + ' to ' + el('domain').value + '.' : (data.error || 'Could not add that document.');
+        if (ok) { el('name').value = ''; el('file').value = ''; refresh(); }
+      };
+    </script>
+  `));
+});
+
+app.post('/api/admin/district-documents/list', async (req, res) => {
+  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  const domain = String(req.body.domain || '').trim().toLowerCase();
+  if (!domain) return res.status(400).json({ error: 'Enter a district domain.' });
+  const { rows } = await pool.query('SELECT cba_library, handbook_library FROM district_settings WHERE domain = $1', [domain]);
+  const cba = ((rows[0] && rows[0].cba_library) || []).map(e => ({ ...e, kindLabel: 'Agreement' }));
+  const handbooks = ((rows[0] && rows[0].handbook_library) || []).map(e => ({ ...e, kindLabel: 'Handbook' }));
+  res.json({ domain, entries: [...cba, ...handbooks] });
+});
+
+app.post('/api/admin/district-documents/upload', async (req, res) => {
+  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  const domain = String(req.body.domain || '').trim().toLowerCase();
+  const { kind, name, unit, filename, dataBase64 } = req.body;
+  if (!domain) return res.status(400).json({ error: 'Enter a district domain.' });
+  if (!name || !filename || !dataBase64) return res.status(400).json({ error: 'A name and a PDF file are both required.' });
+  if (!/\.pdf$/i.test(filename)) return res.status(400).json({ error: 'Please upload a PDF file.' });
+  const buffer = Buffer.from(dataBase64, 'base64');
+  const entry = await addDistrictLibraryEntry({ domain, kind: kind === 'handbook' ? 'handbook' : 'cba', name: String(name).trim(), unit, filename, contentType: 'application/pdf', buffer });
+  console.log('Admin added a', kind, 'for', domain, '-', filename);
+  res.json({ ok: true, entry });
+});
+
+app.post('/api/admin/district-documents/remove', async (req, res) => {
+  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  const domain = String(req.body.domain || '').trim().toLowerCase();
+  const entryKey = String(req.body.entryKey || '');
+  if (!domain || !entryKey) return res.status(400).json({ error: 'Missing district or document.' });
+  const column = entryKey.startsWith('handbook:') ? 'handbook_library' : 'cba_library';
+  // Remove through the shared compare-and-swap so a browser saving at the same
+  // moment cannot bring the removed document back.
+  await updateDistrictSettings(domain, (stored) => {
+    const library = ((stored && stored[column]) || []).filter(e => e.key !== entryKey);
+    const tombstones = [...new Set([...((stored && stored.deleted_keys) || []), entryKey])].slice(-500);
+    return { columns: { [column]: JSON.stringify(library), deleted_keys: JSON.stringify(tombstones) }, result: true };
+  });
+  res.json({ ok: true });
+});
+
 // ─── Statute library ────────────────────────────────────────────────────────
 // Every district uses the same Education Code, so its text lives here once.
 // The app quotes from this text, and drops any citation it cannot verify.
@@ -2639,7 +2975,7 @@ app.get('/api/admin/statutes', async (req, res) => {
         if (!ok) { el('msg').textContent = data.error || 'Could not load.'; return; }
         const rows = data.statutes || [];
         el('list').innerHTML = rows.length
-          ? '<p><strong>' + rows.length + ' loaded:</strong><br>' + rows.map(r => r.code + (r.title ? ' — ' + r.title : '') + ' <button type="button" class="rm" data-c="' + encodeURIComponent(r.code) + '" style="background:none;border:none;color:#c80204;text-decoration:underline;cursor:pointer;padding:0 0 0 8px;font-size:0.85rem;margin:0;">Remove</button>').join('<br>') + '</p>'
+          ? '<p><strong>' + rows.length + ' loaded:</strong><br>' + rows.map(r => esc(r.code) + (r.title ? ', ' + esc(r.title) : '') + ' <button type="button" class="rm" data-c="' + encodeURIComponent(r.code) + '" style="background:none;border:none;color:#c80204;text-decoration:underline;cursor:pointer;padding:0 0 0 8px;font-size:0.85rem;margin:0;">Remove</button>').join('<br>') + '</p>'
           : '<p>No statutes loaded yet, so writeups will cite no Ed Code sections.</p>';
         document.querySelectorAll('.rm').forEach(b => b.onclick = async () => {
           await post('/api/admin/statutes/remove', { code: decodeURIComponent(b.dataset.c) });
@@ -2651,8 +2987,8 @@ app.get('/api/admin/statutes', async (req, res) => {
         el('msg').textContent = 'Fetching...';
         const { ok, data } = await post('/api/admin/statutes/fetch', { codes: el('fetchList').value });
         if (!ok) { el('msg').textContent = data.error || 'Could not fetch.'; return; }
-        el('msg').innerHTML = 'Loaded ' + (data.loaded || []).join(', ') + '.' +
-          ((data.failed || []).length ? '<br>Could not fetch: ' + data.failed.join(', ') + '. Paste those by hand below.' : '');
+        el('msg').innerHTML = 'Loaded ' + esc((data.loaded || []).join(', ')) + '.' +
+          ((data.failed || []).length ? '<br>Could not fetch: ' + esc(data.failed.join(', ')) + '. Paste those by hand below.' : '');
         refresh();
       };
       el('save').onclick = async () => {
@@ -2694,162 +3030,6 @@ app.post('/api/admin/statutes/save', async (req, res) => {
 app.post('/api/admin/statutes/remove', async (req, res) => {
   if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
   await pool.query('DELETE FROM statutes WHERE code = $1', [String(req.body.code || '')]);
-  res.json({ ok: true });
-});
-
-// ─── Loading a district's agreements and handbooks ──────────────────────────
-// Districts can upload these themselves in District Settings. This does the
-// same thing on their behalf, for districts that would rather email the file,
-// and for demos where everything is set up in advance.
-async function addDistrictLibraryEntry({ domain, kind, name, unit, filename, contentType, buffer }) {
-  const id = crypto.randomUUID();
-  await pool.query(
-    'INSERT INTO documents (id, filename, content_type, data, domain) VALUES ($1, $2, $3, $4, $5)',
-    [id, filename, contentType || 'application/pdf', buffer, domain]
-  );
-  // Pull the text out now, so the first writeup does not wait for it.
-  if (pdfParse && /pdf/i.test(contentType || '') ) {
-    try {
-      const parser = new pdfParse.PDFParse({ data: buffer });
-      const text = ((await parser.getText()).text || '').trim();
-      if (text) await pool.query('UPDATE documents SET text_content = $1 WHERE id = $2', [text, id]);
-    } catch (err) { console.error('Could not read text from', filename, err.message); }
-  }
-
-  const column = kind === 'handbook' ? 'handbook_library' : 'cba_library';
-  const { rows } = await pool.query(`SELECT ${column} AS library FROM district_settings WHERE domain = $1`, [domain]);
-  const library = (rows[0] && rows[0].library) || [];
-  const entry = {
-    key: (kind === 'handbook' ? 'handbook:' : 'cba:') + Date.now() + Math.random().toString(36).slice(2),
-    name,
-    unit: unit || '',
-    sourceType: 'file',
-    sourceLabel: filename,
-    documentId: id,
-    savedAt: new Date().toLocaleDateString('en-US'),
-    updatedAt: Date.now(),
-  };
-  library.push(entry);
-  await pool.query(`
-    INSERT INTO district_settings (domain, ${column}, updated_at) VALUES ($1, $2, now())
-    ON CONFLICT (domain) DO UPDATE SET ${column} = EXCLUDED.${column}, updated_at = now()
-  `, [domain, JSON.stringify(library)]);
-  return entry;
-}
-
-app.get('/api/admin/district-documents', async (req, res) => {
-  res.send(adminPageShell('Load a district document', `
-    <h1>Load a district document</h1>
-    <p>Add a bargaining agreement or employee handbook to a district's District Settings on their behalf. Trackument reads the text right away, so writeups can quote the right article.</p>
-    <label for="key">Admin key</label>
-    <input type="password" id="key" autocomplete="off">
-    <label for="domain">District email domain</label>
-    <input type="text" id="domain" placeholder="e.g. basslakesd.org">
-    <button type="button" id="look">Show what is on file</button>
-    <div id="list" style="margin-top:20px;"></div>
-    <label for="kind">Document type</label>
-    <select id="kind" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #d9d4e8;border-radius:8px;font-size:1rem;">
-      <option value="cba">Collective bargaining agreement</option>
-      <option value="handbook">Employee handbook</option>
-    </select>
-    <label for="name">Name</label>
-    <input type="text" id="name" placeholder="e.g. BLTA Agreement 2024-2027">
-    <label for="unit">Applies to</label>
-    <select id="unit" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #d9d4e8;border-radius:8px;font-size:1rem;">
-      <option value="certificated">Certificated staff</option>
-      <option value="classified">Classified staff</option>
-      <option value="management">Management and confidential</option>
-      <option value="all">All staff</option>
-    </select>
-    <label for="file">PDF file</label>
-    <input type="file" id="file" accept="application/pdf,.pdf">
-    <button type="button" id="save">Add to this district</button>
-    <p id="msg"></p>
-    <script>
-      const el = (id) => document.getElementById(id);
-      const post = (path, body) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ key: el('key').value, domain: el('domain').value }, body || {})) }).then(async r => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
-      const refresh = async () => {
-        const { ok, data } = await post('/api/admin/district-documents/list');
-        if (!ok) { el('list').innerHTML = ''; el('msg').textContent = data.error || 'Could not load.'; return; }
-        const rows = (data.entries || []);
-        el('list').innerHTML = rows.length
-          ? '<p><strong>On file for ' + data.domain + ':</strong><br>' + rows.map(e => e.kindLabel + ': ' + e.name + (e.unit ? ' (' + e.unit + ')' : '') + ' — ' + e.sourceLabel + ' <button type="button" data-k="' + e.key + '" class="rm" style="background:none;border:none;color:#c80204;text-decoration:underline;cursor:pointer;padding:0 0 0 8px;font-size:0.85rem;margin:0;">Remove</button>').join('<br>') + '</p>'
-          : '<p>No agreements or handbooks on file for ' + data.domain + '.</p>';
-        document.querySelectorAll('.rm').forEach(btn => btn.onclick = async () => {
-          const r = await post('/api/admin/district-documents/remove', { entryKey: btn.dataset.k });
-          el('msg').textContent = r.ok ? 'Removed.' : (r.data.error || 'Could not remove.');
-          refresh();
-        });
-      };
-      el('look').onclick = () => { el('msg').textContent = ''; refresh(); };
-      el('save').onclick = async () => {
-        const file = el('file').files[0];
-        if (!file) { el('msg').textContent = 'Choose a PDF first.'; return; }
-        if (!el('name').value.trim()) { el('msg').textContent = 'Give the document a name.'; return; }
-        el('msg').textContent = 'Uploading ' + file.name + '...';
-        const dataBase64 = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result).split(',')[1]);
-          reader.onerror = () => reject(new Error('Could not read that file.'));
-          reader.readAsDataURL(file);
-        });
-        const { ok, data } = await post('/api/admin/district-documents/upload', {
-          kind: el('kind').value, name: el('name').value, unit: el('unit').value,
-          filename: file.name, dataBase64
-        });
-        el('msg').textContent = ok ? 'Added ' + data.entry.name + ' to ' + el('domain').value + '.' : (data.error || 'Could not add that document.');
-        if (ok) { el('name').value = ''; el('file').value = ''; refresh(); }
-      };
-    </script>
-  `));
-});
-
-app.post('/api/admin/district-documents/list', async (req, res) => {
-  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
-  const domain = String(req.body.domain || '').trim().toLowerCase();
-  if (!domain) return res.status(400).json({ error: 'Enter a district domain.' });
-  const { rows } = await pool.query('SELECT cba_library, handbook_library FROM district_settings WHERE domain = $1', [domain]);
-  const cba = ((rows[0] && rows[0].cba_library) || []).map(e => ({ ...e, kindLabel: 'Agreement' }));
-  const handbooks = ((rows[0] && rows[0].handbook_library) || []).map(e => ({ ...e, kindLabel: 'Handbook' }));
-  res.json({ domain, entries: [...cba, ...handbooks] });
-});
-
-app.post('/api/admin/district-documents/upload', async (req, res) => {
-  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
-  const domain = String(req.body.domain || '').trim().toLowerCase();
-  const { kind, name, unit, filename, dataBase64 } = req.body;
-  if (!domain) return res.status(400).json({ error: 'Enter a district domain.' });
-  if (!name || !filename || !dataBase64) return res.status(400).json({ error: 'A name and a PDF file are both required.' });
-  if (!/\.pdf$/i.test(filename)) return res.status(400).json({ error: 'Please upload a PDF file.' });
-  const buffer = Buffer.from(dataBase64, 'base64');
-  // A scanned PDF has no text to quote, so it is refused here rather than
-  // failing quietly inside a district's writeup later.
-  if (pdfParse) {
-    let readableLength = 0;
-    try {
-      const parser = new pdfParse.PDFParse({ data: buffer });
-      readableLength = ((await parser.getText()).text || '').trim().length;
-    } catch (err) { readableLength = 0; }
-    if (readableLength < 200) {
-      return res.status(400).json({ error: 'We could not read any text in ' + filename + '. It looks like a scan rather than a text based PDF, so nothing could be quoted from it. Save it again as a text based PDF and upload that copy, or email help@trackument.com for assistance.' });
-    }
-  }
-  const entry = await addDistrictLibraryEntry({ domain, kind: kind === 'handbook' ? 'handbook' : 'cba', name: String(name).trim(), unit, filename, contentType: 'application/pdf', buffer });
-  console.log('Admin added a', kind, 'for', domain, '-', filename);
-  res.json({ ok: true, entry });
-});
-
-app.post('/api/admin/district-documents/remove', async (req, res) => {
-  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
-  const domain = String(req.body.domain || '').trim().toLowerCase();
-  const entryKey = String(req.body.entryKey || '');
-  if (!domain || !entryKey) return res.status(400).json({ error: 'Missing district or document.' });
-  const column = entryKey.startsWith('handbook:') ? 'handbook_library' : 'cba_library';
-  const { rows } = await pool.query(`SELECT ${column} AS library, deleted_keys FROM district_settings WHERE domain = $1`, [domain]);
-  const library = ((rows[0] && rows[0].library) || []).filter(e => e.key !== entryKey);
-  const tombstones = [...new Set([...((rows[0] && rows[0].deleted_keys) || []), entryKey])].slice(-500);
-  await pool.query(`UPDATE district_settings SET ${column} = $1, deleted_keys = $2, updated_at = now() WHERE domain = $3`,
-    [JSON.stringify(library), JSON.stringify(tombstones), domain]);
   res.json({ ok: true });
 });
 
@@ -2951,19 +3131,35 @@ app.get('/api/admin/remove-district', async (req, res) => {
       const post = (path, body) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ key: el('key').value, domain: el('domain').value }, body || {})) }).then(async r => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
       const refresh = async () => {
         const { ok, data } = await post('/api/admin/district-summary');
-        if (!ok) { el('summary').innerHTML = ''; el('actions').style.display = 'none'; el('msg').textContent = data.error || 'Could not look that up.'; return; }
-        if (!data.found) { el('summary').innerHTML = '<p>Nothing saved for that domain.</p>'; el('actions').style.display = 'none'; return; }
-        el('summary').innerHTML = '<p><strong>' + data.districtName + '</strong><br>Status: ' + data.status +
-          (data.contact ? '<br>Contact: ' + data.contact : '') +
-          (data.renewalDate ? '<br>Renews: ' + data.renewalDate : '') +
-          (data.subscription ? '<br>Stripe subscription still on file: ' + data.subscription : '') +
-          '<br>District Settings Managers: ' + (data.managers.join(', ') || 'none named') +
-          '<br>Sites and departments: ' + data.sites +
-          '<br>Board policies: ' + data.boardPolicies +
-          '<br>Agreements: ' + data.agreements + ', handbooks: ' + data.handbooks +
-          '<br>Uploaded files: ' + data.uploadedFiles +
-          '<br>Administrators signed in right now: ' + data.signedInNow + '</p>' +
-          (data.status === 'active' && data.subscription ? '<p style="color:#c80204;">This district still has a Stripe subscription. Cancel or void it in Stripe as well.</p>' : '');
+        const summary = el('summary');
+        summary.textContent = '';
+        if (!ok) { el('actions').style.display = 'none'; el('msg').textContent = data.error || 'Could not look that up.'; return; }
+        if (!data.found) { const none = document.createElement('p'); none.textContent = 'Nothing saved for that domain.'; summary.appendChild(none); el('actions').style.display = 'none'; return; }
+        // The district name, contact, managers, and subscription are all
+        // district-supplied, so they go in as text nodes -- never an HTML
+        // string -- so nothing a district saves can run script on this page.
+        const p = document.createElement('p');
+        const strong = document.createElement('strong');
+        strong.textContent = data.districtName;
+        p.appendChild(strong);
+        const line = (label, value) => { p.appendChild(document.createElement('br')); p.appendChild(document.createTextNode(label + value)); };
+        line('Status: ', data.status);
+        if (data.contact) line('Contact: ', data.contact);
+        if (data.renewalDate) line('Renews: ', data.renewalDate);
+        if (data.subscription) line('Stripe subscription still on file: ', data.subscription);
+        line('District Settings Managers: ', ((data.managers || []).join(', ') || 'none named'));
+        line('Sites and departments: ', data.sites);
+        line('Board policies: ', data.boardPolicies);
+        line('Agreements: ', data.agreements + ', handbooks: ' + data.handbooks);
+        line('Uploaded files: ', data.uploadedFiles);
+        line('Administrators signed in right now: ', data.signedInNow);
+        summary.appendChild(p);
+        if (data.status === 'active' && data.subscription) {
+          const warn = document.createElement('p');
+          warn.style.color = '#c80204';
+          warn.textContent = 'This district still has a Stripe subscription. Cancel or void it in Stripe as well.';
+          summary.appendChild(warn);
+        }
         el('actions').style.display = 'block';
       };
       el('look').onclick = () => { el('msg').textContent = ''; refresh(); };
@@ -3102,7 +3298,7 @@ app.get('/api/agreement/download', async (req, res) => {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Trackument Service Agreement: ${district.district_name}</title>
+  <title>Trackument Service Agreement: ${escapeHtml(district.district_name)}</title>
   <style>
     body{font-family:Georgia,serif;max-width:760px;margin:40px auto;padding:0 24px;color:#1a1a1a;line-height:1.7;}
     h1{font-family:Arial,sans-serif;font-size:1.4rem;color:#1a0256;margin-bottom:4px;}
@@ -3123,8 +3319,8 @@ app.get('/api/agreement/download', async (req, res) => {
   <div class="cover">
     <h1>Trackument Service Agreement</h1>
     <div class="cover-meta">
-      District: <strong>${district.district_name}</strong><br>
-      Agreement date: <strong>${agreedDate}</strong>
+      District: <strong>${escapeHtml(district.district_name)}</strong><br>
+      Agreement date: <strong>${escapeHtml(agreedDate)}</strong>
     </div>
   </div>
   ${termsBody}
@@ -3187,6 +3383,11 @@ async function createPortalLinkForCustomer(stripeCustomerId) {
 // behind district sign-in like everything else that isn't the marketing site.
 app.get('/app', (req, res) => res.sendFile(path.join(__dirname, 'public', 'app.html')));
 
+// Any /api/ path no route above handled is a 404, answered as JSON -- so the
+// app never receives the marketing home page in place of the data it asked for.
+// A prefix middleware (not a route) so it stays out of the route inventory.
+app.use('/api', (req, res) => res.status(404).json({ error: 'Not found.' }));
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
@@ -3232,6 +3433,20 @@ async function reportServerError({ where, message, stack, method, url }) {
 // Anything that slips past a route's own error handling ends here, so the
 // visitor gets a clean message and the server stays up.
 app.use((err, req, res, next) => {
+  // A bad request from the caller -- malformed JSON, a body over the size limit,
+  // or any 4xx a body parser or route set -- is not a server fault. Answer with
+  // that status and do not email an error report, so a stream of bad requests
+  // cannot bury the real server-fault alerts below.
+  const clientStatus = Number(err && (err.status || err.statusCode));
+  if (Number.isInteger(clientStatus) && clientStatus >= 400 && clientStatus < 500) {
+    console.warn('Bad request on', req.method, req.originalUrl, '-', err && err.message);
+    if (res.headersSent) return next(err);
+    const message = clientStatus === 413
+      ? 'That request was too large.'
+      : 'That request could not be read. Please check the information and try again.';
+    if (req.path.startsWith('/api/')) return res.status(clientStatus).json({ error: message });
+    return res.status(clientStatus).send(message);
+  }
   console.error('Unhandled error on', req.method, req.originalUrl, '-', err && err.message);
   reportServerError({ where: 'Request handler', message: (err && err.message) || 'Unknown error', stack: err && err.stack, method: req.method, url: req.originalUrl });
   if (res.headersSent) return next(err);
