@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-23-r15 -->
+<!-- BUILD: 2026-09-23-r16 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6285,12 +6285,15 @@ function verifyQuotedFromSource(citations, sourceText) {
 // The words of this writeup, kept so a citation can be checked against what
 // actually happened rather than against its policy's general subject.
 function factsVocabulary() {
-  // Only what the administrator wrote about this employee counts here. The
-  // category vocabulary (safety, hazard, injury, and so on) helps the search
-  // find candidates, but letting it vouch for a citation is how an eye
-  // protection rule got attached to a bus driver who ran a stop sign.
+  // The facts, the job title, and the words of each concern category checked.
+  // Short facts such as "late three times, causing delayed routes" share few
+  // words with "report to work at the scheduled starting time", so the
+  // category words are what connect them. Words too general to mean anything
+  // (safety, hazard, injury, and the like) never count, which is what keeps an
+  // eye protection rule off a bus driver who ran a stop sign.
   const facts = (document.getElementById('factDescription')?.value || '') + ' '
-    + (document.getElementById('employeeTitle')?.value || '');
+    + (document.getElementById('employeeTitle')?.value || '') + ' '
+    + (typeof selectedSituations !== 'undefined' ? situationVocabulary(selectedSituations) : '');
   return new Set(relevanceKeywords(facts));
 }
 // "driver", "driving" and "drive" are the same idea, so words are compared by
@@ -6307,11 +6310,21 @@ const GENERIC_CONCERN_STEMS = new Set(['safe', 'safety', 'unsafe', 'hazard', 'ha
 // rule with a why about running a stop sign shares nothing but the word
 // "safe", which is how a bad citation looked defensible on the screen.
 function whyMatchesQuote(quote, why) {
-  const stemsOf = (text) => new Set(relevanceKeywords(text).map(wordStem).filter(stem => !GENERIC_CONCERN_STEMS.has(stem)));
+  const general = generalStemsNow();
+  const stemsOf = (text) => new Set(relevanceKeywords(text).map(wordStem).filter(stem => !general.has(stem)));
   const quoteStems = stemsOf(quote);
+  const whyStems = stemsOf(why);
   let shared = 0;
-  stemsOf(why).forEach(stem => { if (quoteStems.has(stem)) shared++; });
-  return shared >= 1;
+  whyStems.forEach(stem => { if (quoteStems.has(stem)) shared++; });
+  if (shared >= 1) return true;
+  // A why about being late and a quote about punctuality share no word, yet
+  // both are plainly about attendance. When the quote and the why each use a
+  // word from the same checked category, they are about the same thing.
+  const chosen = typeof selectedSituations !== 'undefined' ? [...selectedSituations] : [];
+  return chosen.some(key => {
+    const category = stemsOf(SITUATION_KEYWORDS[String(key).toLowerCase()] || '');
+    return [...quoteStems].some(stem => category.has(stem)) && [...whyStems].some(stem => category.has(stem));
+  });
 }
 // Every citation, whatever its source, passes the same three tests: it places
 // a duty on this employee, it is about these facts, and its why connects the
@@ -6319,12 +6332,30 @@ function whyMatchesQuote(quote, why) {
 function citationFitsThisCase(sentence, why) {
   return statesEmployeeDuty(sentence) && touchesTheseFacts(sentence, factsVocabulary()) && whyMatchesQuote(sentence, why);
 }
+// Words that are too general for most rules but are the substance of a
+// category's rules. "Report to work on time" is the whole of an attendance
+// rule, so for attendance these words count. Safety words stay general for
+// every category, because nearly every safety rule contains them.
+const CATEGORY_CORE_WORDS = {
+  attendance: ['time', 'times', 'report', 'reported', 'reporting', 'duty', 'duties', 'hours', 'schedule', 'scheduled', 'day'],
+  performance: ['duty', 'duties', 'performance', 'standard', 'require', 'required', 'requirement'],
+  conduct: ['conduct', 'behavior', 'comply', 'compliance', 'failed', 'failure', 'policy', 'policies'],
+  professional: ['professional', 'conduct', 'behavior', 'standard'],
+  dishonesty: ['report', 'reported', 'reporting', 'time', 'times'],
+};
+function generalStemsNow() {
+  const general = new Set(GENERIC_CONCERN_STEMS);
+  const chosen = typeof selectedSituations !== 'undefined' ? [...selectedSituations] : [];
+  chosen.forEach(key => (CATEGORY_CORE_WORDS[String(key).toLowerCase()] || []).forEach(word => general.delete(wordStem(word))));
+  return general;
+}
 function touchesTheseFacts(sentence, vocabulary) {
+  const general = generalStemsNow();
   const stems = new Set((String(sentence || '').toLowerCase().match(/[a-z][a-z'-]{3,}/g) || []).map(wordStem));
   const shared = new Set();
   vocabulary.forEach(word => {
     const stem = wordStem(word);
-    if (stems.has(stem) && !GENERIC_CONCERN_STEMS.has(stem)) shared.add(stem);
+    if (stems.has(stem) && !general.has(stem)) shared.add(stem);
   });
   return shared.size >= 2;
 }
