@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-22-r21 -->
+<!-- BUILD: 2026-09-22-r5 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
+    --field: #eceaf6;
     --navy: #1a0256;
     --navy-deep: #1a0740;
     --gold: #e05b0e;
@@ -248,11 +249,13 @@
 
   label:first-of-type { margin-top: 0; }
 
-  input[type="text"], input[type="date"], input[type="time"], textarea, select {
+  /* Every box a person types into uses the same light purple, so a field is
+     always recognisable as a field. */
+  input[type="text"], input[type="email"], input[type="url"], input[type="date"], input[type="time"], textarea, select {
     width: 100%;
     padding:8px 16px;
     border: 1px solid var(--light-gray);
-    background: #eceaf6;
+    background: var(--field);
     font-family: 'Source Sans 3', sans-serif;
     font-size: 0.93rem;
     color: var(--text);
@@ -265,9 +268,9 @@
     background: var(--white);
   }
 
-  input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, textarea:focus, select:focus {
+  input[type="text"]:focus, input[type="email"]:focus, input[type="url"]:focus, input[type="date"]:focus, input[type="time"]:focus, textarea:focus, select:focus {
     border-color: var(--gold);
-    background: var(--white);
+    background: var(--field);
   }
 
   /* Draw our own dropdown arrow so it sits in from the right edge instead of
@@ -1344,17 +1347,17 @@
         <div class="setup-section-sub">Choose which documentation types appear in the dropdown. Drag to reorder by severity. They'll appear in this order.</div>
         <div id="docTypeCheckList" style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;" ondragover="event.preventDefault()">
           <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem; cursor:grab;">⠿</span><input type="checkbox" class="doctype-chk" value="Conference Summary" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Conference Summary" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+            <span style="color:var(--gray); font-size:1rem; cursor:grab;">⠿</span><input type="checkbox" class="doctype-chk" value="Conference Summary" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Conference Summary" style="flex:1; border:1px solid transparent; background:var(--field); padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
           <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Written Warning" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Written Warning" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Written Warning" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Written Warning" style="flex:1; border:1px solid transparent; background:var(--field); padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
           <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Letter of Reprimand" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Letter of Reprimand" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Letter of Reprimand" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Letter of Reprimand" style="flex:1; border:1px solid transparent; background:var(--field); padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
           <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Notice of Unsatisfactory Performance" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Notice of Unsatisfactory Performance" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Notice of Unsatisfactory Performance" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Notice of Unsatisfactory Performance" style="flex:1; border:1px solid transparent; background:var(--field); padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
           <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Final Written Warning" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Final Written Warning" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Final Written Warning" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Final Written Warning" style="flex:1; border:1px solid transparent; background:var(--field); padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
           <label draggable="true" class="doctype-row" style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;" ondragstart="dragDocType(event)" ondragover="event.preventDefault()" ondrop="dropDocType(event)">
-            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Notice of Unprofessional Conduct" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Notice of Unprofessional Conduct" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
+            <span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="Notice of Unprofessional Conduct" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="Notice of Unprofessional Conduct" style="flex:1; border:1px solid transparent; background:var(--field); padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()"></label>
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
           <input type="text" id="customDocTypeInput" placeholder="Add a custom document type..." style="flex:1; margin:0;">
@@ -1623,7 +1626,7 @@ if (window.location.protocol === 'file:') {
   <div style="display:flex;align-items:center;gap:8px;">
     <div id="draftSaveIndicator" style="font-size:0.75rem; color:rgba(255,255,255,0.5); opacity:0; transition:opacity 0.4s ease; white-space:nowrap;">✓ Progress saved</div>
     <div title="Names, dates, and identifying information are replaced with placeholders before being sent to the AI. Your real data never leaves your browser." style="font-size:0.8rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:4px 8px; color:rgba(255,255,255,0.7); cursor:default; white-space:nowrap;">🔒 Privacy Protected</div>
-    <button onclick="startOver()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:4px 16px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">+ New Writeup</button>
+    <button onclick="startOver()" style="background:var(--gold); border:1px solid var(--gold); color:#fff; padding:6px 18px; border-radius:3px; font-size:0.82rem; font-weight:700; cursor:pointer; letter-spacing:0.02em;">+ New Writeup</button>
     <button onclick="openFeedback()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:4px 16px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">💬 Feedback</button>
     <a href="mailto:help@trackument.com" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:4px 16px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em; text-decoration:none; display:inline-flex; align-items:center;">❓ Help</a>
     <button id="settingsBtn" onclick="openSettings()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.65); padding:4px 16px; border-radius:2px; font-size:0.8rem; font-weight:600; cursor:pointer; letter-spacing:0.02em;">⚙ District &amp; Site Settings</button>
@@ -1684,7 +1687,7 @@ document.addEventListener('keydown', function(e){
     <div class="side-nav-label" style="display:none;">Memo Steps</div>
     <button class="side-nav-item active" id="snav-0" onclick="jumpToStep(0)">
       <div class="side-nav-circle">1</div>
-      <div><div class="side-nav-text">Setup</div><div class="side-nav-sub">Employee info</div></div>
+      <div><div class="side-nav-text">Situation</div><div class="side-nav-sub">Employee &amp; concern</div></div>
     </button>
     <button class="side-nav-item locked" id="snav-1" onclick="jumpToStep(1)">
       <div class="side-nav-circle">2</div>
@@ -1725,11 +1728,13 @@ document.addEventListener('keydown', function(e){
   <div class="container">
 
   <!-- Step 0: Setup -->
+  <div id="districtNotReadyNote" class="readonly-note" style="display:none; margin-bottom:16px;"></div>
+
   <div class="step-section active" id="step-0">
     <div class="card">
       <div class="card-header">
         <div>
-          <div class="card-title">Employee Info</div>
+          <div class="card-title">Employee &amp; Situation</div>
           <div class="card-desc">Complete the fields below for this memo. District information is pulled from your saved profile.</div>
         </div>
       </div>
@@ -2123,7 +2128,7 @@ document.addEventListener('keydown', function(e){
               <input type="checkbox" id="chk-students" checked style="accent-color:var(--navy); width:15px; height:15px;">
               Impact on Students
             </label>
-            <div id="draft-students-text" contenteditable="true" spellcheck="true" style="padding:8px 16px; font-size:0.87rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:40px;" placeholder="Click Generate above to populate."></div>
+            <div id="draft-students-text" contenteditable="true" spellcheck="true" style="padding:8px 16px; font-size:0.87rem; line-height:1.7; color:var(--text); background:var(--field); outline:none; min-height:40px;" placeholder="Click Generate above to populate."></div>
           </div>
 
           <div id="impactAreaOps" style="border:1px solid var(--light-gray); border-radius:3px; margin-bottom:8px; overflow:hidden;">
@@ -2131,7 +2136,7 @@ document.addEventListener('keydown', function(e){
               <input type="checkbox" id="chk-ops" checked style="accent-color:var(--navy); width:15px; height:15px;">
               Impact on Operations
             </label>
-            <div id="draft-ops-text" contenteditable="true" spellcheck="true" style="padding:8px 16px; font-size:0.87rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:40px;"></div>
+            <div id="draft-ops-text" contenteditable="true" spellcheck="true" style="padding:8px 16px; font-size:0.87rem; line-height:1.7; color:var(--text); background:var(--field); outline:none; min-height:40px;"></div>
           </div>
 
           <div id="impactAreaEmp" style="border:1px solid var(--light-gray); border-radius:3px; margin-bottom:8px; overflow:hidden;">
@@ -2139,7 +2144,7 @@ document.addEventListener('keydown', function(e){
               <input type="checkbox" id="chk-emp" checked style="accent-color:var(--navy); width:15px; height:15px;">
               Impact on Employment Relationship
             </label>
-            <div id="draft-emp-text" contenteditable="true" spellcheck="true" style="padding:8px 16px; font-size:0.87rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:40px;"></div>
+            <div id="draft-emp-text" contenteditable="true" spellcheck="true" style="padding:8px 16px; font-size:0.87rem; line-height:1.7; color:var(--text); background:var(--field); outline:none; min-height:40px;"></div>
           </div>
         </div>
       </div>
@@ -2231,7 +2236,7 @@ document.addEventListener('keydown', function(e){
           Consequences of Future Violations
           <span class="auto-tag" style="margin-left:4px;">Auto-populated</span>
         </label>
-        <div id="consequencesDisplay" contenteditable="true" spellcheck="true" style="padding:16px; font-size:0.88rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:60px; white-space:pre-wrap; word-wrap:break-word;">
+        <div id="consequencesDisplay" contenteditable="true" spellcheck="true" style="padding:16px; font-size:0.88rem; line-height:1.7; color:var(--text); background:var(--field); outline:none; min-height:60px; white-space:pre-wrap; word-wrap:break-word;">
           <em style="color:var(--gray);">Complete Setup with a classification to populate.</em>
         </div>
         <textarea id="consequences" style="display:none;"></textarea>
@@ -2244,7 +2249,7 @@ document.addEventListener('keydown', function(e){
           Personnel File Notice
           <span class="auto-tag" style="margin-left:4px;">Based on document type</span>
         </label>
-        <div id="fileNoticeDisplay" contenteditable="true" spellcheck="true" style="padding:16px; font-size:0.88rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:44px; white-space:pre-wrap; word-wrap:break-word;"></div>
+        <div id="fileNoticeDisplay" contenteditable="true" spellcheck="true" style="padding:16px; font-size:0.88rem; line-height:1.7; color:var(--text); background:var(--field); outline:none; min-height:44px; white-space:pre-wrap; word-wrap:break-word;"></div>
         <select id="fileNotice" style="display:none;" onchange="document.getElementById('fileNoticeDisplay').innerText = this.options[this.selectedIndex].text;">
           <option value="conference-summary">A copy of this conference summary memo will not be placed in your official personnel file. It will be retained in the administrator's working file only. Should the concerns continue, this memo may be referenced in any subsequent formal disciplinary action.</option>
           <option value="supervisor-file">This document will be maintained in the administrator's working file and may be placed in your official personnel file if the conduct described herein recurs or escalates.</option>
@@ -2259,7 +2264,7 @@ document.addEventListener('keydown', function(e){
           <input type="checkbox" id="chk-respond" checked style="accent-color:var(--navy); width:15px; height:15px;">
           Right to Respond to This Document
         </label>
-        <div id="respondRightDisplay" contenteditable="true" spellcheck="true" style="padding:16px; font-size:0.88rem; line-height:1.7; color:var(--text); background:var(--white); outline:none; min-height:60px; white-space:pre-wrap; word-wrap:break-word;"></div>
+        <div id="respondRightDisplay" contenteditable="true" spellcheck="true" style="padding:16px; font-size:0.88rem; line-height:1.7; color:var(--text); background:var(--field); outline:none; min-height:60px; white-space:pre-wrap; word-wrap:break-word;"></div>
         <select id="respondRight" onchange="updateRespondDisplay()" style="display:none;">
           <option value="10-calendar">10 calendar days (EC § 45113)</option>
           <option value="other">Other — specify below</option>
@@ -2387,6 +2392,7 @@ document.addEventListener('keydown', function(e){
 
       <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--light-gray);">
         <button class="btn btn-secondary" onclick="prevStep(8)">&larr; Back to Document</button>
+        <button class="btn btn-primary" onclick="startOver()" style="margin-left:8px;">Start a New Writeup &rarr;</button>
       </div>
     </div>
   </div><!-- end step-8 -->
@@ -2810,7 +2816,7 @@ async function generateMemo() {
     return;
   }
   if (!data.employeeName || data.employeeName.trim().length < 2) {
-    alert('Please complete the employee name in Step 1 before generating.');
+    alert('Please complete the employee name on the Situation step before generating.');
     jumpToStep(1);
     return;
   }
@@ -3781,7 +3787,7 @@ function populateDraftPreview() {
   setEditable('draftPreviewImpact', impactParts.join('\n\n'));
   setEditable('draftPreviewDirectives', directives);
   const rightsEl = document.getElementById('draftPreviewRights');
-  if (rightsEl) rightsEl.textContent = rightsText || '(Complete Setup step to populate)';
+  if (rightsEl) rightsEl.textContent = rightsText || '(Complete the Situation step to populate)';
 }
 
 function toggleRespondOther(val) {
@@ -3899,7 +3905,7 @@ async function analyzeAndSuggestCitations() {
   const handbookFiles = handbookLibrary.filter(h => h.sourceType === 'file' && (h.sourceData || h.documentId));
   const handbookLinks = handbookLibrary.filter(h => h.sourceType === 'link' && h.sourceData);
   // Keywords from the facts pick which parts of the saved documents are sent.
-  const earlyKeywords = relevanceKeywords([citeData.factDescription, citeData.employeeTitle, docType, [...selectedSituations].join(' ')].join(' '));
+  const earlyKeywords = relevanceKeywords([citeData.factDescription, citeData.employeeTitle, docType, [...selectedSituations].join(' '), situationVocabulary(selectedSituations)].join(' '));
   const cbaExcerpt = hasCBAFile ? await loadEntryExcerpts(cbaEntry, earlyKeywords, 25000) : null;
   window._cbaTextReadable = !hasCBAFile || !!cbaExcerpt;
   const handbookExcerpts = [];
@@ -3920,10 +3926,10 @@ async function analyzeAndSuggestCitations() {
     : 'NO STATUTE TEXT IS ON FILE. Cite Education Code section numbers that apply, and leave every "desc" field empty. Never describe or summarize a statute.';
 
   // Only the board policies related to these facts go into the request.
-  const citeKeywords = relevanceKeywords([pseudoFacts, employeeTitle, docType, [...selectedSituations].join(' ')].join(' '));
+  const citeKeywords = relevanceKeywords([pseudoFacts, employeeTitle, docType, [...selectedSituations].join(' '), situationVocabulary(selectedSituations)].join(' '));
   const relevantPolicies = selectRelevantBoardPolicies(window._realBoardPolicies, citeKeywords, classification);
   const bpInstruction = relevantPolicies.length > 0
-    ? `DISTRICT BOARD POLICY — REAL, ADOPTED TEXT. Cite only these policy numbers, and for each one copy the applicable language word for word from the text below. Never paraphrase, summarize, or describe a policy in your own words. If no sentence in a policy applies to these facts, leave that policy out.
+    ? `DISTRICT BOARD POLICY — REAL, ADOPTED TEXT. These are the policies from this district most related to these facts. Cite only these policy numbers, exactly as numbered below, and for each one copy the applicable language word for word. Never paraphrase, summarize, or describe a policy in your own words. Cite every policy below whose language the employee's conduct violates, and leave out any policy where no sentence applies.
 ${relevantPolicies.map(p => `${p.policy_number}${p.title ? ' — ' + p.title : ''}:\n${p.policy_text}`).join('\n\n')}`
     : `NO DISTRICT BOARD POLICY TEXT IS ON FILE for this district. Do not cite, suggest, or invent any board policy or administrative regulation numbers. Return an empty "boardpolicy" array.`;
 
@@ -3962,6 +3968,12 @@ Before including ANY citation, apply this checklist. ALL must be YES:
 ☐ 2. Is the EMPLOYEE (not the district, not the governing board) the subject of the obligation?
 ☐ 3. Does the specific conduct in the facts directly violate this provision?
 ☐ 4. Is this provision relevant to pre-discipline documentation (not dismissal/Skelly proceedings)?
+
+EMPLOYEE CLASSIFICATION RULE — apply before anything else:
+- This employee is a ${classLabels[classification] || 'California school district employee'}.
+- Certificated employees are governed by the Education Code 44000 series. Never cite a 45000 series employee statute for a certificated employee.
+- Classified employees are governed by the Education Code 45000 series. Never cite a 44000 series employee statute for a classified employee.
+- Statutes that apply to all district employees regardless of classification are fine either way.
 
 AUTOMATIC EXCLUSIONS — exclude immediately without further analysis:
 - Any provision where the subject is "The District", "The governing board", "The Superintendent", "Management", or "The commission" — these are institutional obligations, not employee conduct standards
@@ -4129,9 +4141,16 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
     const bpFlagEl = document.getElementById('bpModelFlag');
     if (bpFlagEl) {
       bpFlagEl.style.display = 'block';
-      if (window._realBoardPolicies && window._realBoardPolicies.length > 0) {
+      const shownPolicies = document.querySelectorAll('#bpList .citation-item').length;
+      if (window._realBoardPolicies && window._realBoardPolicies.length > 0 && shownPolicies > 0) {
         bpFlagEl.style.borderLeftColor = 'var(--teal)';
         bpFlagEl.innerHTML = `<strong>✓ Verified:</strong> These citations are quoted directly from your district's adopted board policies.`;
+      } else if (window._realBoardPolicies && window._realBoardPolicies.length > 0) {
+        // Saying "verified" above an empty list is worse than saying nothing.
+        bpFlagEl.style.borderLeftColor = 'var(--gold)';
+        bpFlagEl.innerHTML = `<strong>Note:</strong> None of your district's board policies on file matched these facts closely enough to quote`
+          + (window._bpDropped ? `, and ${window._bpDropped} suggested ${window._bpDropped === 1 ? 'policy was' : 'policies were'} left out because ${window._bpDropped === 1 ? 'it is' : 'they are'} not among your uploaded board policies` : '')
+          + `. Add a board policy number below if you know one, or try Re-analyze. For assistance, email help@trackument.com.`;
       } else {
         bpFlagEl.style.borderLeftColor = 'var(--navy)';
         bpFlagEl.innerHTML = `<strong>Note:</strong> No board policies are on file for your district yet, so no board policy citations were added. Add the link to your board policy site in District Settings, or upload your board policy PDFs there, and we will take it from there. For assistance, email help@trackument.com.`;
@@ -5058,7 +5077,7 @@ function addCustomDocType() {
   label.draggable = true;
   label.className = 'doctype-row';
   label.style.cssText = 'display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:grab; padding:4px 8px; background:var(--cream); border:1px solid var(--light-gray); border-radius:2px; text-transform:none; letter-spacing:0; font-weight:400; color:var(--text); margin-top:0;';
-  label.innerHTML = `<span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="${val}" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="${val}" style="flex:1; border:1px solid transparent; background:transparent; padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()">`;
+  label.innerHTML = `<span style="color:var(--gray); font-size:1rem;">⠿</span><input type="checkbox" class="doctype-chk" value="${val}" checked style="accent-color:var(--navy);"> <input type="text" class="doctype-name-input" value="${val}" style="flex:1; border:1px solid transparent; background:var(--field); padding:4px 4px; font-size:0.85rem; font-family:inherit; color:var(--text); border-radius:2px;" onmouseover="this.style.borderColor='var(--light-gray)'" onmouseout="if(document.activeElement!==this) this.style.borderColor='transparent'" onfocus="this.style.borderColor='var(--gold)'; this.style.background='var(--white)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" oninput="this.previousElementSibling.value = this.value;" onclick="event.stopPropagation()">`;
   label.addEventListener('dragstart', dragDocType);
   label.addEventListener('dragover', e => e.preventDefault());
   label.addEventListener('drop', dropDocType);
@@ -5162,6 +5181,19 @@ async function clearStaleDistrictData() {
   }
 }
 
+// District setup belongs to the settings managers. Everyone else lands on the
+// writeup screen, with a short note if their district is not set up yet.
+async function openSetupIfManager() {
+  const perms = await loadPermissions();
+  if (perms.isManager) { openSetup(); return; }
+  const note = document.getElementById('districtNotReadyNote');
+  if (note) {
+    note.style.display = 'block';
+    note.innerHTML = 'Your district has not finished setting up Trackument yet, so your writeups may not cite your board policies or agreements. '
+      + ((perms.managers && perms.managers.length) ? 'Your settings manager can finish it: ' + bpEscape(perms.managers.join(', ')) + '.' : 'For assistance, email help@trackument.com.');
+  }
+}
+
 async function loadDistrictProfile() {
   let sessionDomain = null;
   try {
@@ -5226,17 +5258,17 @@ async function loadDistrictProfile() {
       // yet) would incorrectly show the last district's information.
       if (sessionDomain && cachedProfile.domain && cachedProfile.domain.trim().toLowerCase() !== sessionDomain) {
         await clearStaleDistrictData();
-        openSetup();
+        await openSetupIfManager();
         return;
       }
       window._districtProfile = cachedProfile;
       applyDistrictProfile(window._districtProfile);
     } else {
-      // No profile found anywhere -- show setup regardless of setup:complete flag
-      openSetup();
+      // No district profile anywhere yet.
+      await openSetupIfManager();
     }
   } catch (err) {
-    if (!window._districtProfile) openSetup();
+    if (!window._districtProfile) openSetupIfManager();
   }
 }
 
@@ -5403,6 +5435,11 @@ async function pushDistrictSettings() {
     // screen, so keep the saved one rather than erasing it for everyone.
     const checkedTypes = getCheckedDocTypes();
     const docTypes = checkedTypes.length ? checkedTypes : (window._districtProfile?.docTypes || []);
+    // The version this browser last saw. The server keeps its own newer district
+    // information when this is out of date, so a stale tab cannot put back an old
+    // district name or board policy link.
+    let baseVersion = 0;
+    try { const v = await store.get('district:version'); baseVersion = Number(v?.value) || 0; } catch (e) {}
     const res = await fetch('/api/district-settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -5415,7 +5452,8 @@ async function pushDistrictSettings() {
         cbaLibrary,
         handbookLibrary,
         schoolSites,
-        deletedKeys
+        deletedKeys,
+        baseVersion
       })
     });
     if (!res.ok) throw new Error('Server answered ' + res.status);
@@ -5424,6 +5462,9 @@ async function pushDistrictSettings() {
     // The server's merged copy is the truth, including any change it declined.
     const merged = await res.json().catch(() => null);
     if (merged && merged.ok) {
+      // Remember the version the server just wrote, so the next save is judged
+      // against the latest, not this browser's older starting point.
+      if (merged.version != null) { try { await store.set('district:version', String(merged.version)); } catch (e) {} }
       for (const entry of [...(merged.cbaLibrary || []), ...(merged.handbookLibrary || []), ...(merged.schoolSites || [])]) {
         if (entry && entry.key) await store.set(entry.key, JSON.stringify(entry));
       }
@@ -5433,6 +5474,12 @@ async function pushDistrictSettings() {
         if (ignored.district) parts.push('district information can only be changed by a District Settings Manager');
         if (ignored.sites && ignored.sites.length) parts.push('you do not have permission to change ' + ignored.sites.join(', '));
         showToast('Some changes were not saved because ' + parts.join(', and ') + '.');
+        if (typeof loadSchoolProfileList === 'function') loadSchoolProfileList();
+      }
+      // Someone on another computer saved a newer copy, so this edit was not
+      // applied. Tell the person plainly instead of dropping it in silence.
+      if (merged.conflicts && merged.conflicts.length) {
+        showToast(merged.conflicts.join(', ') + ' was changed on another computer more recently, so that edit was not saved. Please reload to see the latest and try again.');
         if (typeof loadSchoolProfileList === 'function') loadSchoolProfileList();
       }
     }
@@ -5464,6 +5511,9 @@ async function pullDistrictSettings(domain) {
     };
     await store.set('district:profile', JSON.stringify(profile));
     await store.set('setup:complete', '1');
+    // Remember the version this browser has now seen, so a later save knows
+    // whether its district information is up to date.
+    try { await store.set('district:version', String(Number(data.version) || 0)); } catch (e) {}
     try { localStorage.setItem('wt__district:profile', JSON.stringify(profile)); } catch(e) {}
 
     // Bring in the shared sites, agreements, and handbooks, but only where the
@@ -5562,6 +5612,33 @@ function bpEscape(str) {
 // long. Sending all of it with every request is far past what the AI accepts,
 // and the request fails. These helpers pick the parts that match the facts.
 const RELEVANCE_STOP_WORDS = new Set(('about above after again against because been before being below between both could does doing down during each from further have having here into itself more most other over same should some such than that their them then there these they this those through under until very were what when where which while with would your yours shall will also must upon within without employee employees district school staff').split(' '));
+// The words a district uses in a policy are rarely the words in the facts, so
+// each type of concern brings its own vocabulary to the search.
+const SITUATION_KEYWORDS = {
+  // Attendance / Tardiness
+  attendance: 'attendance absence absent tardy tardiness late punctual punctuality leave sick timely report duty hours workday schedule assignment',
+  // Performance / Incompetency
+  performance: 'performance unsatisfactory competence incompetency duties standards expectations improvement assignment instruction supervision planning',
+  // Conduct / Insubordination
+  conduct: 'conduct insubordination directive direction supervisor refusal willful disobedience disrespect authority compliance behavior',
+  // Professional Conduct
+  professional: 'professional standards ethics conduct dignity respect boundaries interactions students colleagues parents communication social media',
+  // Safety Violations
+  safety: 'safety supervision hazard injury accident emergency protective equipment procedures students facilities reporting negligence',
+  // Alcohol / Drug Related
+  alcohol: 'alcohol drugs substance intoxication impairment tobacco controlled workplace fitness duty testing',
+  // Dishonesty / Fraud
+  dishonesty: 'dishonesty falsification fraud misrepresentation records timesheet attendance reporting theft property integrity trust',
+};
+// A district's own description in the Other box is the best clue we have for
+// that writeup, so it joins the search as-is.
+function situationVocabulary(situations) {
+  const words = [...(situations || [])].map(key => SITUATION_KEYWORDS[String(key).toLowerCase()] || String(key).replace(/[-_]/g, ' '));
+  const otherText = document.getElementById('situationOther')?.value.trim();
+  if (otherText) words.push(otherText);
+  return words.join(' ');
+}
+
 function relevanceKeywords(text) {
   const words = (String(text || '').toLowerCase().match(/[a-z][a-z'-]{3,}/g) || []);
   return [...new Set(words)].filter(w => !RELEVANCE_STOP_WORDS.has(w)).slice(0, 80);
@@ -5586,6 +5663,10 @@ function selectRelevantBoardPolicies(policies, keywords, classification) {
   const scored = (policies || []).map(p => {
     const num = String(p.policy_number || '');
     let score = relevanceScore(keywords, p.title, p.policy_text);
+    // A title match is the strongest signal a district gives us, so weigh the
+    // title again on top of the general score.
+    const title = String(p.title || '').toLowerCase();
+    keywords.forEach(w => { if (title.includes(w)) score += 6; });
     const digits = (num.match(/\d{4}/) || [''])[0];
     if (series && digits.startsWith(series)) score += 6;
     else if (digits.startsWith('40')) score += 3;
@@ -5695,14 +5776,21 @@ function verifyStatuteCitations(citations) {
 
 function verifyBoardPolicyCitations(citations) {
   const policies = window._realBoardPolicies || [];
+  window._bpDropped = 0;
   if (policies.length === 0) return [];
   const normalize = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const digitsOf = (t) => (String(t || '').match(/\d{3,5}(?:\.\d+)*/) || [''])[0];
   const byNumber = new Map(policies.map(p => [normalize(p.policy_number), p]));
+  // A district may file the same rule as BP 4118 while the suggestion says
+  // AR 4118, so fall back to matching on the number itself.
+  const byDigits = new Map();
+  policies.forEach(p => { const d = digitsOf(p.policy_number); if (d && !byDigits.has(d)) byDigits.set(d, p); });
 
   const verified = [];
-  (citations || []).forEach(c => {
-    const policy = byNumber.get(normalize(c.code));
-    if (!policy) return;
+  (citations || []).forEach(rawCitation => {
+    const policy = byNumber.get(normalize(rawCitation.code)) || byDigits.get(digitsOf(rawCitation.code));
+    if (!policy) { window._bpDropped++; return; }
+    const c = { ...rawCitation, code: policy.policy_number };
     const fullText = policy.policy_text || '';
     if (normalize(fullText).includes(normalize(c.desc)) && normalize(c.desc).length > 25) {
       verified.push(c);
@@ -6039,12 +6127,12 @@ function addAdminRow(prefill) {
   row.className = 'author-input-row';
   row.style.cssText = 'display:grid;grid-template-columns:90px 1fr 1fr 1fr 32px;gap:8px;margin-bottom:8px;align-items:center;';
   row.innerHTML = `
-    <select class="author-sal" style="padding:8px 32px 8px 8px;border:1px solid var(--light-gray);background-color:var(--cream);border-radius:2px;font-size:0.88rem;background-position:right 10px center;">
+    <select class="author-sal" style="padding:8px 32px 8px 8px;border:1px solid var(--light-gray);background-color:var(--field);border-radius:2px;font-size:0.88rem;background-position:right 10px center;">
       <option>Mr.</option><option>Ms.</option><option>Mrs.</option><option>Dr.</option><option>Prof.</option><option value="">(None)</option>
     </select>
-    <input type="text" class="author-name-input" name="adminName" autocomplete="name" placeholder="Full name" style="padding:8px 8px;border:1px solid var(--light-gray);background:var(--cream);border-radius:2px;font-size:0.88rem;">
-    <input type="text" class="author-title-input" name="adminTitle" autocomplete="organization-title" placeholder="Title (e.g. Principal)" style="padding:8px 8px;border:1px solid var(--light-gray);background:var(--cream);border-radius:2px;font-size:0.88rem;">
-    <input type="email" class="author-email-input" name="adminEmail" autocomplete="email" placeholder="Email (optional)" style="padding:8px 8px;border:1px solid var(--light-gray);background:var(--cream);border-radius:2px;font-size:0.88rem;">
+    <input type="text" class="author-name-input" name="adminName" autocomplete="name" placeholder="Full name" style="padding:8px 8px;border:1px solid var(--light-gray);background:var(--field);border-radius:2px;font-size:0.88rem;">
+    <input type="text" class="author-title-input" name="adminTitle" autocomplete="organization-title" placeholder="Title (e.g. Principal)" style="padding:8px 8px;border:1px solid var(--light-gray);background:var(--field);border-radius:2px;font-size:0.88rem;">
+    <input type="email" class="author-email-input" name="adminEmail" autocomplete="email" placeholder="Email (optional)" style="padding:8px 8px;border:1px solid var(--light-gray);background:var(--field);border-radius:2px;font-size:0.88rem;">
     <button type="button" onclick="this.closest('.author-input-row').remove()" style="background:transparent;border:1px solid var(--light-gray);border-radius:2px;color:var(--gray);cursor:pointer;font-size:1rem;padding:0;width:32px;height:36px;line-height:1;">×</button>
   `;
   container.appendChild(row);
@@ -7378,20 +7466,9 @@ const _today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 
 document.getElementById('memoDate').value = _today;
 // incidentDates is now populated by the date picker UI (syncIncidentDates)
 
-// Load district profile, schools, and CBA library on startup
-// Show setup immediately if no district profile in localStorage
-// This prevents the writeup tab from flashing before setup appears
-(function() {
-  try {
-    const hasProfile = localStorage.getItem('wt__district:profile');
-    if (!hasProfile) {
-      // Show setup overlay immediately -- don't wait for async storage reads
-      document.addEventListener('DOMContentLoaded', () => {
-        openSetup();
-      });
-    }
-  } catch(e) {}
-})();
+// On a computer with no district profile saved yet, the settings screen used to
+// open for everyone. It now waits for loadDistrictProfile, which opens it only
+// for a settings manager, so other administrators start on their writeup.
 
 // Migrate window.storage → localStorage first, then load everything
 // Clean version -- no migration needed
