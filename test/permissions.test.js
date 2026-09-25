@@ -245,7 +245,7 @@ describe('Districts are kept apart', () => {
   test('uploaded agreements and handbooks can only be opened by their own district', async () => {
     const a = await districtWithStaff();
     const b = await districtWithStaff();
-    const upload = await server.post('/api/documents', { cookie: a.cookies.teacherA, json: { filename: 'contract.pdf', contentType: 'application/pdf', dataBase64: pdfDataUrl(['Article 12 Discipline']) } });
+    const upload = await server.post('/api/documents', { cookie: a.cookies.teacherA, json: { filename: 'contract.pdf', contentType: 'application/pdf', dataBase64: pdfDataUrl(['CLASSIFIED EMPLOYEES AGREEMENT 2024-2027', 'ARTICLE 12 DISCIPLINE', '12.1 No permanent employee shall be disciplined without cause.']) } });
     assert.equal(upload.status, 200);
     const id = upload.json.id;
 
@@ -363,7 +363,7 @@ describe('Admin tools', () => {
     for (const d of [target, bystander]) {
       await saveSettings(d.cookies.manager, d.domain, { districtName: 'Name ' + d.domain });
       await server.post('/api/district/board-policies/upload', { cookie: d.cookies.manager, json: { filename: 'p.pdf', dataBase64: pdfDataUrl(['BP 1000 Policy', 'Text']) } });
-      await server.post('/api/documents', { cookie: d.cookies.manager, json: { filename: 'c.pdf', dataBase64: pdfDataUrl(['Article 1']) } });
+      await server.post('/api/documents', { cookie: d.cookies.manager, json: { filename: 'c.pdf', dataBase64: pdfDataUrl(['CLASSIFIED EMPLOYEES AGREEMENT 2024-2027', 'ARTICLE 12 DISCIPLINE', '12.1 No permanent employee shall be disciplined without cause.']) } });
     }
 
     const unconfirmed = await server.post('/api/admin/district-remove', { json: { key: server.adminKey, domain: target.domain, mode: 'everything', confirm: 'wrong.test' } });

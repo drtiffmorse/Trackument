@@ -52,6 +52,7 @@ const ACCESS = {
   'POST /api/district-settings': SESSION,
   'POST /api/documents': SESSION,
   'GET /api/documents/:id/text': SESSION,
+  'GET /api/documents/:id/readability': SESSION,
   'GET /api/documents/:id': SESSION,
   'GET /api/district/board-policies': SESSION,
   'POST /api/district/board-policies/upload': SESSION,
@@ -84,6 +85,8 @@ const ACCESS = {
   // Ed Code statute text, so citations quote the real wording.
   'GET /api/admin/statutes': ADMIN_PAGE,
   'POST /api/admin/statutes/list': ADMIN_KEY,
+  'GET /api/admin/readability': ADMIN_PAGE,
+  'POST /api/admin/readability/data': ADMIN_KEY,
   'POST /api/admin/statutes/test-search': ADMIN_KEY,
   'POST /api/admin/statutes/fetch': ADMIN_KEY,
   'POST /api/admin/statutes/save': ADMIN_KEY,

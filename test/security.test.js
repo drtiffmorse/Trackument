@@ -113,8 +113,13 @@ describe('Pages that show district-supplied text', () => {
     const domain = server.uniqueDomain();
     await server.createDistrict({ domain });
     const cookie = await server.signIn('any.admin@' + domain);
+    // A new upload that is not really a PDF is refused and never stored.
     const upload = await server.post('/api/documents', { cookie, json: { filename: 'agreement.pdf', contentType: 'text/html', dataBase64: Buffer.from('<script>alert(document.cookie)</script>').toString('base64') } });
-    const res = await server.get('/api/documents/' + upload.json.id, { cookie });
+    assert.equal(upload.status, 422);
+    // A file stored before that check existed is still never served as a page.
+    const id = '00000000-0000-4000-8000-' + String(Date.now()).slice(-12).padStart(12, '0');
+    await server.sql('INSERT INTO documents (id, filename, content_type, data, domain) VALUES ($1, $2, $3, $4, $5)', [id, 'agreement.pdf', 'text/html', Buffer.from('<script>alert(document.cookie)</script>'), domain]);
+    const res = await server.get('/api/documents/' + id, { cookie });
     assert.doesNotMatch(res.headers.get('content-type') || '', /html/, 'served as HTML on trackument.com to whoever opens it');
     assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
   });

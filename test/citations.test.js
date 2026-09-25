@@ -182,7 +182,7 @@ describe('Agreement and handbook text for citations', () => {
     assert.equal(download.status, 200);
   });
 
-  test('only PDF and Word files are accepted', async () => {
+  test('only PDF files are accepted', async () => {
     const { principal } = await districtWithManager();
     const txt = await server.post('/api/documents', { cookie: principal, json: { filename: 'notes.txt', dataBase64: 'aGVsbG8=' } });
     assert.equal(txt.status, 400);
@@ -190,22 +190,30 @@ describe('Agreement and handbook text for citations', () => {
     assert.equal(missing.status, 400);
   });
 
-  test('a Word document is kept but cannot be read for citations', async () => {
+  test('a Word document is refused at upload, with instructions, since it could never be quoted', async () => {
+    // Until 23 September a Word file was kept and then never read.
     const { principal } = await districtWithManager();
     const upload = await server.post('/api/documents', { cookie: principal, json: { filename: 'Handbook.docx', contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', dataBase64: 'UEsDBA==' } });
-    assert.equal(upload.status, 200);
-    const text = await server.get('/api/documents/' + upload.json.id + '/text', { cookie: principal });
-    assert.equal(text.status, 415);
-    assert.match(text.json.error, /Only PDF documents/);
+    assert.equal(upload.status, 400);
+    assert.match(upload.json.error, /Save As, pick PDF/);
   });
 
-  test('an unreadable PDF is answered with an error, not a crash', async () => {
+  test('a file that is not really a PDF is refused at upload with an explanation, not a crash', async () => {
     const { principal } = await districtWithManager();
     const upload = await server.post('/api/documents', { cookie: principal, json: { filename: 'scan.pdf', contentType: 'application/pdf', dataBase64: Buffer.from('not a pdf').toString('base64') } });
-    const text = await server.get('/api/documents/' + upload.json.id + '/text', { cookie: principal });
+    assert.equal(upload.status, 422);
+    assert.match(upload.json.error, /could not open scan\.pdf as a PDF/);
+    assert.equal((await server.get('/api/documents/not-a-real-id/text', { cookie: principal })).status, 404);
+  });
+
+  test('a stored file that cannot be read is answered with an error, not a crash', async () => {
+    // Files stored before the upload check existed can still be unreadable.
+    const { principal, domain } = await districtWithManager();
+    const id = '00000000-0000-4000-8000-' + String(Date.now()).slice(-12).padStart(12, '0');
+    await server.sql('INSERT INTO documents (id, filename, content_type, data, domain) VALUES ($1, $2, $3, $4, $5)', [id, 'old-scan.pdf', 'application/pdf', Buffer.from('not a pdf'), domain]);
+    const text = await server.get('/api/documents/' + id + '/text', { cookie: principal });
     assert.ok(text.status >= 400);
     assert.equal(text.json.error, 'Could not read that document.');
-    assert.equal((await server.get('/api/documents/not-a-real-id/text', { cookie: principal })).status, 404);
   });
 });
 

@@ -1,4 +1,4 @@
-// BUILD: 2026-09-23-r12
+// BUILD: 2026-09-23-r13
 const express = require('express');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
@@ -807,6 +807,8 @@ async function initDb() {
   // Text pulled out of each PDF once, so the app can send the relevant
   // sections of an agreement instead of the whole file.
   await pool.query(`ALTER TABLE documents ADD COLUMN IF NOT EXISTS text_content TEXT;`);
+  // How readable the text is, so scanned uploads can be found and fixed.
+  await pool.query(`ALTER TABLE documents ADD COLUMN IF NOT EXISTS readability JSONB;`);
   // Purchase order / invoice workflow
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS po_number TEXT;`);
   await pool.query(`ALTER TABLE districts ADD COLUMN IF NOT EXISTS stripe_invoice_id TEXT;`);
@@ -1923,6 +1925,74 @@ app.post('/api/setup/managers', async (req, res) => {
 });
 
 // Tiffany's view of any district's managers, for help@ requests.
+// Every district's uploaded agreements, handbooks, and merit rules, with
+// whether Trackument can read them, and every district's board policies. A
+// scanned agreement quietly produces no citations, so this is where Tiffany
+// finds them before a principal does.
+app.get('/api/admin/readability', (req, res) => {
+  res.send(adminPageShell('Document Readability', `
+    <h1>Document Readability</h1>
+    <p>Every district's uploaded agreements, handbooks, and merit rules, with whether Trackument can read them, and each district's board policies.</p>
+    <label for="key">Admin key</label>
+    <input type="password" id="key" autocomplete="off">
+    <button type="button" id="load">Show all districts</button>
+    <button type="button" id="check" style="background:#035e5c;">Check files not yet checked</button>
+    <div id="out" style="margin-top:24px;font-size:0.9rem;"></div>
+    <script>
+      const el = (id) => document.getElementById(id);
+      const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      const label = (r) => !r ? '<span style="color:#8d86a3;">Not yet checked</span>'
+        : r.status === 'readable' ? '<span style="color:#035e5c;font-weight:700;">Readable</span>'
+        : r.status === 'partly' ? '<span style="color:#b45309;font-weight:700;">Partly readable</span> (' + r.blankPages.length + ' of ' + r.pages + ' pages have no text: ' + r.blankPages.slice(0, 12).join(', ') + (r.blankPages.length > 12 ? ', and more' : '') + ')'
+        : r.reason === 'word' ? '<span style="color:#b91c1c;font-weight:700;">Not readable</span> (a Word file; save it as a PDF and upload again)'
+        : '<span style="color:#b91c1c;font-weight:700;">Not readable</span> (scanned; ' + r.pages + ' pages with no text)';
+      const show = async (check) => {
+        el('out').textContent = check ? 'Checking files. This can take a minute for large agreements...' : 'Loading...';
+        const res = await fetch('/api/admin/readability/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: el('key').value, check }) });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { el('out').textContent = data.error || 'Could not load.'; return; }
+        const domains = [...new Set([...(data.documents || []).map(d => d.domain || '(no district)'), ...Object.keys(data.policies || {})])].sort();
+        el('out').innerHTML = (data.unchecked ? '<p><strong>' + data.unchecked + ' files have not been checked yet.</strong> Click "Check files not yet checked".</p>' : '')
+          + domains.map(domain => {
+            const docs = (data.documents || []).filter(d => (d.domain || '(no district)') === domain);
+            const pol = (data.policies || {})[domain];
+            return '<h2 style="font-size:1.05rem;margin:28px 0 8px;">' + esc(domain) + '</h2>'
+              + (docs.length ? '<ul style="margin:0 0 0 18px;padding:0;line-height:1.7;">' + docs.map(d => '<li>' + esc(d.filename) + ': ' + label(d.readability) + '</li>').join('') + '</ul>' : '<p>No uploaded files.</p>')
+              + (pol ? '<p style="margin:8px 0 4px;"><strong>Board policies:</strong> ' + pol.total + ' on file'
+                  + (pol.short.length ? ', and <span style="color:#b45309;font-weight:700;">' + pol.short.length + ' with almost no text</span> (' + pol.short.map(esc).join(', ') + ')' : '') + '.</p>'
+                  + '<details><summary style="cursor:pointer;">Show every policy</summary><ul style="margin:6px 0 0 18px;padding:0;line-height:1.6;">'
+                  + pol.list.map(p => '<li>' + esc(p.number) + (p.title ? ', ' + esc(p.title) : '') + ' <span style="color:#8d86a3;">(' + Number(p.chars).toLocaleString() + ' characters)</span></li>').join('') + '</ul></details>'
+                : '<p style="margin:8px 0 0;"><strong>Board policies:</strong> none on file.</p>');
+          }).join('');
+      };
+      el('load').onclick = () => show(false);
+      el('check').onclick = () => show(true);
+    </script>
+  `));
+});
+
+app.post('/api/admin/readability/data', asyncRoute(async (req, res) => {
+  if (!adminKeyValid(req.body.key)) return res.status(403).json({ error: 'That admin key is not correct.' });
+  // Checking reads each file's text once; the result is kept, so later loads
+  // are instant. A batch at a time keeps one request from running too long.
+  if (req.body.check === true) {
+    const { rows: pending } = await pool.query('SELECT id, filename, content_type, domain, text_content, readability FROM documents WHERE readability IS NULL ORDER BY created_at DESC LIMIT 15');
+    for (const doc of pending) {
+      try { await readStoredDocument(doc); } catch (err) { console.error('Readability check failed:', doc.id, err.message); }
+    }
+  }
+  const { rows: documents } = await pool.query('SELECT id, domain, filename, created_at, readability FROM documents ORDER BY domain, created_at DESC');
+  const { rows: policyRows } = await pool.query('SELECT domain, policy_number, title, length(policy_text)::int AS chars FROM board_policies ORDER BY domain, policy_number');
+  const policies = {};
+  policyRows.forEach(p => {
+    const entry = policies[p.domain] || (policies[p.domain] = { total: 0, short: [], list: [] });
+    entry.total++;
+    entry.list.push({ number: p.policy_number, title: p.title, chars: p.chars });
+    if (p.chars < 200) entry.short.push(p.policy_number);
+  });
+  res.json({ documents, policies, unchecked: documents.filter(d => !d.readability).length });
+}));
+
 app.get('/api/admin/managers', async (req, res) => {
   res.send(adminPageShell('District Settings Managers', `
     <h1>District Settings Managers</h1>
@@ -2259,29 +2329,105 @@ app.post('/api/district-settings', requireAppAccess, async (req, res) => {
 // a small id to reference it by. Accepts PDF and Word documents -- the
 // district-facing tool now accepts .doc/.docx directly instead of requiring a
 // manual PDF conversion first.
+// How much real text a PDF gave. The PDF reader adds a marker such as
+// "-- 1 of 54 --" after every page, so a scanned 54-page agreement came back
+// as 959 characters of nothing but markers and passed the old check. Pages
+// are judged one by one: covers, signature pages, and appendices are often
+// blank, but a scan is blank almost everywhere.
+function readabilityOf(text, pages) {
+  const raw = String(text || '');
+  const pieces = raw.split(/--\s*\d+\s+of\s+\d+\s*--/);
+  const pageTexts = pieces.length > 1
+    ? pieces.slice(0, -1).concat(pieces[pieces.length - 1].trim() ? [pieces[pieces.length - 1]] : [])
+    : [raw];
+  const perPage = pageTexts.map(t => String(t || '').replace(/\s+/g, '').length);
+  const readableChars = perPage.reduce((a, b) => a + b, 0);
+  const pageCount = Math.max(1, Number(pages) || pageTexts.length);
+  const blankPages = perPage.map((n, i) => (n < 80 ? i + 1 : 0)).filter(Boolean);
+  const blankShare = blankPages.length / pageCount;
+  // A short but real one-page letter is fine; a file with essentially no text
+  // on nearly every page is a scan.
+  const status = readableChars < 80 || blankShare > 0.8 ? 'unreadable'
+    : blankShare > 0.25 && blankPages.length >= 4 ? 'partly'
+    : 'readable';
+  const headings = [...raw.matchAll(/(?:^|\n)\s*((?:ARTICLE|Article|SECTION|Section)\s+[0-9IVXLC]+\b[^\n]{0,60})/g)]
+    .map(m => m[1].replace(/\s+/g, ' ').trim());
+  return { status, pages: pageCount, readableChars, blankPages, headings: [...new Set(headings)].slice(0, 40) };
+}
+
+const UNREADABLE_UPLOAD = (filename) => 'Trackument could not read any text in ' + filename + '. It is a scanned image rather than a text-based PDF, so no article in it could ever be quoted. '
+  + 'Please ask for the original digital file, or open it in Adobe Acrobat and use Scan & OCR, then Recognize Text, and upload that copy. For assistance, email help@trackument.com.';
+
+// Reads a stored PDF's text once and keeps it, with how readable it is.
+async function readStoredDocument(doc) {
+  if (doc.text_content && doc.readability) return { text: doc.text_content, readability: doc.readability };
+  const isPdf = /pdf/i.test(doc.content_type || '') || /\.pdf$/i.test(doc.filename || '');
+  if (!isPdf) {
+    const readability = { status: 'unreadable', reason: 'word', pages: 0, readableChars: 0, blankPages: [], headings: [] };
+    await pool.query('UPDATE documents SET readability = $1 WHERE id = $2', [JSON.stringify(readability), doc.id]);
+    return { text: '', readability };
+  }
+  if (!pdfParse) throw new Error('PDF reading is temporarily unavailable.');
+  let data = doc.data;
+  if (!data) data = (await pool.query('SELECT data FROM documents WHERE id = $1', [doc.id])).rows[0].data;
+  const result = await new pdfParse.PDFParse({ data }).getText();
+  const text = (result.text || '').trim();
+  const readability = readabilityOf(text, result.total);
+  await pool.query('UPDATE documents SET text_content = $1, readability = $2 WHERE id = $3', [text, JSON.stringify(readability), doc.id]);
+  return { text, readability };
+}
+
 app.post('/api/documents', requireAppAccess, async (req, res) => {
   try {
     const { filename, contentType, dataBase64 } = req.body;
     if (typeof filename !== 'string' || typeof dataBase64 !== 'string' || !filename || !dataBase64) return res.status(400).json({ error: 'Missing filename or file data.' });
     const lower = filename.toLowerCase();
-    const allowed = ['.pdf', '.doc', '.docx'].some(ext => lower.endsWith(ext));
-    if (!allowed) return res.status(400).json({ error: 'Only PDF and Word documents are supported.' });
+    // Agreements, handbooks, and merit rules are uploaded here so Trackument
+    // can quote them, and only PDF text can be read for quoting. A Word file
+    // used to be accepted and then never read.
+    if (lower.endsWith('.doc') || lower.endsWith('.docx')) {
+      return res.status(400).json({ error: 'Trackument can quote only from PDF files. Please open ' + filename + ' in Word, choose Save As, pick PDF, and upload that copy.' });
+    }
+    if (!lower.endsWith('.pdf')) return res.status(400).json({ error: 'Only PDF documents are supported.' });
 
     // dataBase64 arrives as a full data: URL (e.g. "data:application/pdf;base64,....");
     // strip the prefix before decoding to raw bytes.
     const base64 = dataBase64.includes(',') ? dataBase64.split(',')[1] : dataBase64;
     const buffer = Buffer.from(base64, 'base64');
+    // Read the text now, so a scan is caught at upload rather than weeks later
+    // in the middle of a writeup.
+    let text = '', readability = null;
+    if (pdfParse) {
+      try {
+        const result = await new pdfParse.PDFParse({ data: buffer }).getText();
+        text = (result.text || '').trim();
+        readability = readabilityOf(text, result.total);
+      } catch (err) {
+        return res.status(422).json({ error: 'Trackument could not open ' + filename + ' as a PDF. Please save it again as a PDF and upload that copy.' });
+      }
+      if (readability.status === 'unreadable') return res.status(422).json({ error: UNREADABLE_UPLOAD(filename), readability });
+    }
     const id = crypto.randomUUID();
     await pool.query(
-      'INSERT INTO documents (id, filename, content_type, data, domain) VALUES ($1, $2, $3, $4, $5)',
-      [id, filename, contentType || '', buffer, req.districtSession.district_domain]
+      'INSERT INTO documents (id, filename, content_type, data, domain, text_content, readability) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [id, filename, contentType || '', buffer, req.districtSession.district_domain, text || null, readability ? JSON.stringify(readability) : null]
     );
-    res.json({ id, filename });
+    res.json({ id, filename, readability });
   } catch (err) {
     console.error('Document upload failed:', err.message);
     res.status(500).json({ error: 'Upload failed: ' + err.message });
   }
 });
+
+// Whether a saved agreement, handbook, or merit rules file can be quoted, for
+// the label beside it in District Settings.
+app.get('/api/documents/:id/readability', requireAppAccess, asyncRoute(async (req, res) => {
+  const { rows } = await pool.query('SELECT id, filename, content_type, domain, text_content, readability FROM documents WHERE id = $1', [req.params.id]);
+  const doc = rows[0];
+  if (!doc || (doc.domain && !canAccessDistrict(req, doc.domain))) return res.status(404).json({ error: 'Document not found.' });
+  const { readability } = await readStoredDocument(doc);
+  res.json({ filename: doc.filename, readability });
+}));
 
 // Retrieves a previously uploaded document by id, used both for letting an
 // administrator re-download what they uploaded and for the AI drafting step
@@ -2291,16 +2437,14 @@ app.post('/api/documents', requireAppAccess, async (req, res) => {
 // that match the facts out of this text instead.
 app.get('/api/documents/:id/text', requireAppAccess, async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT filename, content_type, data, domain, text_content FROM documents WHERE id = $1', [req.params.id]);
+    const { rows } = await pool.query('SELECT id, filename, content_type, data, domain, text_content, readability FROM documents WHERE id = $1', [req.params.id]);
     const doc = rows[0];
     if (!doc || (doc.domain && !canAccessDistrict(req, doc.domain))) return res.status(404).json({ error: 'Document not found.' });
     if (doc.text_content) return res.json({ filename: doc.filename, text: doc.text_content });
     const isPdf = /pdf/i.test(doc.content_type || '') || /\.pdf$/i.test(doc.filename || '');
     if (!isPdf) return res.status(415).json({ error: 'Only PDF documents can be read for citations.' });
     if (!pdfParse) return res.status(503).json({ error: 'PDF reading is temporarily unavailable.' });
-    const parser = new pdfParse.PDFParse({ data: doc.data });
-    const text = ((await parser.getText()).text || '').trim();
-    await pool.query('UPDATE documents SET text_content = $1 WHERE id = $2', [text, req.params.id]);
+    const { text } = await readStoredDocument(doc);
     res.json({ filename: doc.filename, text });
   } catch (err) {
     console.error('Document text extraction failed:', req.params.id, err.message);

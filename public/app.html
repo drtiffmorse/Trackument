@@ -1,4 +1,4 @@
-<!-- BUILD: 2026-09-23-r16 -->
+<!-- BUILD: 2026-09-23-r23 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1334,7 +1334,7 @@
               <div style="font-size:0.85rem;color:var(--gray);margin-bottom:8px;">Drag and drop, or</div>
               <button type="button" onclick="event.stopPropagation(); document.getElementById('cbaFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:8px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
               <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF or Word document (.pdf, .doc, .docx)</div>
-              <input type="file" id="cbaFileInput" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none;" onchange="handleCBAFile(this.files[0])">
+              <input type="file" id="cbaFileInput" accept=".pdf,application/pdf" style="display:none;" onchange="handleCBAFile(this.files[0])">
             </div>
             <div id="cbaFilePreview" style="display:none;padding:8px 16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);align-items:center;justify-content:space-between;">
               <span id="cbaFileName"></span>
@@ -1416,7 +1416,7 @@
               <div style="font-size:0.85rem;color:var(--gray);margin-bottom:8px;">Drag and drop, or</div>
               <button type="button" onclick="event.stopPropagation(); document.getElementById('handbookFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:8px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
               <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF or Word document (.pdf, .doc, .docx)</div>
-              <input type="file" id="handbookFileInput" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none;" onchange="handleHandbookFile(this.files[0])">
+              <input type="file" id="handbookFileInput" accept=".pdf,application/pdf" style="display:none;" onchange="handleHandbookFile(this.files[0])">
             </div>
             <div id="handbookFilePreview" style="display:none;padding:8px 16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);align-items:center;justify-content:space-between;">
               <span id="handbookFileName"></span>
@@ -1454,7 +1454,7 @@
               <div style="font-size:0.85rem;color:var(--gray);margin-bottom:8px;">Drag and drop, or</div>
               <button type="button" onclick="event.stopPropagation(); document.getElementById('meritFileInput').click()" style="background:var(--gold);color:#fff;border:none;border-radius:3px;padding:8px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;">Browse Files</button>
               <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;">PDF or Word document (.pdf, .doc, .docx)</div>
-              <input type="file" id="meritFileInput" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none;" onchange="handleMeritFile(this.files[0])">
+              <input type="file" id="meritFileInput" accept=".pdf,application/pdf" style="display:none;" onchange="handleMeritFile(this.files[0])">
             </div>
             <div id="meritFilePreview" style="display:none;padding:8px 16px;background:var(--cream);border:1px solid var(--light-gray);border-radius:2px;margin-top:8px;font-size:0.85rem;color:var(--navy);align-items:center;justify-content:space-between;">
               <span id="meritFileName"></span>
@@ -1952,7 +1952,7 @@ document.addEventListener('keydown', function(e){
         <div id="witnessFileList" style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;"></div>
         <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; margin-top:0; font-size:0.78rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0; border:1px solid var(--light-gray); border-radius:2px; padding:8px 16px; background:var(--white);">
           <span>📎 Attach Witness Statement</span>
-          <input type="file" id="witnessFileInput" accept=".pdf,.doc,.docx,application/pdf" multiple style="display:none;" onchange="handleWitnessFiles(this.files)">
+          <input type="file" id="witnessFileInput" accept=".pdf,application/pdf" multiple style="display:none;" onchange="handleWitnessFiles(this.files)">
         </label>
       </div>
 
@@ -1965,7 +1965,7 @@ document.addEventListener('keydown', function(e){
         <div id="priorDocFileList" style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;"></div>
         <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; margin-top:0; font-size:0.78rem; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0; border:1px solid var(--light-gray); border-radius:2px; padding:8px 16px; background:var(--white);">
           <span>📎 Attach Prior Writeup (optional)</span>
-          <input type="file" id="priorDocFileInput" accept=".pdf,.doc,.docx,application/pdf" multiple style="display:none;" onchange="handlePriorDocFiles(this.files)">
+          <input type="file" id="priorDocFileInput" accept=".pdf,application/pdf" multiple style="display:none;" onchange="handlePriorDocFiles(this.files)">
         </label>
         <div style="font-size:0.72rem; color:var(--gray); margin-top:4px;">PDF or Word. Attached documents will be included as reference when generating the final document.</div>
       </div>
@@ -3145,7 +3145,6 @@ ABSOLUTE RULES:
 - Start immediately with the document header (TO: FROM: DATE: RE:)
 - Never cite CBA Article 3 (District Rights) or any Management Rights/Zipper/Grievance/Recognition article
 - Never cite Ed Code 45020, 39800, or any provision where the governing board or district is the subject
-- Never cite Board Policies in the 3000 series or evaluation policies (4115, 4215, 4315)
 - Only cite provisions that directly state what the EMPLOYEE must do or is prohibited from doing
 - Only cite CVC sections relevant to the specific vehicle type and violation in the facts
 - Exclude any provision not directly violated by the specific conduct described
@@ -4211,6 +4210,17 @@ async function analyzeAndSuggestCitations() {
 
   // Only the board policies related to these facts go into the request.
   const relevantPolicies = selectRelevantBoardPolicies(window._realBoardPolicies, citeKeywords, classification);
+  // What the analysis is given to work with, shown in the suggestion report so
+  // an empty result can be traced to its cause.
+  window._analysisInputs = {
+    policiesOnFile: (window._realBoardPolicies || []).length,
+    policiesSent: relevantPolicies.map(p => String(p.policy_number || '') + (p.title ? ', ' + p.title : '')),
+    agreementName: cbaEntry ? cbaEntry.name : '',
+    agreementFile: !!hasCBAFile,
+    agreementChars: cbaExcerpt ? cbaExcerpt.length : 0,
+    handbookChars: (window._lastHandbookExcerpt || '').length,
+    statutesSent: (window._statuteLibrary || []).map(st => st.code),
+  };
   const bpInstruction = relevantPolicies.length > 0
     ? `DISTRICT BOARD POLICY — REAL, ADOPTED TEXT. These are the policies from this district most related to these facts. Cite only these policy numbers, exactly as numbered below, and for each one copy the applicable language word for word. Never paraphrase, summarize, or describe a policy in your own words. Cite every policy below whose language the employee's conduct violates, and leave out any policy where no sentence applies.
 ${relevantPolicies.map(p => `${p.policy_number}${p.title ? ' — ' + p.title : ''}:\n${p.policy_text}`).join('\n\n')}`
@@ -4235,10 +4245,10 @@ Return ONLY a JSON object — no preamble, no markdown backticks, no explanation
 {
   "edcode": [{"code": "Ed Code § XXXXX", "desc": "The sentence that places the broken duty on this employee, copied word for word from the statute text provided above. Never cite a section whose text is not provided above.", "why": "One sentence, in your own words, connecting these specific facts to this section. This is analysis, not a quotation, so never phrase it as statutory text."}],
   "cvc": [{"code": "CVC § XXXXX", "desc": "Direct verbatim quote — only populate if employee drives a district vehicle", "why": "One sentence connecting these facts to this section."}],
-  "other": [{"code": "Citation name § number", "desc": "Direct verbatim quote — only for health code, DMV, or non-Ed Code regulatory citations when directly relevant. note instead of a quote, as instructed above."}],
+  "other": [{"code": "Citation name § number", "desc": "Direct verbatim quote — only for health code, DMV, or non-Ed Code regulatory citations when directly relevant. note instead of a quote, as instructed above.", "why": "One sentence connecting these facts to this section."}],
   "boardpolicy": [{"code": "BP XXXX", "desc": "The sentence that states the duty this employee broke, copied word for word from the district policy text above", "why": "One sentence naming the conduct in these facts that breaks that duty"}],
-  "cba": [{"code": "Article X.X — Title", "desc": "Direct verbatim quote of the single most relevant sentence only"}],
-  "handbook": [{"code": "Handbook Section X.X — Title", "desc": "Direct verbatim quote of the single most relevant sentence only"}],
+  "cba": [{"code": "Article X.X — Title", "desc": "Direct verbatim quote of the single most relevant sentence only", "why": "One sentence naming the conduct in these facts that breaks that duty"}],
+  "handbook": [{"code": "Handbook Section X.X — Title", "desc": "Direct verbatim quote of the single most relevant sentence only", "why": "One sentence naming the conduct in these facts that breaks that duty"}],
   "notes": "One sentence summarizing the primary rules violated"
 }
 
@@ -4273,8 +4283,6 @@ AUTOMATIC EXCLUSIONS — exclude immediately without further analysis:
 - Conduct statutes that the facts actually implicate ARE welcome, whatever the series. Examples: Ed Code 49001 for corporal punishment, Ed Code 49076 for student record confidentiality, Penal Code 11166 for mandated reporting, Vehicle Code sections for driving, and California Retail Food Code sections for food service. Cite these when the employee's own conduct violates them.
 - Ed Code 45020 — defines classified service structure, not an employee conduct standard
 - Ed Code 39800 — authorizes districts to provide transportation, not an employee driving standard
-- Board Policies in the 3000 series — district operations
-- Board Policies 4115, 4215, 4315 — employee evaluation
 - CBA Article 3 (District Rights) or equivalent — ALWAYS exclude regardless of how it is worded
 - CBA Management Rights, Zipper, Recognition, Grievance, Duration articles
 - CBA articles where the District is the subject ("The District will...", "The District shall...")
@@ -4305,7 +4313,6 @@ BAD EXAMPLES for attendance — exclude these:
 - Ed Code § 45113: discipline/suspension procedures — Skelly only ✗
 - CBA article about how the District shall track or record absences — district obligation ✗
 - CBA article about sick leave accrual rates — benefit provision, not a conduct standard ✗
-- BP 4215: classified employee evaluation — evaluation, not conduct ✗
 - Any article about FMLA/CFRA leave entitlements — these are employee rights, not conduct obligations ✗
 
 GOOD EXAMPLES for interpersonal behavior/unprofessional conduct (certificated or classified):
@@ -4326,8 +4333,6 @@ FORBIDDEN citations — never include these regardless of relevance:
 - Ed Code 45113, 45302, 45304 (discipline/suspension/dismissal procedures for classified) — Skelly only
 - Ed Code 45101 ("cause" definition) — Skelly only
 - Any Ed Code section that describes what the DISTRICT may do, not what the EMPLOYEE must do
-- Board Policies in the 3000 series (district administration — directed at the Superintendent)
-- Board Policies 4115, 4215, 4315 (employee evaluation)
 - CBA: District Rights, Management Rights, Zipper, Recognition, Grievance, Duration articles
 - Any CBA article about district authority or procedures — only cite articles imposing employee obligations
 
@@ -4347,7 +4352,7 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
 - Ed Code: Classified = 45xxx performance/conduct sections only. Certificated = 44xxx performance/conduct sections only. Max 4.
 - CVC: Bus drivers, van drivers, any driver — cite the specific code sections violated. Return [] if not a driving situation.
 - Food Code: Nutrition services, cafeteria, food service staff. Cite California Retail Food Code sections violated. Return [] if not a food-service situation.
-- Board Policy: Correct series by classification. Classified = 4200 series. Certificated = 4100 series. Management = 4300 series. Max 3.
+- Board Policy: Max 3. A policy's number or series never rules it out. Cite any policy on file, in any series, whose quoted sentence places a duty on this employee that these facts broke. A policy written for another classification applies only when its sentence covers this employee.
 - CBA: Max 3 articles that directly state employee obligations. Strict relevance to the actual conduct.
 - Employee Handbook: Max 3 sections that directly state employee obligations. Strict relevance to the actual conduct. Return [] if no handbook was saved.`;
 
@@ -4421,16 +4426,20 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
     renderCitations('bpList', verifyBoardPolicyCitations(data.boardpolicy || []));
 
     // Render CVC citations in separate section if present
-    const cvcCitations = data.cvc || [];
-    if (cvcCitations.length > 0) {
-      renderCitations('cvcList', verifyStatuteCitations(cvcCitations));
+    // Vehicle Code sections are quoted from the library like every statute. A
+    // number with no text on file is not shown.
+    const cvcVerified = verifyStatuteCitations(data.cvc || [], classification).filter(c => !c.unverified && c.desc);
+    if (cvcVerified.length > 0) {
+      renderCitations('cvcList', cvcVerified);
       document.getElementById('cvcGroup').style.display = 'block';
     }
 
     // Render other citations (health code, DMV, etc.) if present
-    const otherCitations = data.other || [];
-    if (otherCitations.length > 0) {
-      renderCitations('otherCiteList', otherCitations);
+    // These were shown exactly as the AI wrote them until 23 September. They
+    // now pass the same checks as every other statute.
+    const otherVerified = verifyStatuteCitations(data.other || [], classification).filter(c => !c.unverified && c.desc);
+    if (otherVerified.length > 0) {
+      renderCitations('otherCiteList', otherVerified);
       document.getElementById('otherCiteGroup').style.display = 'block';
     }
 
@@ -4477,8 +4486,11 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
       if (handbookGroupEl) handbookGroupEl.style.display = 'none';
     } else {
       if (handbookGroupEl) handbookGroupEl.style.display = 'block';
-      if (data.handbook && data.handbook.length > 0) {
-        renderCitations('handbookRefList', data.handbook);
+      // Handbook quotes are checked against the handbook text, like the
+      // bargaining agreement. Until 23 September they were shown unchecked.
+      const verifiedHandbook = verifyQuotedFromSource(data.handbook || [], window._lastHandbookExcerpt || '');
+      if (verifiedHandbook.length > 0) {
+        renderCitations('handbookRefList', verifiedHandbook);
         const hNotice = document.getElementById('handbookRefNotice');
         if (hNotice) hNotice.style.display = 'none';
       } else {
@@ -4489,6 +4501,8 @@ For Employee Handbook: apply the same MANDATORY CHECKLIST above — the section 
         }
       }
     }
+
+    showSuggestionReport(suggestionOutcomes(data, classification, { cba: window._lastCbaExcerpt || '', handbook: window._lastHandbookExcerpt || '' }), window._analysisInputs, data.notes);
 
     document.getElementById('ruleCitationSection').style.display = 'block';
     if (loadingEl) loadingEl.style.display = 'none';
@@ -5931,7 +5945,7 @@ const RELEVANCE_STOP_WORDS = new Set(('about above after again against because b
 // each type of concern brings its own vocabulary to the search.
 const SITUATION_KEYWORDS = {
   // Attendance / Tardiness
-  attendance: 'attendance absence absent tardy tardiness late punctual punctuality leave sick timely report duty hours workday schedule assignment',
+  attendance: 'attendance absence absent tardy tardiness late punctual punctuality leave sick timely report duty hours workday schedule assignment notify notification substitute',
   // Performance / Incompetency
   performance: 'performance unsatisfactory competence incompetency duties standards expectations improvement assignment instruction supervision planning',
   // Conduct / Insubordination
@@ -5972,12 +5986,70 @@ function relevanceScore(keywords, title, body) {
 }
 
 // Board policies most related to these facts, within a size the AI accepts.
+// Policy text as it can be cited. CSBA's model policies carry "CSBA NOTE"
+// paragraphs of editorial guidance, and many districts publish them inside
+// their adopted regulations (Bass Lake's AR 3542 has 18). They are CSBA's
+// words, not the district's, so they are never sent or quoted. A note ends at
+// the first short line, which is where a paragraph ends; when that is unclear
+// the note runs on, so real policy is occasionally set aside but commentary is
+// never quoted. Reference and cross-reference lists are removed too.
+function policyTextForCitation(text) {
+  let body = String(text || '');
+  const refs = body.search(/\n\s*(Legal (?:&|and) Management References|Legal Reference|Cross References)\b/i);
+  if (refs > 0) body = body.slice(0, refs);
+  const lines = body.split('\n');
+  const lengths = lines.map(l => l.trim().length).filter(n => n > 40).sort((a, b) => a - b);
+  const typical = lengths.length ? lengths[Math.floor(lengths.length * 0.75)] : 90;
+  const kept = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (/^\s*CSBA NOTE\b/i.test(lines[i])) {
+      let j = i;
+      while (j < lines.length - 1 && j - i < 25) {
+        const line = lines[j].trim();
+        if (j > i && (!line || line.length < typical * 0.8)) break;
+        if (j === i && line.length < typical * 0.8 && /[.:]$/.test(line)) break;
+        j++;
+      }
+      i = j;
+      continue;
+    }
+    kept.push(lines[i]);
+  }
+  return kept.join('\n').trim();
+}
+
+// The parts of a long policy that best match the facts, in their original
+// order, within a size limit. Until 23 September only the first 6,000
+// characters were sent, so the Responsibilities section of a 25,000-character
+// bus driver regulation never reached the analysis.
+function policyExcerptFor(text, keywords, maxChars) {
+  const body = policyTextForCitation(text);
+  if (body.length <= maxChars) return body;
+  const lines = body.split('\n');
+  const chunks = [];
+  let current = '';
+  lines.forEach(line => {
+    if (current.length + line.length > 900 && current) { chunks.push(current); current = ''; }
+    current += (current ? '\n' : '') + line;
+  });
+  if (current) chunks.push(current);
+  const ranked = chunks.map((chunk, index) => ({ chunk, index, score: index === 0 ? 1e6 : relevanceScore(keywords, '', chunk) }))
+    .sort((a, b) => b.score - a.score);
+  const keep = [];
+  let total = 0;
+  for (const r of ranked) {
+    if (total + r.chunk.length > maxChars) continue;
+    keep.push(r); total += r.chunk.length;
+  }
+  return keep.sort((a, b) => a.index - b.index).map(r => r.chunk).join('\n[...]\n');
+}
+
 function selectRelevantBoardPolicies(policies, keywords, classification) {
   const series = { 'cert-prob': '41', 'cert-perm': '41', 'class-prob': '42', 'class-perm': '42', 'mgmt': '43' }[classification] || '';
   const coreDiscipline = /^(BP|AR)\s*4[123]1[89]\b/;
   const scored = (policies || []).map(p => {
     const num = String(p.policy_number || '');
-    let score = relevanceScore(keywords, p.title, p.policy_text);
+    let score = relevanceScore(keywords, p.title, policyTextForCitation(p.policy_text));
     // A title match is the strongest signal a district gives us, so weigh the
     // title again on top of the general score.
     const title = String(p.title || '').toLowerCase();
@@ -5992,7 +6064,7 @@ function selectRelevantBoardPolicies(policies, keywords, classification) {
   let total = 0;
   for (const { p } of scored) {
     if (chosen.length >= 20 || total > 60000) break;
-    const text = String(p.policy_text || '').slice(0, 6000);
+    const text = policyExcerptFor(p.policy_text, keywords, 6000);
     chosen.push({ ...p, policy_text: text });
     total += text.length;
   }
@@ -6077,6 +6149,9 @@ async function ensureStatuteTextFor(citations) {
 // series is not a close call, it is simply wrong, so it is dropped here even
 // if the AI suggested it.
 function statuteFitsClassification(code, classification) {
+  // The series rule belongs to the Education Code only. Other codes number
+  // their sections their own way.
+  if (/\b(veh|cvc|vehicle|hsc|h&s|health|pen|penal|gov|government|lab|labor)\b/i.test(String(code))) return true;
   const section = Number(((String(code).match(/\b(4[45]\d{3})/) || [])[1]) || 0);
   if (!section) return true;
   const certificated = String(classification || '').startsWith('cert') || classification === 'mgmt';
@@ -6170,7 +6245,9 @@ function completeQuote(sentence, fullText) {
 //   effect"), it belongs to the district, or it grants the employee a right
 //   rather than requiring something of them ("shall not be required to work
 //   under unsafe conditions" protects the employee, it does not bind them).
-const DUTY_VERBS = /\b(shall not|shall|must not|must|may not|are expected|is expected|are required|is required|are prohibited|is prohibited)\b/gi;
+// "Employees are obligated to report" (CSEA 17.2 in the Bass Lake agreement) is
+// as much a duty as "shall report".
+const DUTY_VERBS = /\b(shall not|shall|must not|must|may not|are expected|is expected|are required|is required|are prohibited|is prohibited|are obligated|is obligated|are responsible for|is responsible for|responsibility is to)\b/gi;
 const GENERAL_PERSON_WORDS = 'employees?|staff|personnel|unit members?|members?|workers?|he|she|they|you';
 // Roles that usually supervise the person being written up. They only count as
 // the subject when this employee actually holds that role.
@@ -6182,7 +6259,7 @@ function personWordsForThisEmployee() {
 }
 let PERSON_WORDS = new RegExp('\\b(' + GENERAL_PERSON_WORDS + ')\\b', 'i');
 const THING_WORDS = /\b(plan|program|policy|policies|regulation|procedures?|records?|report|reports|training|notice|notices|agreement|section|article|district|board|superintendent|department|committee|office|fund|guidelines?|materials?|equipment|premises|forms?|list)\b/i;
-const EMPLOYEE_RIGHTS = /\b(shall not be required|shall not be compelled|shall be entitled|shall have the right|shall have the ability|shall have access|shall be able|shall be provided|shall be granted|shall be given|shall receive|shall be afforded|may request|may elect|at no cost to)\b/i;
+const EMPLOYEE_RIGHTS = /\b(shall not be required|shall not be compelled|shall be entitled|shall be eligible|shall have the right|shall have the ability|shall have access|shall be able|shall be provided|shall be granted|shall be given|shall receive|shall be afforded|may request|may elect|at no cost to)\b/i;
 
 // "The Board expects employees to maintain professional standards" places a
 // duty on employees even though the sentence opens with the Board.
@@ -6200,7 +6277,15 @@ function statesEmployeeDuty(sentence) {
   if (EXPECTS_OF_EMPLOYEES.test(text)) return true;
   DUTY_VERBS.lastIndex = 0;
   let match;
+  let judgedSentence = -2; // no sentence judged yet; the first sentence is -1
   while ((match = DUTY_VERBS.exec(text)) !== null) {
+    // "The Superintendent shall notify each driver ... and shall ensure" is
+    // all the Superintendent's duty. Only the first duty verb in a sentence
+    // names its subject; reading back from the second one found "driver".
+    const soFar = text.slice(0, match.index);
+    const thisSentence = Math.max(soFar.lastIndexOf('. '), soFar.lastIndexOf('; '), soFar.lastIndexOf(': '));
+    if (thisSentence === judgedSentence) continue;
+    judgedSentence = thisSentence;
     // Look at the words just before the duty verb. Whichever comes last, a
     // person or a thing, is what the duty belongs to. "The plan ... shall be
     // in effect" is the plan's duty, not the employee's.
@@ -6211,7 +6296,13 @@ function statesEmployeeDuty(sentence) {
     const sentenceSoFar = text.slice(0, match.index);
     const sentenceStart = Math.max(sentenceSoFar.lastIndexOf('. '), sentenceSoFar.lastIndexOf('; '), sentenceSoFar.lastIndexOf(': ')) + 1;
     const before = sentenceSoFar.slice(sentenceStart);
-    const words = before.split(/[^A-Za-z]+/).filter(Boolean).slice(-30);
+    // Words keep their trailing punctuation here, because a comma or a closing
+    // quotation mark ends a phrase: in 'charged with a "leave of absence
+    // offense," the Superintendent shall', the Superintendent is not inside
+    // "of".
+    const rawWords = before.split(/\s+/).filter(w => /[A-Za-z]/.test(w)).slice(-30);
+    const words = rawWords.map(w => w.replace(/[^A-Za-z]/g, ''));
+    const endsPhrase = rawWords.map(w => /[,;:"\u201D\u2019)]$/.test(w));
     const PREPOSITIONS = /^(to|for|of|with|by|from|among|upon|between|toward|towards|about|within)$/i;
     const FILLER = /^(all|the|any|each|every|its|their|new|other)$/i;
     // Work backwards from the duty verb to the noun that owns it. A noun
@@ -6225,7 +6316,11 @@ function statesEmployeeDuty(sentence) {
       const isThing = THING_WORDS.test(word);
       if (!isPerson && !isThing) continue;
       const preceding = [];
-      for (let back = at - 1; back >= 0 && preceding.length < 2; back--) {
+      // Four words back, because modifiers can sit between the preposition and
+      // the noun: in "the work week of regular full-time employees shall
+      // consist", the subject is the work week.
+      for (let back = at - 1; back >= 0 && preceding.length < 4; back--) {
+        if (endsPhrase[back]) break;
         if (!FILLER.test(words[back])) preceding.push(words[back]);
       }
       if (preceding.some(w => PREPOSITIONS.test(w))) continue;
@@ -6274,7 +6369,12 @@ function verifyQuotedFromSource(citations, sourceText) {
       wanted.forEach(w => { if (words.has(w)) score++; });
       if (score > bestScore) { bestScore = score; best = sentence; }
     });
-    if (best) {
+    // Same rule as board policies: a substitute must say substantially what
+    // the analysis quoted, measured against the quote alone.
+    const quotedWords = new Set(normalize(quoted).split(' ').filter(w => w.length > 4));
+    const overlap = best ? [...quotedWords].filter(w => normalize(best).split(' ').includes(w)).length : 0;
+    if (sentences.length === 1 && !best) best = sentences[0];
+    if (best && (sentences.length === 1 || overlap >= Math.max(3, Math.ceil(quotedWords.size * 0.4)))) {
       const text = completeQuote(best, source);
       verified.push({ ...c, code: articleNumberFromQuote(text, c.code), desc: text });
     }
@@ -6330,7 +6430,12 @@ function whyMatchesQuote(quote, why) {
 // a duty on this employee, it is about these facts, and its why connects the
 // two.
 function citationFitsThisCase(sentence, why) {
-  return statesEmployeeDuty(sentence) && touchesTheseFacts(sentence, factsVocabulary()) && whyMatchesQuote(sentence, why);
+  // A missing why has nothing to compare, so it cannot sink a quote that
+  // passes the other two tests. Until 23 September the bargaining agreement and
+  // handbook were asked for no why at all, and every one of their quotes was
+  // thrown away here. Board policies still require a why, checked separately.
+  const whyOk = String(why || '').trim() ? whyMatchesQuote(sentence, why) : true;
+  return statesEmployeeDuty(sentence) && touchesTheseFacts(sentence, factsVocabulary()) && whyOk;
 }
 // Words that are too general for most rules but are the substance of a
 // category's rules. "Report to work on time" is the whole of an attendance
@@ -6360,6 +6465,104 @@ function touchesTheseFacts(sentence, vocabulary) {
   return shared.size >= 2;
 }
 
+// Every suggestion the analysis made, whether it was kept, and if not, why.
+// Each one is checked on its own, with the same checks the lists above use,
+// so the report always agrees with what the administrator sees.
+function suggestionOutcomes(data, classification, sources) {
+  const out = [];
+  const savedDropped = window._bpDropped;
+  const digitsOf = (t) => (String(t || '').match(/\d{3,6}(?:\.\d+)?/) || [''])[0];
+  const statuteReason = (c) => {
+    const digits = digitsOf(c.code);
+    if (digits === '44938' || (typeof CLASSIFIED_STATUTES !== 'undefined' && CLASSIFIED_STATUTES[digits])) return 'Trackument names this section itself where it belongs, so it is never listed as a rule the employee broke.';
+    if (!statuteFitsClassification(c.code, classification)) return 'This part of the Education Code governs a different employee classification.';
+    const library = window._statuteLibrary || [];
+    const onFile = library.find(st => digitsOf(st.code) === digits);
+    if (!onFile || String(onFile.statute_text || '').trim().length < 120) return 'Its text is not in the statute library, so it cannot be quoted.';
+    return 'No sentence in its text places a duty on this employee that fits these facts.';
+  };
+  const statutes = (list, section) => (list || []).forEach(c => {
+    const kept = verifyStatuteCitations([c], classification).filter(v => !v.unverified && v.desc).length > 0;
+    out.push({ section, code: c.code, kept, reason: kept ? '' : statuteReason(c) });
+  });
+  statutes(data.edcode, 'Education Code');
+  statutes(data.cvc, 'Vehicle Code');
+  statutes(data.other, 'Other statutes');
+  (data.boardpolicy || []).forEach(c => {
+    const kept = verifyBoardPolicyCitations([c]).length > 0;
+    let reason = '';
+    if (!kept) {
+      const digits = digitsOf(c.code);
+      const onFile = (window._realBoardPolicies || []).some(p => digitsOf(p.policy_number) === digits);
+      reason = !onFile ? 'This policy is not among your district\'s board policies on file.'
+        : !String(c.why || '').trim() ? 'The analysis gave no reason it applies to these facts.'
+        : 'No sentence in this policy places a duty on this employee that fits these facts.';
+    }
+    out.push({ section: 'Board policy', code: c.code, kept, reason });
+  });
+  const quoted = (list, source, section, name) => (list || []).forEach(c => {
+    const kept = verifyQuotedFromSource([c], source).length > 0;
+    out.push({ section, code: c.code || name, kept, reason: kept ? '' : (!String(source || '').trim()
+      ? 'The text of the ' + name + ' could not be read, so no quote can be checked.'
+      : 'No sentence in the ' + name + ' places a duty on this employee that fits these facts.') });
+  });
+  quoted(data.cba, sources && sources.cba, 'Bargaining agreement', 'bargaining agreement');
+  quoted(data.handbook, sources && sources.handbook, 'Employee handbook', 'employee handbook');
+  window._bpDropped = savedDropped;
+  return out;
+}
+
+// A plain account of what the analysis was given. When nothing comes back,
+// this usually shows why: no attendance policy among those sent, or an
+// agreement whose text could not be read.
+function analysisInputLines(inputs) {
+  if (!inputs) return [];
+  const lines = [];
+  lines.push(inputs.policiesOnFile === 0
+    ? 'Board policies: none are on file for this district.'
+    : 'Board policies: ' + inputs.policiesSent.length + ' of the ' + inputs.policiesOnFile + ' on file ' + (inputs.policiesSent.length === 1 ? 'was' : 'were') + ' sent, chosen by how closely they match these facts'
+      + (inputs.policiesSent.length ? ': ' + inputs.policiesSent.join('; ') + '.' : '. None matched, so no policy was sent.'));
+  if (!inputs.agreementName) lines.push('Bargaining agreement: none is selected for this classification.');
+  else if (!inputs.agreementFile) lines.push('Bargaining agreement: ' + inputs.agreementName + ' is saved as a link with no uploaded file, so its text cannot be quoted.');
+  else if (!inputs.agreementChars) lines.push('Bargaining agreement: ' + inputs.agreementName + ' is on file, but no part of its text matched these facts, or its text could not be read. Nothing from it was sent.');
+  else lines.push('Bargaining agreement: the parts of ' + inputs.agreementName + ' that best match these facts were sent (' + inputs.agreementChars.toLocaleString() + ' characters).');
+  lines.push(inputs.statutesSent.length
+    ? 'Statutes: ' + inputs.statutesSent.length + (inputs.statutesSent.length === 1 ? ' section was' : ' sections were') + ' sent: ' + inputs.statutesSent.slice(0, 15).join(', ') + (inputs.statutesSent.length > 15 ? ', and others.' : '.')
+    : 'Statutes: no statute text matched these facts, so none was sent.');
+  if (inputs.handbookChars) lines.push('Employee handbook: ' + inputs.handbookChars.toLocaleString() + ' characters were sent.');
+  return lines;
+}
+
+function showSuggestionReport(outcomes, inputs, notes) {
+  const section = document.getElementById('ruleCitationSection');
+  if (!section) return;
+  let box = document.getElementById('suggestionReport');
+  if (!box) {
+    box = document.createElement('details');
+    box.id = 'suggestionReport';
+    box.style.cssText = 'margin:16px 0; font-size:0.85rem; color:var(--text); background:var(--cream); border:1px solid var(--light-gray); border-radius:3px; padding:12px 16px;';
+    const notes = document.getElementById('ruleNotes');
+    const anchor = notes ? (notes.previousElementSibling && notes.previousElementSibling.tagName === 'LABEL' ? notes.previousElementSibling : notes) : null;
+    if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(box, anchor); else section.appendChild(box);
+  }
+  const kept = outcomes.filter(o => o.kept).length;
+  const setAside = outcomes.length - kept;
+  const heading = outcomes.length === 0
+    ? 'What the analysis suggested: nothing for any section'
+    : 'What the analysis suggested: ' + kept + ' kept, ' + setAside + ' set aside';
+  const sections = ['Education Code', 'Vehicle Code', 'Other statutes', 'Board policy', 'Bargaining agreement', 'Employee handbook'];
+  const lines = outcomes.map(o => '<li><strong>' + bpEscape(o.section) + ', ' + bpEscape(o.code || '') + ':</strong> '
+    + (o.kept ? 'kept.' : 'set aside. ' + bpEscape(o.reason)) + '</li>');
+  const silent = sections.filter(name => !outcomes.some(o => o.section === name) && ['Education Code', 'Board policy', 'Bargaining agreement'].includes(name));
+  box.innerHTML = '<summary style="cursor:pointer; font-weight:700; color:var(--navy);">' + heading + '</summary>'
+    + '<p style="margin:8px 0 4px;">Every citation above passed Trackument\'s checks: the words are quoted from text on file, they place a duty on this employee, and they fit these facts. This list shows each suggestion and what happened to it.</p>'
+    + (lines.length ? '<ul style="margin:6px 0 0 18px; padding:0; line-height:1.6;">' + lines.join('') + '</ul>' : '')
+    + (silent.length ? '<p style="margin:8px 0 0;">The analysis suggested nothing for: ' + silent.map(bpEscape).join(', ') + '.</p>' : '')
+    + (notes ? '<p style="margin:8px 0 0;"><strong>The analysis summarized:</strong> ' + bpEscape(String(notes)) + '</p>' : '')
+    + (inputs ? '<p style="margin:12px 0 4px;"><strong>What the analysis was given to work with:</strong></p><ul style="margin:0 0 0 18px; padding:0; line-height:1.6;">'
+      + analysisInputLines(inputs).map(line => '<li>' + bpEscape(line) + '</li>').join('') + '</ul>' : '');
+}
+
 function verifyBoardPolicyCitations(citations) {
   const policies = window._realBoardPolicies || [];
   window._bpDropped = 0;
@@ -6377,7 +6580,7 @@ function verifyBoardPolicyCitations(citations) {
     const policy = byNumber.get(normalize(rawCitation.code)) || byDigits.get(digitsOf(rawCitation.code));
     if (!policy) { window._bpDropped++; return; }
     const c = { ...rawCitation, code: policy.policy_number };
-    const fullText = policy.policy_text || '';
+    const fullText = policyTextForCitation(policy.policy_text);
     if (normalize(fullText).includes(normalize(c.desc)) && normalize(c.desc).length > 25 && citationFitsThisCase(c.desc, c.why)) {
       if (!String(c.why || '').trim()) { window._bpDropped++; return; }
       verified.push({ ...c, desc: completeQuote(c.desc, fullText) });
@@ -6397,7 +6600,13 @@ function verifyBoardPolicyCitations(citations) {
       wanted.forEach(w => { if (words.has(w)) score++; });
       if (score > bestScore) { bestScore = score; best = sentence.trim(); }
     });
-    if (!best && sentences.length > 0) best = sentences[0].trim();
+    // A substitute must say substantially what the analysis quoted. Taking the
+    // first sentence that passed, whatever it said, could turn a suggestion
+    // into "shall not drive for more than 10 hours" for a tardy driver.
+    // A substitute is used when the choice is unambiguous (only one sentence
+    // in the policy passes every check) or when it shares enough words.
+    if (sentences.length === 1 && !best) best = sentences[0].trim();
+    if (sentences.length > 1 && bestScore < Math.max(3, Math.ceil(wanted.size * 0.4))) best = null;
     // Nothing in this policy states a duty these facts broke, so it is not a
     // citation. Leaving it out is better than citing something indefensible.
     if (!best) { window._bpDropped++; return; }
@@ -7446,18 +7655,15 @@ async function uploadDocumentToServer(base64DataUrl, filename, contentType) {
     throw new Error(err.error || 'Upload failed');
   }
   const uploaded = await res.json();
-  // Check right now that the text can be read. A scanned PDF has no text to
-  // quote, and the administrator should learn that here rather than during a
-  // writeup weeks later.
-  if (/\.pdf$/i.test(filename || '')) {
-    let readable = false;
-    try {
-      const textRes = await fetch('/api/documents/' + encodeURIComponent(uploaded.id) + '/text');
-      if (textRes.ok) readable = ((await textRes.json()).text || '').trim().length > 200;
-    } catch (e) {}
-    if (!readable) {
-      throw new Error('We could not read any text in ' + filename + '. It looks like a scan rather than a text based PDF. Open it in Word or Google Docs, save it again as a PDF, and upload that copy, or email help@trackument.com for assistance.');
-    }
+  // The server reads the text at upload and refuses a scan or a Word file with
+  // an explanation, which arrives above as the error. A file with some blank
+  // pages is kept, but the administrator should know which pages cannot be
+  // quoted.
+  const r = uploaded.readability;
+  if (r && r.status === 'partly') {
+    alert(filename + ' was saved, but ' + r.blankPages.length + ' of its ' + r.pages + ' pages have no readable text (pages '
+      + r.blankPages.slice(0, 12).join(', ') + (r.blankPages.length > 12 ? ', and more' : '')
+      + '). Those pages look scanned, so nothing on them can be quoted. For assistance, email help@trackument.com.');
   }
   return uploaded;
 }
@@ -7509,6 +7715,33 @@ async function saveSetupCBA() {
   }
 }
 
+// A plain label under each saved agreement, handbook, or merit rules file
+// saying whether Trackument can quote it. A file that cannot be read used to
+// produce no citations with no explanation.
+function readabilityPlaceholder(e) {
+  return '<div class="doc-readability" data-doc="' + (e.documentId || '') + '" data-source="' + (e.sourceType || '') + '" style="font-size:0.75rem;margin-top:4px;"></div>';
+}
+function readabilityText(r) {
+  if (!r) return '';
+  if (r.status === 'readable') return '<span style="color:var(--teal);font-weight:700;">Readable.</span> Trackument can quote it' + (r.headings && r.headings.length ? ' (' + r.headings.length + ' articles and sections found).' : '.');
+  if (r.status === 'partly') return '<span style="color:var(--gold);font-weight:700;">Partly readable.</span> ' + r.blankPages.length + ' of ' + r.pages + ' pages have no text, so nothing on them can be quoted. Upload a fully text-based PDF if you can.';
+  if (r.reason === 'word') return '<span style="color:var(--warn);font-weight:700;">Not readable.</span> Trackument can quote only PDF files. Save it as a PDF in Word and upload it again.';
+  return '<span style="color:var(--warn);font-weight:700;">Not readable.</span> This is a scanned image, so nothing in it can be quoted. Upload a text-based PDF, or email help@trackument.com for assistance.';
+}
+async function fillReadabilityLabels(list) {
+  if (!list) return;
+  for (const box of list.querySelectorAll('.doc-readability')) {
+    const id = box.getAttribute('data-doc');
+    const source = box.getAttribute('data-source');
+    if (source === 'link') { box.innerHTML = '<span style="color:var(--gold);font-weight:700;">Link only.</span> Trackument cannot quote a link. Upload the PDF so its articles can be quoted.'; continue; }
+    if (!id) { box.innerHTML = '<span style="color:var(--warn);font-weight:700;">Not readable.</span> This was saved in an older format that Trackument cannot read. Remove it and upload the PDF again.'; continue; }
+    try {
+      const res = await fetch('/api/documents/' + encodeURIComponent(id) + '/readability');
+      if (res.ok) box.innerHTML = readabilityText((await res.json()).readability);
+    } catch (e) {}
+  }
+}
+
 async function loadSetupCBAList() {
   const list = document.getElementById('setupCBAList');
   if (!list) return;
@@ -7536,6 +7769,7 @@ async function loadSetupCBAList() {
             ${e.sourceType === 'file' ? '📄 ' + e.sourceLabel : '🔗 ' + e.sourceLabel}
           </div>
           <div style="font-size:0.72rem;color:var(--gray);margin-top:4px;">Saved ${e.savedAt}</div>
+          ${readabilityPlaceholder(e)}
         </div>
         <div class="cba-card-actions">
           <button class="btn-cba-delete" data-key="${e.key}" data-type="cba">Remove</button>
@@ -7547,6 +7781,7 @@ async function loadSetupCBAList() {
     list.querySelectorAll('[data-type="cba"]').forEach(btn => {
       btn.addEventListener('click', () => deleteSetupCBA(btn.getAttribute('data-key')));
     });
+    fillReadabilityLabels(list);
   } catch (err) {
     list.innerHTML = '<div style="font-size:0.85rem;color:var(--warn);">Error loading agreements. For assistance, email help@trackument.com.</div>';
   }
@@ -7707,6 +7942,7 @@ async function loadSetupHandbookList() {
             ${e.sourceType === 'file' ? '📄 ' + e.sourceLabel : '🔗 ' + e.sourceLabel}
           </div>
           <div style="font-size:0.72rem;color:var(--gray);margin-top:4px;">Saved ${e.savedAt}</div>
+          ${readabilityPlaceholder(e)}
         </div>
         <div class="cba-card-actions">
           <button class="btn-cba-delete" data-key="${e.key}" data-type="handbook">Remove</button>
@@ -7717,6 +7953,7 @@ async function loadSetupHandbookList() {
     list.querySelectorAll('[data-type="handbook"]').forEach(btn => {
       btn.addEventListener('click', () => deleteSetupHandbook(btn.getAttribute('data-key')));
     });
+    fillReadabilityLabels(list);
   } catch (err) {
     list.innerHTML = '<div style="font-size:0.85rem;color:var(--warn);">Error loading handbooks. For assistance, email help@trackument.com.</div>';
   }
@@ -8121,6 +8358,7 @@ async function loadMeritRulesList() {
           <div class="cba-card-name">${e.name}</div>
           <div class="cba-card-preview">${e.sourceType === 'file' ? '📄 ' + e.sourceLabel : '🔗 ' + e.sourceLabel}</div>
           <div style="font-size:0.72rem;color:var(--gray);margin-top:4px;">Saved ${e.savedAt}</div>
+          ${readabilityPlaceholder(e)}
         </div>
         <div class="cba-card-actions">
           <button class="btn-cba-delete" data-key="${e.key}" data-type="merit">Remove</button>
@@ -8136,6 +8374,7 @@ async function loadMeritRulesList() {
         } catch(err) { showToast(withHelp('Error removing document')); }
       });
     });
+    fillReadabilityLabels(list);
   } catch (err) {}
 }
 

@@ -107,6 +107,38 @@ describe('The right to respond cites its real source', () => {
   });
 });
 
+describe('Every kind of suggestion is checked before it is shown', () => {
+  test('Vehicle Code, other statutes, and handbook suggestions all pass through a check', () => {
+    const html = read(APP_HTML);
+    assert.equal(html.includes("renderCitations('otherCiteList', otherCitations)"), false, 'other statutes are shown unchecked');
+    assert.equal(html.includes("renderCitations('handbookRefList', data.handbook)"), false, 'handbook quotes are shown unchecked');
+    assert.equal(html.includes("renderCitations('cvcList', verifyStatuteCitations(cvcCitations))"), false, 'Vehicle Code numbers without text are shown');
+  });
+});
+
+describe('Every kind of citation the analysis returns asks for a why', () => {
+  test('the agreement, handbook, and other statutes ask for a why', () => {
+    const html = read(APP_HTML);
+    for (const key of ['cba', 'handbook', 'other']) {
+      const at = html.indexOf('  "' + key + '": [{');
+      assert.ok(at > 0, key + ' is missing from the response format');
+      assert.ok(html.slice(at, html.indexOf('\n', at)).includes('"why"'), key + ' asks for no why');
+    }
+  });
+});
+
+describe('No board policy is ruled out by its number (Tiffany Morse, 23 September)', () => {
+  // A blanket rule kept AR 3542, School Bus Drivers, out of every bus driver
+  // case. Whether a policy can be cited depends on its sentence alone.
+  test('no instruction excludes a policy by series or number', () => {
+    const html = read(APP_HTML);
+    for (const phrase of [/3000 series/i, /4115, 4215, 4315/, /Classified = 4200 series/, /BP 4215: classified employee evaluation/]) {
+      assert.equal(phrase.test(html), false, 'a blanket policy exclusion is back: ' + phrase);
+    }
+    assert.match(html, /A policy's number or series never rules it out/);
+  });
+});
+
 describe('There is no built-in list of citations', () => {
   test('the Ed Code box is never filled from hand-written descriptions', () => {
     const html = read(APP_HTML);

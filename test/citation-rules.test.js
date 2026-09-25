@@ -61,7 +61,10 @@ function loadCitationRules() {
     fn('articleNumberFromQuote'),
     fn('citationNumbersIn'),
     fn('sameCitation'),
-    'return { whyMatchesQuote, citationFitsThisCase, verifyStatuteCitations, statesEmployeeDuty, stripPageMarkers, touchesTheseFacts, wordStem, factsVocabulary, completeQuote, touchesTheseFacts, factsVocabulary, statuteFitsClassification, verifyBoardPolicyCitations, verifyQuotedFromSource, articleNumberFromQuote, citationNumbersIn, sameCitation };',
+    fn('suggestionOutcomes'),
+    fn('policyTextForCitation'),
+    fn('analysisInputLines'),
+    'return { policyTextForCitation, analysisInputLines, suggestionOutcomes, whyMatchesQuote, citationFitsThisCase, verifyStatuteCitations, statesEmployeeDuty, stripPageMarkers, touchesTheseFacts, wordStem, factsVocabulary, completeQuote, touchesTheseFacts, factsVocabulary, statuteFitsClassification, verifyBoardPolicyCitations, verifyQuotedFromSource, articleNumberFromQuote, citationNumbersIn, sameCitation };',
   ].join('\n\n');
   // The page globals these functions read.
   const window = { _realBoardPolicies: [], _bpDropped: 0 };
@@ -352,5 +355,158 @@ describe('A third demo on 23 September: a bus driver late three times, nothing w
       assert.equal(rules.citationFitsThisCase(eyeRule, 'Running a stop sign while operating a school bus is a violation of safe work practices.'), false);
       assert.equal(rules.citationFitsThisCase('Bus drivers shall obey all traffic laws and shall stop at every stop sign.', 'You drove through a stop sign without stopping.'), true);
     });
+  });
+});
+
+describe('The suggestion report says what happened to every suggestion', () => {
+  test('each suggestion is marked kept or set aside, with the reason', () => {
+    rules.window._realBoardPolicies = [{ policy_number: 'BP 4218', title: 'Conduct', policy_text: 'Bus drivers shall obey all traffic laws and shall stop at every stop sign on their routes.' }];
+    rules.window._statuteLibrary = [{ code: 'VEH 22450', statute_text: 'The driver of any vehicle approaching a stop sign at the entrance to, or within, an intersection shall stop at a limit line, if marked, otherwise before entering the crosswalk on the near side of the intersection.' }];
+    const cba = 'Article 12.3. Bus drivers shall stop at every stop sign and obey all traffic laws while driving district vehicles on their routes.';
+    const why = 'You drove through a stop sign without stopping.';
+    const outcomes = rules.suggestionOutcomes({
+      cvc: [{ code: 'CVC § 22450', desc: 'The driver of any vehicle approaching a stop sign at the entrance to, or within, an intersection shall stop at a limit line', why }, { code: 'CVC § 21200', desc: 'bicycle rights', why }],
+      edcode: [{ code: 'Ed Code § 45113', desc: 'discipline for cause', why }],
+      boardpolicy: [{ code: 'BP 4218', desc: 'Bus drivers shall obey all traffic laws and shall stop at every stop sign on their routes.', why }, { code: 'BP 9999', desc: 'Something else entirely.', why }],
+      cba: [{ code: 'Article 12.3', desc: 'Bus drivers shall stop at every stop sign and obey all traffic laws while driving district vehicles on their routes.', why }],
+    }, 'class-perm', { cba, handbook: '' });
+    const find = (code) => outcomes.find(o => o.code === code);
+    assert.equal(find('CVC § 22450').kept, true);
+    assert.match(find('CVC § 21200').reason, /not in the statute library/);
+    assert.match(find('Ed Code § 45113').reason, /names this section itself/);
+    assert.equal(find('BP 4218').kept, true);
+    assert.match(find('BP 9999').reason, /not among your district's board policies/);
+    assert.equal(find('Article 12.3').kept, true);
+  });
+  test('an unreadable agreement is named as the reason', () => {
+    const outcomes = rules.suggestionOutcomes({ cba: [{ code: 'Article 5', desc: 'Employees shall report on time.', why: 'You were late.' }] }, 'class-perm', { cba: '', handbook: '' });
+    assert.match(outcomes[0].reason, /could not be read/);
+  });
+  test('the Education Code series rule never touches other codes', () => {
+    assert.equal(rules.statuteFitsClassification('VEH 44000', 'class-perm'), true);
+    assert.equal(rules.statuteFitsClassification('Health and Safety Code § 44010', 'class-perm'), true);
+    assert.equal(rules.statuteFitsClassification('Ed Code § 44807', 'class-perm'), false);
+  });
+});
+
+describe('The report shows what the analysis was given', () => {
+  test('an agreement with no matching text is named plainly', () => {
+    const lines = rules.analysisInputLines({ policiesOnFile: 40, policiesSent: ['BP 4218, Discipline'], agreementName: 'CSEA', agreementFile: true, agreementChars: 0, handbookChars: 0, statutesSent: [] });
+    assert.ok(lines.some(l => /CSEA is on file, but no part of its text matched/.test(l)));
+    assert.ok(lines.some(l => /1 of the 40 on file was sent/.test(l)));
+    assert.ok(lines.some(l => /no statute text matched/.test(l)));
+  });
+  test('no policies on file, and an agreement saved only as a link, are each explained', () => {
+    const lines = rules.analysisInputLines({ policiesOnFile: 0, policiesSent: [], agreementName: 'CSEA', agreementFile: false, agreementChars: 0, handbookChars: 0, statutesSent: ['VEH 22450'] });
+    assert.ok(lines.some(l => /none are on file/.test(l)));
+    assert.ok(lines.some(l => /saved as a link/.test(l)));
+    assert.ok(lines.some(l => /1 section was sent: VEH 22450/.test(l)));
+  });
+});
+
+describe('Bargaining agreement quotes survive without a why (fixed 23 September)', () => {
+  const run = (fn) => {
+    const saved = { facts: rules.fields.factDescription, title: rules.fields.employeeTitle, situations: [...rules.selectedSituations] };
+    rules.selectedSituations.clear(); rules.selectedSituations.add('attendance');
+    rules.fields.factDescription = 'Bus driver is late three times in two weeks, causing delayed routes.'; rules.fields.employeeTitle = 'Bus Driver';
+    try { fn(); } finally {
+      rules.fields.factDescription = saved.facts; rules.fields.employeeTitle = saved.title;
+      rules.selectedSituations.clear(); saved.situations.forEach(x => rules.selectedSituations.add(x));
+    }
+  };
+  const agreement = 'Article 9.4 Tardiness. Employees shall report to work at their scheduled starting time. An employee who will be late shall notify the immediate supervisor before the start of the shift. Article 9.5 The District shall maintain attendance records.';
+  test('an attendance article quoted with no why is kept', () => run(() => {
+    const kept = rules.verifyQuotedFromSource([{ code: 'Article 9.4', desc: 'Employees shall report to work at their scheduled starting time.' }], agreement);
+    assert.equal(kept.length, 1);
+  }));
+  test('a district obligation is never quoted, even when the agreement has a real duty nearby', () => run(() => {
+    const kept = rules.verifyQuotedFromSource([{ code: 'Article 9.5', desc: 'The District shall maintain attendance records.' }], agreement);
+    assert.equal(kept.some(c => /District shall maintain/.test(c.desc)), false);
+    kept.forEach(c => assert.ok(/^(Employees shall report|An employee who will be late)/.test(c.desc), c.desc));
+  }));
+  test('a why that has nothing to do with the quote still sinks it', () => run(() => {
+    const kept = rules.verifyQuotedFromSource([{ code: 'Article 9.4', desc: 'Employees shall report to work at their scheduled starting time.', why: 'You drove through a stop sign without stopping.' }], agreement);
+    assert.equal(kept.length, 0);
+  }));
+});
+
+describe('Bass Lake CSEA agreement and employee handbook, tested 23 September', () => {
+  // Real sentences from the demo district's documents, as the server extracts
+  // them. The CSEA agreement has no punctuality article; its attendance duties
+  // are about notice of an absence.
+  const run = (fn) => {
+    const saved = { facts: rules.fields.factDescription, title: rules.fields.employeeTitle, situations: [...rules.selectedSituations] };
+    rules.selectedSituations.clear(); rules.selectedSituations.add('attendance');
+    rules.fields.factDescription = 'Bus driver was late three times in two weeks and did not call in, causing delayed routes.'; rules.fields.employeeTitle = 'Bus Driver';
+    try { fn(); } finally {
+      rules.fields.factDescription = saved.facts; rules.fields.employeeTitle = saved.title;
+      rules.selectedSituations.clear(); saved.situations.forEach(x => rules.selectedSituations.add(x));
+    }
+  };
+  const why = 'You did not notify the District before arriving late for your route on three occasions.';
+  test('CSEA 11.1.5, notice of an absence, is a duty that fits', () => run(() => {
+    assert.equal(rules.citationFitsThisCase('Whenever possible, an employee must contact the District Office as soon as the need to be absent is known, but in no event less than one (1) hour prior to the start of the workday to permit the District to secure a substitute service.', why), true);
+  }));
+  test('the handbook attendance sentence is a duty that fits', () => run(() => {
+    assert.equal(rules.citationFitsThisCase('Employees who miss work are required to notify specific people (supervisor, secretary, etc.) in advance of their absence so a sub can be arranged.', why), true);
+  }));
+  test('CSEA 9.1 defines the work week and places no duty on anyone', () => {
+    assert.equal(rules.statesEmployeeDuty('The work week of regular full-time employees shall consist of five (5) consecutive days of eight (8) hours per day exclusive of a lunch period and forty (40) hours per week.'), false);
+  });
+  test('CSEA 17.1 is the District\'s duty and 17.2 is the employee\'s', () => {
+    assert.equal(rules.statesEmployeeDuty('The District shall comply with the applicable provisions of the California State Occupational Safety and Health Act.'), false);
+    assert.equal(rules.statesEmployeeDuty('Employees are obligated to immediately report any condition or practice with which they feel unsafe, potentially unsafe, or hazardous, to their immediate supervisor.'), true);
+  });
+});
+
+describe('Bass Lake board policies, tested 23 September', () => {
+  // AR 3542 as published carries 18 CSBA NOTE paragraphs of editorial
+  // guidance, and all three regulations end with long reference lists.
+  const ar3542 = [
+    'CSBA NOTE: Any driver employed to operate a school bus or student activity bus is required to',
+    'possess a special certificate from the California Highway Patrol (CHP) permitting such service.',
+    'Issuance of the certificate is based on successful completion of prescribed examinations',
+    'conducted by the CHP and compliance with all applicable provisions of the Vehicle Code',
+    'Additionally, all drivers employed to operate school buses or student activity buses shall possess,',
+    'and retain in their immediate possession while operating the bus, a certificate issued by the',
+    'California Highway Patrol (CHP) which permits the operation of school buses or student activity',
+    'buses, as applicable. (Vehicle Code 12517, 12517.4)',
+    'Responsibilities',
+    "The driver's primary responsibility is to safely transport students to and from school and school",
+    'activities. The driver shall follow procedures contained in district plans and regulations pertaining',
+    'to transportation safety.',
+    'Legal & Management References',
+    'Veh. Code 22112 — School bus signals; roadway crossings',
+    'Cross References',
+    '3540 Transportation',
+  ].join('\n');
+  test('CSBA editorial notes and reference lists are never quoted as district policy', () => {
+    const text = rules.policyTextForCitation(ar3542);
+    assert.equal(/CSBA NOTE|special certificate from the California Highway Patrol \(CHP\) permitting/.test(text), false, text);
+    assert.equal(/Legal & Management References|Cross References|3540 Transportation/.test(text), false);
+    assert.match(text, /primary responsibility is to safely transport students/);
+  });
+  test('a later "shall" in a sentence belongs to that sentence\'s subject', () => {
+    assert.equal(rules.statesEmployeeDuty("The Superintendent or designee shall notify each driver of the expiration date of the individual's driver's license, certificate, and medical certificate, and shall ensure each document is renewed prior to expiration."), false);
+  });
+  test('a comma or quotation mark ends a phrase', () => {
+    assert.equal(rules.statesEmployeeDuty('Upon being informed that a classified employee has been charged with a "mandatory leave of absence offense," the Superintendent or designee shall immediately place the employee on a leave of absence.'), false);
+  });
+  test('"primary responsibility is to" is a duty, and "shall be eligible" is not', () => {
+    assert.equal(rules.statesEmployeeDuty("The driver's primary responsibility is to safely transport students to and from school and school activities."), true);
+    assert.equal(rules.statesEmployeeDuty('They shall be eligible for promotion into the regular classified service only after completing six months of satisfactory service.'), false);
+  });
+  test('with several loosely fitting sentences, an unrelated substitute is never chosen', () => {
+    const saved = { facts: rules.fields.factDescription, situations: [...rules.selectedSituations] };
+    rules.selectedSituations.clear(); rules.selectedSituations.add('attendance');
+    rules.fields.factDescription = 'Bus driver was late three times in two weeks, causing delayed routes.';
+    try {
+      rules.window._realBoardPolicies = [{ policy_number: 'AR 3542', title: 'School Bus Drivers', policy_text: 'All drivers employed to operate school buses shall not drive for more than 10 hours within a work period, or after the end of the 16th hour after coming on duty. The driver shall report at the completion of each day\'s work the condition of the bus. The driver shall not require any student to leave the bus en route between home and school.' }];
+      const kept = rules.verifyBoardPolicyCitations([{ code: 'AR 3542', desc: 'Drivers must arrive on time for their routes.', why: 'You arrived late for your route three times.' }]);
+      assert.deepEqual(kept, []);
+    } finally {
+      rules.fields.factDescription = saved.facts;
+      rules.selectedSituations.clear(); saved.situations.forEach(x => rules.selectedSituations.add(x));
+    }
   });
 });
